@@ -455,13 +455,23 @@ export default function App(){
         <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button></div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
           {(cTab==="boissons"?boissons:snacks).map(p=>(
-            <button key={p.id} onClick={()=>addToCart(p,cTab)} style={{background:S.card2,border:`1px solid ${S.border}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",transition:"transform .1s"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.95)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
-              <div style={{fontSize:24}}>{p.emoji}</div>
-              <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
-              <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
-              {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
-            </button>
+            <div key={p.id} style={{position:"relative"}}>
+              <button onClick={()=>addToCart(p,cTab)} style={{width:"100%",background:S.card2,border:`1px solid ${S.border}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",transition:"transform .1s"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.95)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
+                <div style={{fontSize:24}}>{p.emoji}</div>
+                <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
+                <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
+                {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
+              </button>
+              {user.role==="patron"&&<div style={{display:"flex",gap:2,marginTop:4}}>
+                <button onClick={()=>setEditProd({...p,cat:cTab})} style={{flex:1,background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"3px",cursor:"pointer",fontSize:11}}>✏️</button>
+                <button onClick={()=>{if(cTab==="boissons"){const nb=boissons.filter(x=>x.id!==p.id);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.filter(x=>x.id!==p.id);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}showToast("Supprimé",S.orange);}} style={{flex:1,background:S.card2,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"3px",cursor:"pointer",fontSize:11}}>🗑</button>
+              </div>}
+            </div>
           ))}
+          {user.role==="patron"&&<button onClick={()=>setAddProdModal(cTab)} style={{background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.gold,textAlign:"center"}}>
+            <div style={{fontSize:22}}>＋</div>
+            <div style={{fontSize:10,marginTop:4,fontWeight:700}}>Ajouter</div>
+          </button>}
         </div>
         {cart.length>0?<div style={Card()}>
           <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
@@ -552,6 +562,7 @@ export default function App(){
                 <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{rec.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • ")}</div></div>
                 <input type="number" min="0" placeholder="0" value={planQty[rec.id]||""} onChange={e=>setPlanQty(p=>({...p,[rec.id]:parseInt(e.target.value)||0}))} style={{...Inp("65px"),padding:"7px 8px",fontSize:14,textAlign:"center",fontWeight:700}}/>
                 <span style={{fontSize:10,color:S.muted,minWidth:20}}>pcs</span>
+                {user.role==="patron"&&<button onClick={()=>{const nr=recipes.filter(r=>r.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);showToast("Retiré du planning",S.orange);}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"3px 6px",cursor:"pointer",fontSize:11}}>🗑</button>}
               </div>
             ))}
           </div>
@@ -583,13 +594,17 @@ export default function App(){
               <div key={rec.id} style={{background:S.card2,borderRadius:10,padding:12,marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>
-                  {user.role==="patron"&&<button onClick={()=>setEditRecModal({...rec,ingredients:rec.ingredients.map(i=>({...i}))})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button>}
+                  {user.role==="patron"&&<div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>setEditRecModal({...rec,ingredients:rec.ingredients.map(i=>({...i}))})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button>
+                    <button onClick={()=>{const nr=recipes.filter(r=>r.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);showToast("Recette supprimée",S.orange);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>🗑</button>
+                  </div>}
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
               </div>
             ))}
           </div>
         ))}
+        {user.role==="patron"&&<button onClick={()=>setAddRecModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une recette manuellement</button>}
         <div style={{background:"#0d0a1a",border:`1px solid ${S.purple}`,borderRadius:12,padding:14}}>
           <div style={{fontWeight:700,color:S.purple,marginBottom:10,fontSize:13}}>🤖 Créer une recette avec l'IA</div>
           <textarea value={aiRecInput} onChange={e=>setAiRecInput(e.target.value)} placeholder={"Décrivez votre plat...\nEx: Poulet yassa mariné oignon citron moutarde"} style={{...Inp(),height:70,resize:"none",fontSize:12,padding:"10px"}}/>
