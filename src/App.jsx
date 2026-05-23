@@ -149,6 +149,7 @@ export default function App(){
   const [aiRecInput,setAiRecInput]=useState("");
   const [aiRecLoading,setAiRecLoading]=useState(false);
   const [addRecModal,setAddRecModal]=useState(false);
+  const [editRecModal,setEditRecModal]=useState(null);
   const [newRec,setNewRec]=useState({name:"",emoji:"🍽️",category:"Autre",snackId:"",ingredients:[]});
   const [storeModal,setStoreModal]=useState(false);
   const [tick,setTick]=useState(0);
@@ -735,6 +736,38 @@ export default function App(){
         </div>
       </div>}
 
+
+      {/* Edit Recipe Modal */}
+      {editRecModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:300,padding:16,overflowY:"auto"}}>
+        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid ${S.purple}`,marginTop:20}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.purple,marginBottom:16}}>✏️ Modifier la recette</div>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            <div style={{flex:1}}><div style={{fontSize:11,color:S.muted,marginBottom:3}}>Emoji</div><input value={editRecModal.emoji} onChange={e=>setEditRecModal(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:20,textAlign:"center",padding:"8px"}}/></div>
+            <div style={{flex:3}}><div style={{fontSize:11,color:S.muted,marginBottom:3}}>Nom</div><input value={editRecModal.name} onChange={e=>setEditRecModal(p=>({...p,name:e.target.value}))} style={Inp()}/></div>
+          </div>
+          <div style={{marginBottom:10}}><div style={{fontSize:11,color:S.muted,marginBottom:3}}>Catégorie</div><input value={editRecModal.category} onChange={e=>setEditRecModal(p=>({...p,category:e.target.value}))} style={Inp()}/></div>
+          <div style={{fontWeight:700,color:S.muted,fontSize:11,marginBottom:8,letterSpacing:1}}>INGRÉDIENTS (quantité par unité produite)</div>
+          {editRecModal.ingredients.map((ing,i)=>{
+            const ingObj=ingredients.find(x=>x.id===ing.id);
+            return(
+              <div key={i} style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
+                <select value={ing.id} onChange={e=>{const ni=[...editRecModal.ingredients];ni[i]={...ni[i],id:e.target.value};setEditRecModal(p=>({...p,ingredients:ni}));}} style={{flex:2,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px 8px",fontSize:12,outline:"none"}}>
+                  {ingredients.map(x=><option key={x.id} value={x.id}>{x.emoji} {x.name} ({x.unit})</option>)}
+                </select>
+                <input type="number" step="0.001" value={ing.qty} onChange={e=>{const ni=[...editRecModal.ingredients];ni[i]={...ni[i],qty:parseFloat(e.target.value)||0};setEditRecModal(p=>({...p,ingredients:ni}));}} style={{width:75,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px 4px",fontSize:12,outline:"none",textAlign:"center"}}/>
+                <div style={{fontSize:11,color:S.muted,minWidth:22}}>{ingObj?.unit||"kg"}</div>
+                <button onClick={()=>{const ni=editRecModal.ingredients.filter((_,j)=>j!==i);setEditRecModal(p=>({...p,ingredients:ni}));}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 6px",cursor:"pointer",fontSize:12}}>✕</button>
+              </div>
+            );
+          })}
+          <button onClick={()=>setEditRecModal(p=>({...p,ingredients:[...p.ingredients,{id:ingredients[0]?.id||"i1",qty:0.001}]}))} style={{width:"100%",background:"transparent",border:`1px dashed ${S.border}`,color:S.muted,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,marginBottom:14}}>＋ Ajouter un ingrédient</button>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setEditRecModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{const nr=recipes.map(r=>r.id===editRecModal.id?editRecModal:r);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);setEditRecModal(null);showToast("✓ Recette mise à jour");}} style={{background:S.purple,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
+          </div>
+        </div>
+      </div>}
+
       {/* Goal modal */}
       {goalModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
         <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.gold}`}}>
@@ -746,3 +779,4 @@ export default function App(){
     </div>
   );
 }
+// PATCH: add editRecModal JSX after goal modal
