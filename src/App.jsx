@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+mport React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
@@ -17,6 +17,10 @@ const INIT_B=[{id:"b1",name:"Café",price:200,emoji:"☕"},{id:"b2",name:"Café 
 const INIT_S=[{id:"s1",name:"Crêpe Sucre",price:500,emoji:"🥞"},{id:"s2",name:"Crêpe Confiture",price:600,emoji:"🥞"},{id:"s3",name:"Crêpe Nutella",price:1500,emoji:"🥞"},{id:"s4",name:"Gaufre Sucre",price:500,emoji:"🧇"},{id:"s5",name:"Gaufre Nutella",price:1200,emoji:"🧇"},{id:"s6",name:"Poulet-Fromage",price:1500,emoji:"🍗"},{id:"s7",name:"Bœuf-Fromage",price:2000,emoji:"🥩"},{id:"s8",name:"Sandwich",price:1000,emoji:"🥪"}];
 const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62},{id:"i6",name:"Confiture",unit:"kg",emoji:"🍓",unitCost:5000},{id:"i7",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000},{id:"i8",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200},{id:"i9",name:"Fromage",unit:"kg",emoji:"🧀",unitCost:6000},{id:"i10",name:"Thon",unit:"kg",emoji:"🐟",unitCost:3000},{id:"i11",name:"Pain",unit:"pcs",emoji:"🍞",unitCost:50},{id:"i12",name:"Levure",unit:"kg",emoji:"🧪",unitCost:5000}];
 const INIT_REC=[{id:"r1",emoji:"🥞",name:"Crêpe Sucre",category:"Crêpes",snackId:"s1",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i4",qty:0.005},{id:"i5",qty:0.5}]},{id:"r2",emoji:"🥞",name:"Crêpe Confiture",category:"Crêpes",snackId:"s2",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i6",qty:0.030},{id:"i5",qty:0.5}]},{id:"r3",emoji:"🥞",name:"Crêpe Nutella",category:"Crêpes",snackId:"s3",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i7",qty:0.040},{id:"i5",qty:0.5}]},{id:"r4",emoji:"🧇",name:"Gaufre Sucre",category:"Gaufres",snackId:"s4",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i4",qty:0.008},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r5",emoji:"🧇",name:"Gaufre Nutella",category:"Gaufres",snackId:"s5",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i7",qty:0.040},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r6",emoji:"🍗",name:"Poulet-Fromage",category:"Salées",snackId:"s6",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r7",emoji:"🥩",name:"Bœuf-Fromage",category:"Salées",snackId:"s7",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r8",emoji:"🥪",name:"Sandwich Thon",category:"Sandwichs",snackId:"s8",ingredients:[{id:"i10",qty:0.060},{id:"i9",qty:0.030},{id:"i11",qty:2}]}];
+
+const EMOJIS_FOOD=["☕","🍫","🍵","🥤","🧃","🥛","🍺","🧋","🍹","🥞","🧇","🍗","🥩","🥪","🌮","🍕","🥗","🍱","🥙","🌯","🍔","🌭","🍟","🧆","🥚","🧈","🌾","🍬","🍓","🍫","🥜","🧄","🧅","🥦","🥕","🍞","🧪","🐟","🧀","🍖","🥐","🍰","🎂","🍩","🍪","🍦","🧁","🍭","🍮","🫙"];
+const EMOJIS_GAMING=["🎮","🕹️","👾","🎯","🏆","🥇","⚡","🔥","💥","🎲","🃏","♟️","🎰","🎳","🎪","💻","🖥️","📱","⌨️","🖱️"];
+const EMOJIS_ALL=[...EMOJIS_FOOD,...EMOJIS_GAMING];
 const STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
 
 // GUIDE CONTENT
@@ -181,6 +185,24 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
   );
 }
 
+
+function EmojiPicker({onSelect,selected}){
+  const [open,setOpen]=useState(false);
+  return(
+    <div style={{position:"relative"}}>
+      <button type="button" onClick={()=>setOpen(o=>!o)} style={{fontSize:28,background:"#1C1C1C",border:"2px solid #FFD600",borderRadius:10,width:56,height:56,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {selected||"🍽️"}
+      </button>
+      {open&&<div style={{position:"absolute",top:60,left:0,background:"#141414",border:"1px solid #2a2a2a",borderRadius:12,padding:10,zIndex:500,width:260,maxHeight:200,overflowY:"auto",display:"flex",flexWrap:"wrap",gap:4,boxShadow:"0 8px 32px rgba(0,0,0,.8)"}}>
+        {EMOJIS_ALL.map((e,i)=>(
+          <button key={i} type="button" onClick={()=>{onSelect(e);setOpen(false);}} style={{fontSize:22,background:selected===e?"#FFD600":"transparent",border:"none",borderRadius:6,width:36,height:36,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {e}
+          </button>
+        ))}
+      </div>}
+    </div>
+  );
+}
 export default function App(){
   const [user,setUser]=useState(null);
   const [pinErr,setPinErr]=useState(false);
@@ -809,7 +831,11 @@ export default function App(){
       {addIngModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
         <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
           <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>＋ Nouvel ingrédient</div>
-          {[{l:"Emoji",k:"emoji",t:"text",ph:"🥄"},{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg, L, pcs)",k:"unit",t:"text",ph:"kg"},{l:"Coût/unité (F)",k:"unitCost",t:"number",ph:"300"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newIng[f.k]} placeholder={f.ph} onChange={e=>setNewIng(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:S.muted,marginBottom:6}}>Emoji — Appuie pour choisir</div>
+            <EmojiPicker selected={newIng.emoji} onSelect={e=>setNewIng(p=>({...p,emoji:e}))}/>
+          </div>
+          {[{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg, L, pcs)",k:"unit",t:"text",ph:"kg"},{l:"Coût/unité (F)",k:"unitCost",t:"number",ph:"300"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newIng[f.k]} placeholder={f.ph} onChange={e=>setNewIng(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
           <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setAddIngModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newIng.name)return;const i={id:`i${uid()}`,name:newIng.name,unit:newIng.unit||"kg",emoji:newIng.emoji||"🥄",unitCost:parseFloat(newIng.unitCost)||0};const ni=[...ingredients,i];setIngredients(ni);saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);addAudit("AJOUT ING",`${i.emoji}${i.name}`);setAddIngModal(false);setNewIng({name:"",unit:"kg",emoji:"🥄",unitCost:""});showToast("✓ Ingrédient ajouté");}} style={{...Btn(S.blue),flex:1}}>✓ Ajouter</button></div>
         </div>
       </div>}
@@ -825,11 +851,11 @@ export default function App(){
             </div>
           </div>
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:4,display:"flex",justifyContent:"space-between"}}>
-              <span>Emoji</span>
+            <div style={{fontSize:11,color:S.muted,marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span>Emoji — Appuie pour choisir</span>
               <button onClick={async()=>{const name=editProd?.name||newProd.name;await suggestEmoji(name);}} disabled={emojiSuggesting||!(editProd?.name||newProd.name)} style={{background:S.purple,color:"#fff",border:"none",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10,opacity:emojiSuggesting?0.5:1}}>{emojiSuggesting?"⏳ IA...":"🤖 Suggérer"}</button>
             </div>
-            <input type="text" value={editProd?editProd.emoji:newProd.emoji} onChange={e=>editProd?setEditProd(p=>({...p,emoji:e.target.value})):setNewProd(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:24,textAlign:"center",padding:"8px"}} maxLength={4}/>
+            <EmojiPicker selected={editProd?editProd.emoji:newProd.emoji} onSelect={e=>editProd?setEditProd(p=>({...p,emoji:e})):setNewProd(p=>({...p,emoji:e}))}/>
           </div>
           <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix (FCFA)</div><input type="number" value={editProd?editProd.price:newProd.price} onChange={e=>editProd?setEditProd(p=>({...p,price:e.target.value})):setNewProd(p=>({...p,price:e.target.value}))} style={Inp()}/></div>
           <div style={{display:"flex",gap:10,marginTop:8}}>
