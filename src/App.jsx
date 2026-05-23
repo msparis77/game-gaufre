@@ -52,18 +52,112 @@ function PinPad({onConfirm,error}){
 
 // TICKET COMPONENT
 function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
-  const printTicket=()=>{
-    const w=window.open("","_blank","width=300,height=600");
-    w.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:12px;width:250px;margin:0;padding:8px;}h2{text-align:center;font-size:14px;margin:4px 0;}hr{border-top:1px dashed #000;}td{padding:2px 0;}.r{text-align:right;}.total{font-weight:bold;font-size:14px;}</style></head><body>
-    <h2>🎮 GAME & GAUFRE</h2><p style="text-align:center;font-size:10px;margin:2px;">${storeName}</p><hr/>
-    <p style="font-size:10px;margin:2px;">Ticket #${ticketNo} | ${new Date().toLocaleDateString("fr-FR")} ${timeStr()}</p>
-    <p style="font-size:10px;margin:2px;">Employé: ${employeeName}</p><hr/>
-    <table width="100%">${items.map(i=>`<tr><td>${i.emoji||""}${i.name} ×${i.qty}</td><td class="r">${Number(i.price*i.qty).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
-    <table width="100%"><tr><td class="total">TOTAL</td><td class="r total">${Number(total).toLocaleString("fr-FR")} F</td></tr></table><hr/>
-    <p style="text-align:center;font-size:10px;margin:4px;">Merci pour votre visite ! 😊</p>
-    <p style="text-align:center;font-size:9px;margin:2px;">Game & Gaufre — Limamoulaye, Guédiawaye</p>
+  // Build ESC/POS ticket bytes for Epson thermal printer
+  const buildEscPos=(items,total,storeName,employeeName,ticketNo)=>{
+    const enc=new TextEncoder();
+    const lines=[];
+    const line=(txt,bold=false,center=false)=>{
+      if(center){lines.push(Uint8Array.from([0x1b,0x61,0x01]));}
+      else{lines.push(Uint8Array.from([0x1b,0x61,0x00]));}
+      if(bold){lines.push(Uint8Array.from([0x1b,0x45,0x01]));}
+      lines.push(enc.encode(txt+"\n"));
+      if(bold){lines.push(Uint8Array.from([0x1b,0x45,0x00]));}
+    };
+    // Init
+    lines.push(Uint8Array.from([0x1b,0x40]));
+    // Header
+    lines.push(Uint8Array.from([0x1b,0x61,0x01]));
+    lines.push(Uint8Array.from([0x1b,0x45,0x01,0x1d,0x21,0x11]));
+    lines.push(enc.encode("GAME & GAUFRE\n"));
+    lines.push(Uint8Array.from([0x1d,0x21,0x00,0x1b,0x45,0x00]));
+    line(storeName.slice(0,32),false,true);
+    line("--------------------------------",false,true);
+    lines.push(Uint8Array.from([0x1b,0x61,0x00]));
+    line("Ticket #"+ticketNo);
+    line(new Date().toLocaleDateString("fr-FR")+" "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}));
+    line("Employe: "+employeeName);
+    line("--------------------------------");
+    // Items
+    items.forEach(i=>{
+      const name=(i.emoji||"")+(i.name||"").slice(0,18)+" x"+i.qty;
+      const price=Number(i.price*i.qty).toLocaleString("fr-FR")+" F";
+      const pad=32-name.length-price.length;
+      line(name+" ".repeat(Math.max(1,pad))+price);
+    });
+    line("--------------------------------");
+    // Total
+    lines.push(Uint8Array.from([0x1b,0x45,0x01,0x1d,0x21,0x01]));
+    const tot="TOTAL: "+Number(total).toLocaleString("fr-FR")+" F";
+    lines.push(enc.encode(tot+"\n"));
+    lines.push(Uint8Array.from([0x1d,0x21,0x00,0x1b,0x45,0x00]));
+    line("--------------------------------");
+    lines.push(Uint8Array.from([0x1b,0x61,0x01]));
+    line("Merci pour votre visite!",false,true);
+    line("Game & Gaufre - Limamoulaye",false,true);
+    // Feed and cut
+    lines.push(Uint8Array.from([0x1b,0x64,0x04,0x1d,0x56,0x42,0x00]));
+    // Merge all
+    const total_len=lines.reduce((s,a)=>s+a.length,0);
+    const merged=new Uint8Array(total_len);
+    let offset=0;
+    lines.forEach(a=>{merged.set(a,offset);offset+=a.length;});
+    return merged;
+  };
+
+  const printTicket=async()=>{
+    // Try Bluetooth Web API first (Android Chrome)
+    if(navigator.bluetooth){
+      try{
+        const device=await navigator.bluetooth.requestDevice({
+          filters:[
+            {name:"TM-m30"},
+            {name:"EPSON"},
+            {namePrefix:"Epson"},
+            {namePrefix:"TM-"},
+          ],
+          optionalServices:["000018f0-0000-1000-8000-00805f9b34fb"]
+        });
+        const server=await device.gatt.connect();
+        const service=await server.getPrimaryService("000018f0-0000-1000-8000-00805f9b34fb");
+        const characteristic=await service.getCharacteristic("00002af1-0000-1000-8000-00805f9b34fb");
+        const data=buildEscPos(items,total,storeName,employeeName,ticketNo);
+        // Send in chunks of 512 bytes
+        for(let i=0;i<data.length;i+=512){
+          await characteristic.writeValue(data.slice(i,Math.min(i+512,data.length)));
+        }
+        await server.disconnect();
+        onPrint();
+        return;
+      }catch(err){
+        console.log("Bluetooth failed, trying print dialog:",err);
+      }
+    }
+    // Fallback: browser print dialog
+    const w=window.open("","_blank","width=300,height=500");
+    w.document.write(`<!DOCTYPE html><html><head><title>Ticket</title><style>
+      *{margin:0;padding:0;}
+      body{font-family:"Courier New",monospace;font-size:11px;width:250px;padding:6px;}
+      .c{text-align:center;} .b{font-weight:bold;} .hr{border-top:1px dashed #000;margin:4px 0;}
+      .row{display:flex;justify-content:space-between;}
+      .big{font-size:14px;font-weight:bold;}
+      @media print{@page{margin:0;size:58mm auto;}}
+    </style></head><body>
+    <div class="c b" style="font-size:15px;">GAME & GAUFRE</div>
+    <div class="c" style="font-size:10px;">${storeName}</div>
+    <div class="hr"></div>
+    <div>Ticket #${ticketNo}</div>
+    <div>${new Date().toLocaleDateString("fr-FR")} ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</div>
+    <div>Employe: ${employeeName}</div>
+    <div class="hr"></div>
+    ${items.map(i=>`<div class="row"><span>${i.emoji||""}${i.name} x${i.qty}</span><span>${Number(i.price*i.qty).toLocaleString("fr-FR")} F</span></div>`).join("")}
+    <div class="hr"></div>
+    <div class="row big"><span>TOTAL</span><span>${Number(total).toLocaleString("fr-FR")} F</span></div>
+    <div class="hr"></div>
+    <div class="c">Merci pour votre visite!</div>
+    <div class="c" style="font-size:9px;">Game & Gaufre - Limamoulaye</div>
+    <script>window.onload=()=>{window.print();window.close();}<\/script>
     </body></html>`);
-    w.document.close();w.focus();w.print();w.close();
+    w.document.close();
     onPrint();
   };
   return(
