@@ -1,5 +1,4 @@
-
-mport React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
@@ -33,12 +32,18 @@ const GUIDE_SECTIONS=[
   {id:"g6",emoji:"🚫",title:"Ce qui est interdit",color:"#FF5252",steps:[{icon:"❌",text:"Vendre sans enregistrer dans la caisse. Toutes les ventes doivent passer par l'outil."},{icon:"❌",text:"Annuler une vente sans autorisation du patron (code PIN nécessaire)."},{icon:"❌",text:"Donner des produits sans encaisser. Même les 'cadeaux' doivent être enregistrés."},{icon:"❌",text:"Laisser une session gaming tourner sans encaisser à la fin."},{icon:"✅",text:"En cas de doute, appelez le patron AVANT d'agir."}]}
 ];
 
+const ANTHROPIC_KEY=import.meta.env.VITE_ANTHROPIC_KEY||"";
 async function callAI(system,user,maxTokens=800){
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens,system,messages:[{role:"user",content:user}]})});
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens,system,messages:[{role:"user",content:user}]})
+    });
     const d=await r.json();
+    if(d.error){console.error("API error:",d.error);return "";}
     return d.content?.map(c=>c.text||"").join("")||"";
-  }catch(e){return"";}
+  }catch(e){console.error("callAI error:",e);return "";}
 }
 
 function PinPad({onConfirm,error}){
@@ -376,7 +381,7 @@ export default function App(){
     const nm=[...aiMessages,{role:"user",content:msg}];setAiMessages(nm);setAiLoading(true);
     const ctx=buildCtx();
     const hist=nm.slice(-8).map(m=>({role:m.role,content:m.content}));
-    try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:600,system:ctx,messages:hist})});const d=await r.json();const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
+    try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:600,system:ctx,messages:hist})});const d=await r.json();const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
     catch(e){setAiMessages(prev=>[...prev,{role:"assistant",content:"❌ Erreur de connexion."}]);}
     setAiLoading(false);
     setTimeout(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},100);
