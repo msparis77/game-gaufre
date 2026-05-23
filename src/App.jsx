@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+
+ import React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
@@ -511,15 +512,27 @@ export default function App(){
         {stSub==="ing"&&<div>
           <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
           {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span>
+              <div style={{display:"flex",alignItems:"center",gap:4}}>
+                {user.role==="patron"
+                  ?<div style={{display:"flex",alignItems:"center",gap:4}}>
+                    <input type="number" value={ing.unitCost} onChange={e=>{const ni=ingredients.map(x=>x.id===ing.id?{...x,unitCost:parseFloat(e.target.value)||0}:x);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);}} style={{width:70,background:S.card2,border:`1px solid ${S.gold}`,color:S.gold,borderRadius:6,padding:"3px 6px",fontSize:11,outline:"none",textAlign:"right"}}/>
+                    <span style={{fontSize:10,color:S.gold}}>F/{ing.unit}</span>
+                  </div>
+                  :<span style={{fontSize:10,color:S.muted}}>{fmt(ing.unitCost)}/{ing.unit}</span>
+                }
+              </div>
+            </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
               <div style={{flex:1,minWidth:90}}><div style={{fontSize:10,color:S.muted,marginBottom:3}}>Stock matin ({ing.unit})</div><input type="number" step="0.001" value={s.opening??""} placeholder="0" onChange={e=>setIngField(ing.id,"opening",e.target.value)} style={{...Inp("100%"),padding:"7px 8px",fontSize:13}}/></div>
               <div style={{display:"flex",gap:6}}>
                 <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Utilisé</div><div style={{fontSize:14,fontWeight:800,color:S.orange,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(used,ing.unit)}</div></div>
                 <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Restant</div><div style={{fontSize:14,fontWeight:800,color:rem>0?S.green:S.muted,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(rem,ing.unit)}</div></div>
+                <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Valeur</div><div style={{fontSize:12,fontWeight:700,color:S.gold,background:S.card2,borderRadius:6,padding:"4px 6px"}}>{fmt(rem*ing.unitCost)}</div></div>
               </div>
             </div>
-            {al&&<div style={{marginTop:6,background:S.red,borderRadius:6,padding:"4px 8px",fontSize:11,color:"#fff",fontWeight:700}}>⚠️ {al.diff>0?`MANQUE ${fmtQ(al.diff,ing.unit)}`:`SURPLUS`}</div>}
+            {al&&<div style={{marginTop:6,background:S.red,borderRadius:6,padding:"4px 8px",fontSize:11,color:"#fff",fontWeight:700}}>⚠️ {al.diff>0?`MANQUE ${fmtQ(al.diff,ing.unit)} = ${fmt(al.diff*ing.unitCost)}`:`SURPLUS`}</div>}
           </div>);})}
           {user.role==="patron"&&<button onClick={()=>setAddIngModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.blue}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.blue,fontWeight:700,fontSize:13,marginTop:4}}>＋ Ajouter ingrédient</button>}
         </div>}
@@ -599,7 +612,11 @@ export default function App(){
                     <button onClick={()=>{const nr=recipes.filter(r=>r.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);showToast("Recette supprimée",S.orange);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>🗑</button>
                   </div>}
                 </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:4}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+                  <span style={{fontSize:10,color:S.muted}}>Coût de revient :</span>
+                  <span style={{fontSize:12,fontWeight:800,color:S.gold}}>{fmt(rec.ingredients.reduce((s,ri)=>{const ing=ingredients.find(x=>x.id===ri.id);return s+(ing?ri.qty*ing.unitCost:0);},0))}</span>
+                </div>
               </div>
             ))}
           </div>
