@@ -489,7 +489,7 @@ export default function App(){
               <div key={rec.id} style={{background:S.card2,borderRadius:10,padding:12,marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>
-                  {user.role==="patron"&&<button onClick={()=>{}} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button>}
+                  {user.role==="patron"&&<button onClick={()=>setEditRecModal({...rec,ingredients:rec.ingredients.map(i=>({...i}))})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button>}
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
               </div>
