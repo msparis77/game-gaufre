@@ -1,5 +1,5 @@
 
- import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
@@ -414,9 +414,26 @@ export default function App(){
       </div>
 
       {/* TABS */}
-      <div style={{display:"flex",background:S.card,borderBottom:`1px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none"}}>
-        {[["home","🏠"],["caisse","🛒"],["gaming","🎮"],["stocks","📦"],["planning","🧮"],["recettes","📖"],["ia","🤖"],["bilan","📊"],["aide","❓"],["audit","🔍"]].map(([id,l])=>(
-          <button key={id} style={{...T(tab===id),fontSize:id==="aide"?14:9}} onClick={()=>{setTab(id);touch();}}>{l}</button>
+      <div style={{display:"flex",background:S.card,borderBottom:`2px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+        {[["home","🏠","Accueil"],["caisse","🛒","Caisse"],["gaming","🎮","Gaming"],["stocks","📦","Stocks"],["planning","🧮","Courses"],["recettes","📖","Recettes"],["ia","🤖","Assistant"],["bilan","📊","Bilan"],["aide","❓","Guide"],["audit","🔍","Audit"]].map(([id,emoji,label])=>(
+          <button key={id} onClick={()=>{setTab(id);touch();}} style={{
+            flexShrink:0,
+            padding:"10px 12px",
+            background:tab===id?S.gold:"transparent",
+            color:tab===id?S.bg:S.muted,
+            border:"none",
+            borderBottom:tab===id?`3px solid ${S.gold}`:"3px solid transparent",
+            cursor:"pointer",
+            display:"flex",
+            flexDirection:"column",
+            alignItems:"center",
+            gap:3,
+            transition:"all .15s",
+            minWidth:60,
+          }}>
+            <span style={{fontSize:20}}>{emoji}</span>
+            <span style={{fontSize:10,fontWeight:700,letterSpacing:.3,whiteSpace:"nowrap"}}>{label}</span>
+          </button>
         ))}
       </div>
 
