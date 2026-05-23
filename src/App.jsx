@@ -109,13 +109,12 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
     if(navigator.bluetooth){
       try{
         const device=await navigator.bluetooth.requestDevice({
-          filters:[
-            {name:"TM-m30"},
-            {name:"EPSON"},
-            {namePrefix:"Epson"},
-            {namePrefix:"TM-"},
-          ],
-          optionalServices:["000018f0-0000-1000-8000-00805f9b34fb"]
+          acceptAllDevices:true,
+          optionalServices:[
+            "000018f0-0000-1000-8000-00805f9b34fb",
+            "00001101-0000-1000-8000-00805f9b34fb",
+            "e7810a71-73ae-499d-8c15-faa9aef0c3f2"
+          ]
         });
         const server=await device.gatt.connect();
         const service=await server.getPrimaryService("000018f0-0000-1000-8000-00805f9b34fb");
