@@ -1,1263 +1,1498 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react'
 
-const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
-const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
-const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<0.001)return"0 "+unit;if(qty<1)return(qty*1000).toFixed(0)+" "+(unit==="kg"?"g":"ml");return qty.toFixed(3).replace(/\.?0+$/,"")+" "+unit;}return qty%1===0?qty+" "+unit:qty.toFixed(1)+" "+unit;};
-const todayStr=()=>new Date().toISOString().split("T")[0];
-const timeStr=()=>new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-const uid=()=>`${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
-const DEFAULT_GOAL=150000;
-const BILLETS=[10000,5000,2000,1000,500,200,100];
-const CHECKLIST=["Stock ingrédients saisi","Production planifiée","Caisse vérifiée","Gaufrier préchauffé","Crêpier préchauffé","Monnaie prête"];
-const STORES=[{id:"s1",name:"Game & Gaufre — Limamoulaye",emoji:"🏪"},{id:"s2",name:"Game & Gaufre — Guédiawaye 2",emoji:"🏬"},{id:"s3",name:"Game & Gaufre — Pikine",emoji:"🏢"}];
-
-const INIT_EMPS=[{id:"patron",name:"Patron",pin:"1234",role:"patron"},{id:"e1",name:"Employé 1",pin:"0001",role:"employe"},{id:"e2",name:"Employé 2",pin:"0002",role:"employe"},{id:"e3",name:"Employé 3",pin:"0003",role:"employe"},{id:"e4",name:"Employé 4",pin:"0004",role:"employe"},{id:"e5",name:"Employé 5",pin:"0005",role:"employe"}];
-const INIT_B=[{id:"b1",name:"Café",price:200,emoji:"☕"},{id:"b2",name:"Café Lait",price:250,emoji:"☕"},{id:"b3",name:"Chocolat",price:300,emoji:"🍫"},{id:"b4",name:"Thé",price:200,emoji:"🍵"},{id:"b5",name:"Café Touba",price:150,emoji:"☕"},{id:"b6",name:"Canette",price:500,emoji:"🥤"},{id:"b7",name:"Autre Jus",price:300,emoji:"🧃"}];
-const INIT_S=[{id:"s1",name:"Crêpe Sucre",price:500,emoji:"🥞"},{id:"s2",name:"Crêpe Confiture",price:600,emoji:"🥞"},{id:"s3",name:"Crêpe Nutella",price:1500,emoji:"🥞"},{id:"s4",name:"Gaufre Sucre",price:500,emoji:"🧇"},{id:"s5",name:"Gaufre Nutella",price:1200,emoji:"🧇"},{id:"s6",name:"Poulet-Fromage",price:1500,emoji:"🍗"},{id:"s7",name:"Bœuf-Fromage",price:2000,emoji:"🥩"},{id:"s8",name:"Sandwich",price:1000,emoji:"🥪"}];
-const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62},{id:"i6",name:"Confiture",unit:"kg",emoji:"🍓",unitCost:5000},{id:"i7",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000},{id:"i8",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200},{id:"i9",name:"Fromage",unit:"kg",emoji:"🧀",unitCost:6000},{id:"i10",name:"Thon",unit:"kg",emoji:"🐟",unitCost:3000},{id:"i11",name:"Pain",unit:"pcs",emoji:"🍞",unitCost:50},{id:"i12",name:"Levure",unit:"kg",emoji:"🧪",unitCost:5000}];
-const INIT_REC=[{id:"r1",emoji:"🥞",name:"Crêpe Sucre",category:"Crêpes",snackId:"s1",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i4",qty:0.005},{id:"i5",qty:0.5}]},{id:"r2",emoji:"🥞",name:"Crêpe Confiture",category:"Crêpes",snackId:"s2",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i6",qty:0.030},{id:"i5",qty:0.5}]},{id:"r3",emoji:"🥞",name:"Crêpe Nutella",category:"Crêpes",snackId:"s3",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i7",qty:0.040},{id:"i5",qty:0.5}]},{id:"r4",emoji:"🧇",name:"Gaufre Sucre",category:"Gaufres",snackId:"s4",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i4",qty:0.008},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r5",emoji:"🧇",name:"Gaufre Nutella",category:"Gaufres",snackId:"s5",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i7",qty:0.040},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r6",emoji:"🍗",name:"Poulet-Fromage",category:"Salées",snackId:"s6",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r7",emoji:"🥩",name:"Bœuf-Fromage",category:"Salées",snackId:"s7",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r8",emoji:"🥪",name:"Sandwich Thon",category:"Sandwichs",snackId:"s8",ingredients:[{id:"i10",qty:0.060},{id:"i9",qty:0.030},{id:"i11",qty:2}]}];
-
-const EMOJIS_FOOD=["☕","🍫","🍵","🥤","🧃","🥛","🍺","🧋","🍹","🥞","🧇","🍗","🥩","🥪","🌮","🍕","🥗","🍱","🥙","🌯","🍔","🌭","🍟","🧆","🥚","🧈","🌾","🍬","🍓","🍫","🥜","🧄","🧅","🥦","🥕","🍞","🧪","🐟","🧀","🍖","🥐","🍰","🎂","🍩","🍪","🍦","🧁","🍭","🍮","🫙"];
-const EMOJIS_GAMING=["🎮","🕹️","👾","🎯","🏆","🥇","⚡","🔥","💥","🎲","🃏","♟️","🎰","🎳","🎪","💻","🖥️","📱","⌨️","🖱️"];
-const EMOJIS_ALL=[...EMOJIS_FOOD,...EMOJIS_GAMING];
-const STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
-
-// GUIDE CONTENT
-const GUIDE_SECTIONS=[
-  {id:"g1",emoji:"🔐",title:"Se connecter",color:"#FFD600",steps:[{icon:"1️⃣",text:"Sur l'écran de verrouillage, entrez votre code PIN à 4 chiffres."},{icon:"2️⃣",text:"Le PATRON a accès à tout. L'EMPLOYÉ peut encaisser et gérer le gaming."},{icon:"⚠️",text:"L'outil se verrouille automatiquement après 5 minutes d'inactivité."},{icon:"💡",text:"En cas d'oubli de PIN, demandez au patron de le modifier dans Bilan → Employés."}]},
-  {id:"g2",emoji:"🛒",title:"Encaisser une vente",color:"#00E676",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🛒 Caisse."},{icon:"2️⃣",text:"Appuyez sur un produit pour l'ajouter au panier. Appuyez plusieurs fois pour augmenter la quantité."},{icon:"3️⃣",text:"Vérifiez le panier, puis appuyez sur ✓ Encaisser."},{icon:"🖨️",text:"Un TICKET s'affiche. Vous DEVEZ appuyer sur Imprimer avant de valider la vente."},{icon:"⚠️",text:"Ne jamais valider sans ticket ! Toute vente est enregistrée avec votre nom."}]},
-  {id:"g3",emoji:"🎮",title:"Gérer le Gaming",color:"#00B0FF",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🎮 Gaming."},{icon:"2️⃣",text:"Appuyez sur ▶ 1J (1 joueur) ou ▶ 2J (2 joueurs) sur la console concernée."},{icon:"3️⃣",text:"Le chronomètre démarre. La facturation est par tranche de 30 minutes."},{icon:"4️⃣",text:"Pour arrêter, appuyez sur ⏹ Stop & Encaisser. Le ticket s'imprime automatiquement."},{icon:"💡",text:"L'écran géant est plus cher. PS5 standard : 1 000F/30min."}]},
-  {id:"g4",emoji:"📦",title:"Gérer les Stocks",color:"#FF6D00",steps:[{icon:"🌅",text:"Chaque matin, allez dans 📦 Stocks → Ingrédients. Saisissez les quantités en KG."},{icon:"🍳",text:"Quand vous fabriquez, allez dans Production. Entrez la quantité fabriquée. Les ingrédients se déduisent automatiquement."},{icon:"🔍",text:"Le soir, allez dans Vérification. Comptez physiquement et entrez les quantités. Si ça ne correspond pas → alerte automatique."},{icon:"⚠️",text:"Toute différence est enregistrée et envoyée au patron. Soyez honnêtes !"}]},
-  {id:"g5",emoji:"📊",title:"Rapport du soir",color:"#BB86FC",steps:[{icon:"1️⃣",text:"En fin de journée, allez dans 📊 Bilan → Clôturer caisse."},{icon:"2️⃣",text:"Comptez tous les billets et pièces. Entrez les quantités par coupure."},{icon:"3️⃣",text:"Si l'écart est à 0 → parfait ! Si manque → le patron est alerté automatiquement."},{icon:"4️⃣",text:"Appuyez sur 📱 Rapport WhatsApp pour envoyer le résumé de la journée au patron."},{icon:"💡",text:"Le patron voit tout depuis Paris en temps réel. Travaillez toujours honnêtement."}]},
-  {id:"g6",emoji:"🚫",title:"Ce qui est interdit",color:"#FF5252",steps:[{icon:"❌",text:"Vendre sans enregistrer dans la caisse. Toutes les ventes doivent passer par l'outil."},{icon:"❌",text:"Annuler une vente sans autorisation du patron (code PIN nécessaire)."},{icon:"❌",text:"Donner des produits sans encaisser. Même les 'cadeaux' doivent être enregistrés."},{icon:"❌",text:"Laisser une session gaming tourner sans encaisser à la fin."},{icon:"✅",text:"En cas de doute, appelez le patron AVANT d'agir."}]}
-];
-
-const getKey=()=>{
-  try{return import.meta.env.VITE_ANTHROPIC_KEY||"";}
-  catch(e){return "";}
-};
-async function callAI(system,user,maxTokens=800){
-  const key=getKey();
-  if(!key){console.warn("No API key");return "IA non configurée. Vérifiez la clé API dans Vercel.";}
-  try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:maxTokens,system,messages:[{role:"user",content:user}]})
-    });
-    if(!r.ok){const err=await r.text();console.error("API HTTP error:",r.status,err);return `Erreur ${r.status}. Vérifiez la clé API.`;}
-    const d=await r.json();
-    if(d.error){console.error("API error:",d.error);return `Erreur IA: ${d.error.message||"inconnue"}`;}
-    return d.content?.map(c=>c.text||"").join("")||"";
-  }catch(e){console.error("callAI error:",e);return "Erreur de connexion.";}
+// ============================================================
+// DONNÉES PAR DÉFAUT
+// ============================================================
+const DEFAULT_PINS = {
+  patron: '1234',
+  employes: [
+    { id: 1, nom: 'Employé 1', pin: '0001' },
+    { id: 2, nom: 'Employé 2', pin: '0002' },
+    { id: 3, nom: 'Employé 3', pin: '0003' },
+    { id: 4, nom: 'Employé 4', pin: '0004' },
+    { id: 5, nom: 'Employé 5', pin: '0005' },
+  ]
 }
 
-function PinPad({onConfirm,error}){
-  const [d,setD]=useState("");
-  const h=k=>{if(k==="←"){setD(p=>p.slice(0,-1));return;}const n=d+k;setD(n);if(n.length===4){onConfirm(n);setD("");}};
-  return(<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
-    <div style={{display:"flex",gap:12}}>{[0,1,2,3].map(i=><div key={i} style={{width:14,height:14,borderRadius:"50%",background:d.length>i?S.gold:S.card3,border:`2px solid ${d.length>i?S.gold:S.border}`,transition:"all .15s"}}/>)}</div>
-    {error&&<div style={{color:S.red,fontSize:12,fontWeight:700}}>❌ CODE INCORRECT</div>}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,68px)",gap:10}}>
-      {["1","2","3","4","5","6","7","8","9","","0","←"].map((k,i)=>k===""?<div key={i}/>:
-        <button key={i} onClick={()=>h(k)} style={{width:68,height:68,background:S.card2,border:`2px solid ${S.border}`,color:S.text,borderRadius:12,fontSize:k==="←"?18:24,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{k}</button>
-      )}
-    </div>
-  </div>);
+const DEFAULT_BOISSONS = [
+  { id: 'b1', nom: 'Café', emoji: '☕', prix: 150 },
+  { id: 'b2', nom: 'Café lait', emoji: '🥛', prix: 200 },
+  { id: 'b3', nom: 'Chocolat', emoji: '🍫', prix: 200 },
+  { id: 'b4', nom: 'Thé', emoji: '🍵', prix: 150 },
+  { id: 'b5', nom: 'Café Touba', emoji: '☕', prix: 150 },
+  { id: 'b6', nom: 'Canette', emoji: '🥤', prix: 500 },
+  { id: 'b7', nom: 'Jus', emoji: '🧃', prix: 300 },
+  { id: 'b8', nom: 'Bissap', emoji: '🔴', prix: 300 },
+  { id: 'b9', nom: 'Eau', emoji: '💧', prix: 200 },
+]
+
+const DEFAULT_SNACKS = [
+  { id: 's1', nom: 'Crêpe Sucre', emoji: '🥞', prix: 500 },
+  { id: 's2', nom: 'Crêpe Confiture', emoji: '🥞', prix: 600 },
+  { id: 's3', nom: 'Crêpe Nutella', emoji: '🥞', prix: 800 },
+  { id: 's4', nom: 'Crêpe Poulet', emoji: '🍗', prix: 1500 },
+  { id: 's5', nom: 'Crêpe Thon', emoji: '🐟', prix: 1500 },
+  { id: 's6', nom: 'Gaufre Sucre', emoji: '🧇', prix: 500 },
+  { id: 's7', nom: 'Gaufre Nutella', emoji: '🧇', prix: 1000 },
+  { id: 's8', nom: 'Sandwich', emoji: '🥪', prix: 1000 },
+]
+
+const DEFAULT_STATIONS = [
+  { id: 'ps1', nom: 'PS5 — Console 1', emoji: '🎮', prix1j: 500, prix2j: 1000, durees: [30, 60, 90] },
+  { id: 'ps2', nom: 'PS5 — Console 2', emoji: '🎮', prix1j: 500, prix2j: 1000, durees: [30, 60, 90] },
+  { id: 'ps3', nom: 'PS5 — Console 3', emoji: '🎮', prix1j: 500, prix2j: 1000, durees: [30, 60, 90] },
+  { id: 'ps4', nom: 'PS5 — Console 4', emoji: '🎮', prix1j: 500, prix2j: 1000, durees: [30, 60, 90] },
+  { id: 'ps5', nom: 'PS5 — Console 5', emoji: '🎮', prix1j: 500, prix2j: 1000, durees: [30, 60, 90] },
+  { id: 'psg', nom: 'Écran Géant', emoji: '📺', prix1j: 1500, prix2j: 2000, durees: [30, 60, 90] },
+  { id: 'pc1', nom: 'PC — Poste 1', emoji: '💻', prix1j: 300, prix2j: 500, durees: [30, 60] },
+  { id: 'pc2', nom: 'PC — Poste 2', emoji: '💻', prix1j: 300, prix2j: 500, durees: [30, 60] },
+  { id: 'pc3', nom: 'PC — Poste 3', emoji: '💻', prix1j: 300, prix2j: 500, durees: [30, 60] },
+]
+
+const DEFAULT_INGREDIENTS = [
+  { id: 'i1', nom: 'Farine', emoji: '🌾', stock: 5, unite: 'kg', prixKg: 300 },
+  { id: 'i2', nom: 'Lait en poudre', emoji: '🥛', stock: 2, unite: 'kg', prixKg: 6000 },
+  { id: 'i3', nom: 'Beurre', emoji: '🧈', stock: 2, unite: 'kg', prixKg: 7000 },
+  { id: 'i4', nom: 'Oeufs', emoji: '🥚', stock: 30, unite: 'u', prixKg: 62 },
+  { id: 'i5', nom: 'Sucre', emoji: '🍬', stock: 3, unite: 'kg', prixKg: 470 },
+  { id: 'i6', nom: 'Nutella', emoji: '🍫', stock: 1, unite: 'kg', prixKg: 10000 },
+  { id: 'i7', nom: 'Confiture', emoji: '🍓', stock: 1, unite: 'kg', prixKg: 5000 },
+  { id: 'i8', nom: 'Poulet', emoji: '🍗', stock: 2, unite: 'kg', prixKg: 2200 },
+  { id: 'i9', nom: 'Fromage', emoji: '🧀', stock: 0.5, unite: 'kg', prixKg: 6000 },
+  { id: 'i10', nom: 'Pain', emoji: '🍞', stock: 10, unite: 'u', prixKg: 150 },
+]
+
+const DEFAULT_RECETTES = [
+  { id: 'r1', nom: 'Crêpe Sucre', emoji: '🥞', ingredients: [{ id: 'i1', qte: 0.06 }, { id: 'i2', qte: 0.015 }, { id: 'i3', qte: 0.005 }, { id: 'i4', qte: 0.5 }, { id: 'i5', qte: 0.015 }] },
+  { id: 'r2', nom: 'Crêpe Nutella', emoji: '🥞', ingredients: [{ id: 'i1', qte: 0.06 }, { id: 'i2', qte: 0.015 }, { id: 'i3', qte: 0.005 }, { id: 'i4', qte: 0.5 }, { id: 'i6', qte: 0.03 }] },
+  { id: 'r3', nom: 'Gaufre Sucre', emoji: '🧇', ingredients: [{ id: 'i1', qte: 0.05 }, { id: 'i2', qte: 0.008 }, { id: 'i3', qte: 0.015 }, { id: 'i4', qte: 0.5 }, { id: 'i5', qte: 0.015 }] },
+  { id: 'r4', nom: 'Crêpe Poulet', emoji: '🍗', ingredients: [{ id: 'i1', qte: 0.06 }, { id: 'i2', qte: 0.015 }, { id: 'i8', qte: 0.08 }, { id: 'i9', qte: 0.04 }] },
+]
+
+const EMOJIS = ['☕','🥛','🍫','🍵','🥤','🧃','💧','🔴','🍊','🟡','🥞','🧇','🍗','🐟','🥩','🥪','🍕','🍔','🌮','🥗','🌾','🧈','🥚','🍬','🍓','🧀','🍞','🫙','🥜','🌽','🎮','💻','📺','🏆','🔥','⚡','⭐','💎','🎯','🎪','🛒','📦','🎁','💰','📱','🖨️','🔑','📊','📋','✅','⚠️','🚨','👑','👤','🌙','☀️','🌤️']
+
+// ============================================================
+// STORAGE LOCAL
+// ============================================================
+function loadData(key, def) {
+  try {
+    const v = localStorage.getItem('gg_' + key)
+    return v ? JSON.parse(v) : def
+  } catch { return def }
+}
+function saveData(key, val) {
+  try { localStorage.setItem('gg_' + key, JSON.stringify(val)) } catch {}
 }
 
-// TICKET COMPONENT
-function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkipPrint}){
-  // Build ESC/POS ticket bytes for Epson thermal printer
-  const buildEscPos=(items,total,storeName,employeeName,ticketNo)=>{
-    const enc=new TextEncoder();
-    const lines=[];
-    const line=(txt,bold=false,center=false)=>{
-      if(center){lines.push(Uint8Array.from([0x1b,0x61,0x01]));}
-      else{lines.push(Uint8Array.from([0x1b,0x61,0x00]));}
-      if(bold){lines.push(Uint8Array.from([0x1b,0x45,0x01]));}
-      lines.push(enc.encode(txt+"\n"));
-      if(bold){lines.push(Uint8Array.from([0x1b,0x45,0x00]));}
-    };
-    // Init
-    lines.push(Uint8Array.from([0x1b,0x40]));
-    // Header
-    lines.push(Uint8Array.from([0x1b,0x61,0x01]));
-    lines.push(Uint8Array.from([0x1b,0x45,0x01,0x1d,0x21,0x11]));
-    lines.push(enc.encode("GAME & GAUFRE\n"));
-    lines.push(Uint8Array.from([0x1d,0x21,0x00,0x1b,0x45,0x00]));
-    line(storeName.slice(0,32),false,true);
-    line("--------------------------------",false,true);
-    lines.push(Uint8Array.from([0x1b,0x61,0x00]));
-    line("Ticket #"+ticketNo);
-    line(new Date().toLocaleDateString("fr-FR")+" "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}));
-    line("Employe: "+employeeName);
-    line("--------------------------------");
-    // Items
-    items.forEach(i=>{
-      const name=(i.emoji||"")+(i.name||"").slice(0,18)+" x"+i.qty;
-      const price=Number(i.price*i.qty).toLocaleString("fr-FR")+" F";
-      const pad=32-name.length-price.length;
-      line(name+" ".repeat(Math.max(1,pad))+price);
-    });
-    line("--------------------------------");
-    // Total
-    lines.push(Uint8Array.from([0x1b,0x45,0x01,0x1d,0x21,0x01]));
-    const tot="TOTAL: "+Number(total).toLocaleString("fr-FR")+" F";
-    lines.push(enc.encode(tot+"\n"));
-    lines.push(Uint8Array.from([0x1d,0x21,0x00,0x1b,0x45,0x00]));
-    line("--------------------------------");
-    lines.push(Uint8Array.from([0x1b,0x61,0x01]));
-    line("Merci pour votre visite!",false,true);
-    line("Game & Gaufre - Limamoulaye",false,true);
-    // Feed and cut
-    lines.push(Uint8Array.from([0x1b,0x64,0x04,0x1d,0x56,0x42,0x00]));
-    // Merge all
-    const total_len=lines.reduce((s,a)=>s+a.length,0);
-    const merged=new Uint8Array(total_len);
-    let offset=0;
-    lines.forEach(a=>{merged.set(a,offset);offset+=a.length;});
-    return merged;
-  };
-
-  const printTicket=async()=>{
-    // Try Bluetooth Web API first (Android Chrome)
-    if(navigator.bluetooth){
-      try{
-        const device=await navigator.bluetooth.requestDevice({
-          acceptAllDevices:true,
-          optionalServices:[
-            "000018f0-0000-1000-8000-00805f9b34fb",
-            "00001101-0000-1000-8000-00805f9b34fb",
-            "e7810a71-73ae-499d-8c15-faa9aef0c3f2"
-          ]
-        });
-        const server=await device.gatt.connect();
-        const service=await server.getPrimaryService("000018f0-0000-1000-8000-00805f9b34fb");
-        const characteristic=await service.getCharacteristic("00002af1-0000-1000-8000-00805f9b34fb");
-        const data=buildEscPos(items,total,storeName,employeeName,ticketNo);
-        // Send in chunks of 512 bytes
-        for(let i=0;i<data.length;i+=512){
-          await characteristic.writeValue(data.slice(i,Math.min(i+512,data.length)));
-        }
-        await server.disconnect();
-        onPrint();
-        return;
-      }catch(err){
-        console.log("Bluetooth failed, trying print dialog:",err);
-      }
-    }
-    // Fallback: browser print dialog
-    const w=window.open("","_blank","width=300,height=500");
-    w.document.write(`<!DOCTYPE html><html><head><title>Ticket</title><style>
-      *{margin:0;padding:0;}
-      body{font-family:"Courier New",monospace;font-size:11px;width:250px;padding:6px;}
-      .c{text-align:center;} .b{font-weight:bold;} .hr{border-top:1px dashed #000;margin:4px 0;}
-      .row{display:flex;justify-content:space-between;}
-      .big{font-size:14px;font-weight:bold;}
-      @media print{@page{margin:0;size:58mm auto;}}
-    </style></head><body>
-    <div class="c b" style="font-size:15px;">GAME & GAUFRE</div>
-    <div class="c" style="font-size:10px;">${storeName}</div>
-    <div class="hr"></div>
-    <div>Ticket #${ticketNo}</div>
-    <div>${new Date().toLocaleDateString("fr-FR")} ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</div>
-    <div>Employe: ${employeeName}</div>
-    <div class="hr"></div>
-    ${items.map(i=>`<div class="row"><span>${i.emoji||""}${i.name} x${i.qty}</span><span>${Number(i.price*i.qty).toLocaleString("fr-FR")} F</span></div>`).join("")}
-    <div class="hr"></div>
-    <div class="row big"><span>TOTAL</span><span>${Number(total).toLocaleString("fr-FR")} F</span></div>
-    <div class="hr"></div>
-    <div class="c">Merci pour votre visite!</div>
-    <div class="c" style="font-size:9px;">Game & Gaufre - Limamoulaye</div>
-    <script>window.onload=()=>{window.print();window.close();}<\/script>
-    </body></html>`);
-    w.document.close();
-    onPrint();
-  };
-  return(
-    <div style={{background:S.card,borderRadius:16,padding:20,border:`2px solid ${S.teal}`,maxWidth:340,width:"100%"}}>
-      <div style={{textAlign:"center",marginBottom:16}}>
-        <div style={{fontSize:32}}>🎫</div>
-        <div style={{fontSize:15,fontWeight:800,color:S.teal}}>TICKET DE CAISSE</div>
-        <div style={{fontSize:10,color:S.muted,marginTop:2}}>N° {ticketNo} — {timeStr()}</div>
-      </div>
-      <div style={{background:S.card2,borderRadius:10,padding:12,marginBottom:12,fontFamily:"monospace"}}>
-        <div style={{fontSize:11,fontWeight:700,color:S.muted,marginBottom:8,textAlign:"center"}}>🎮 GAME & GAUFRE</div>
-        {items.map((i,idx)=><div key={idx} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",borderBottom:`1px dashed ${S.border}`}}><span>{i.emoji}{i.name} ×{i.qty}</span><span style={{fontWeight:700}}>{Number(i.price*i.qty).toLocaleString("fr-FR")} F</span></div>)}
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`2px dashed ${S.border}`}}><span style={{fontWeight:800,fontSize:14}}>TOTAL</span><span style={{fontWeight:800,fontSize:16,color:S.green}}>{Number(total).toLocaleString("fr-FR")} F</span></div>
-      </div>
-      <div style={{display:"flex",gap:10}}>
-        <button onClick={onCancel} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
-        <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
-      </div>
-      <div style={{marginTop:8,borderTop:`1px dashed #2a2a2a`,paddingTop:8,textAlign:"center"}}>
-        <div style={{fontSize:10,color:"#555",marginBottom:6}}>⚠️ Imprimante en panne ?</div>
-        <button type="button" onClick={()=>{onSkipPrint&&onSkipPrint();}} style={{background:"transparent",border:"1px solid #FF6D00",color:"#FF6D00",borderRadius:8,padding:"7px 16px",cursor:"pointer",fontSize:11,fontWeight:700}}>
-          Valider sans imprimer (urgence)
-        </button>
-      </div>
-    </div>
-  );
+// ============================================================
+// FORMATAGE
+// ============================================================
+function fmt(n) {
+  return (n || 0).toLocaleString('fr-FR') + ' F'
+}
+function fmtKg(n) {
+  if (!n && n !== 0) return '0'
+  if (n >= 1) return n.toFixed(3).replace(/\.?0+$/, '') + ' kg'
+  return (n * 1000).toFixed(0) + ' g'
+}
+function now() {
+  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+function today() {
+  return new Date().toLocaleDateString('fr-FR')
 }
 
-
-function EmojiPicker({onSelect,selected}){
-  const [open,setOpen]=useState(false);
-  return(
-    <div style={{position:"relative"}}>
-      <button type="button" onClick={()=>setOpen(o=>!o)} style={{fontSize:28,background:"#1C1C1C",border:"2px solid #FFD600",borderRadius:10,width:56,height:56,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        {selected||"🍽️"}
-      </button>
-      {open&&<div style={{position:"absolute",top:60,left:0,background:"#141414",border:"1px solid #2a2a2a",borderRadius:12,padding:10,zIndex:500,width:260,maxHeight:200,overflowY:"auto",display:"flex",flexWrap:"wrap",gap:4,boxShadow:"0 8px 32px rgba(0,0,0,.8)"}}>
-        {EMOJIS_ALL.map((e,i)=>(
-          <button key={i} type="button" onClick={()=>{onSelect(e);setOpen(false);}} style={{fontSize:22,background:selected===e?"#FFD600":"transparent",border:"none",borderRadius:6,width:36,height:36,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {e}
-          </button>
-        ))}
-      </div>}
-    </div>
-  );
-}
-export default function App(){
-  const [user,setUser]=useState(null);
-  const [pinErr,setPinErr]=useState(false);
-  const [emps,setEmps]=useState(INIT_EMPS);
-  const empRef=useRef(INIT_EMPS);
-  const [pinModal,setPinModal]=useState(null);
-  const [pinMErr,setPinMErr]=useState(false);
-  const [currentStore,setCurrentStore]=useState(STORES[0]);
-  const [tab,setTab]=useState("home");
-  const [stSub,setStSub]=useState("ing");
-  const [cTab,setCTab]=useState("boissons");
-  const [guideSection,setGuideSection]=useState(null);
-  const [boissons,setBoissons]=useState(INIT_B);
-  const [snacks,setSnacks]=useState(INIT_S);
-  const [ingredients,setIngredients]=useState(INIT_ING);
-  const [recipes,setRecipes]=useState(INIT_REC);
-  const [ingStock,setIngStock]=useState({});
-  const [ingPhys,setIngPhys]=useState({});
-  const [productions,setProductions]=useState([]);
-  const [finPhys,setFinPhys]=useState({});
-  const [planQty,setPlanQty]=useState({});
-  const [planStock,setPlanStock]=useState({});
-  const [cart,setCart]=useState([]);
-  const [pendingTicket,setPendingTicket]=useState(null);
-  const [ticketNo,setTicketNo]=useState(1001);
-  const [sales,setSales]=useState([]);
-  const [sessions,setSessions]=useState({});
-  const [paidSessions,setPaidSessions]=useState({});
-  const [stations,setStations]=useState(DEFAULT_STATIONS);
-  const [editStationModal,setEditStationModal]=useState(null);
-  const [newStation,setNewStation]=useState({name:"",emoji:"🎮",rate1:1000,rate2:1500});
-  const [addStationModal,setAddStationModal]=useState(false);
-  const [doneSess,setDoneSess]=useState([]);
-  const [photoPrice,setPhotoPrice]=useState(50);
-  const [photoCount,setPhotoCount]=useState(0);
-  const [expenses,setExpenses]=useState([]);
-  const [audit,setAudit]=useState([]);
-  const [checklist,setChecklist]=useState({});
-  const [dailyGoal,setDailyGoal]=useState(DEFAULT_GOAL);
-  const [history,setHistory]=useState({});
-  const [aiMessages,setAiMessages]=useState([{role:"assistant",content:"👋 Bonjour ! Je suis votre assistant IA Game & Gaufre.\n\nJe connais vos ventes, stocks et recettes en temps réel. Je peux :\n\n📊 Analyser vos pertes\n🛒 Calculer vos courses\n💡 Optimiser votre rentabilité\n🚨 Détecter les vols\n📈 Proposer des améliorations\n\nPosez-moi n'importe quelle question !"}]);
-  const [aiInput,setAiInput]=useState("");
-  const [aiLoading,setAiLoading]=useState(false);
-  const [aiSuggestions,setAiSuggestions]=useState([]);
-  const [suggestLoading,setSuggestLoading]=useState(false);
-  const [aiInsight,setAiInsight]=useState("");
-  const [insightLoading,setInsightLoading]=useState(false);
-  const [addProdModal,setAddProdModal]=useState(null);
-  const [achats,setAchats]=useState([]);
-  const [achatModal,setAchatModal]=useState(false);
-  const [newAchat,setNewAchat]=useState({ingId:"",qty:"",price:"",note:""});
-  const [photoLoading,setPhotoLoading]=useState(false);
-  const [routineStep,setRoutineStep]=useState(0);
-  const [newProd,setNewProd]=useState({name:"",price:"",emoji:"🍽️"});
-  const [emojiSuggesting,setEmojiSuggesting]=useState(false);
-  const [editProd,setEditProd]=useState(null);
-  const [addIngModal,setAddIngModal]=useState(false);
-  const [newIng,setNewIng]=useState({name:"",unit:"kg",emoji:"🥄",unitCost:""});
-  const [prodModal,setProdModal]=useState(null);
-  const [prodQtyVal,setProdQtyVal]=useState("");
-  const [cashModal,setCashModal]=useState(false);
-  const [cashCount,setCashCount]=useState({});
-  const [whatsModal,setWhatsModal]=useState(false);
-  const [empModal,setEmpModal]=useState(false);
-  const [editEmp,setEditEmp]=useState(null);
-  const [goalModal,setGoalModal]=useState(false);
-  const [newGoal,setNewGoal]=useState("");
-  const [expModal,setExpModal]=useState(false);
-  const [newExp,setNewExp]=useState({label:"",amount:"",emoji:"🛒"});
-  const [aiRecInput,setAiRecInput]=useState("");
-  const [aiRecLoading,setAiRecLoading]=useState(false);
-  const [addRecModal,setAddRecModal]=useState(false);
-  const [editRecModal,setEditRecModal]=useState(null);
-  const [newRec,setNewRec]=useState({name:"",emoji:"🍽️",category:"Autre",snackId:"",ingredients:[]});
-  const [storeModal,setStoreModal]=useState(false);
-  const [tick,setTick]=useState(0);
-  const [lastAct,setLastAct]=useState(Date.now());
-  const [toast,setToast]=useState(null);
-  const chatRef=useRef(null);
-
-  useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
-  const touch=()=>setLastAct(Date.now());
-
-  useEffect(()=>{(async()=>{
-    try{const r=await window.storage.get("gg3-emps");if(r){const e=JSON.parse(r.value);setEmps(e);empRef.current=e;}}catch(e){}
-    try{const r=await window.storage.get("gg3-prods");if(r){const d=JSON.parse(r.value);if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
-    try{const r=await window.storage.get("gg3-day-"+todayStr());if(r){const d=JSON.parse(r.value);if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);if(d.achats)setAchats(d.achats);}}catch(e){}
-    try{const r=await window.storage.get("gg3-stations");if(r)setStations(JSON.parse(r.value));}catch(e){}
-    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const r=await window.storage.get("gg3-day-"+ds);if(r){const d=JSON.parse(r.value);hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}}catch(e){}}
-    setHistory(hist);
-  })();},[]);
-
-  const saveStations=async st=>{try{await window.storage.set("gg3-stations",JSON.stringify(st));}catch(e){}};
-  const saveEmps=async e=>{try{await window.storage.set("gg3-emps",JSON.stringify(e));}catch(e){}};
-  const saveProds=async(b,s,ing,rec,pp,g,tno)=>{try{await window.storage.set("gg3-prods",JSON.stringify({b,s,ing,rec,pp,goal:g,tno}));}catch(e){}};
-  const saveDay=async upd=>{try{let c={};try{const r=await window.storage.get("gg3-day-"+todayStr());if(r)c=JSON.parse(r.value);}catch(e){}await window.storage.set("gg3-day-"+todayStr(),JSON.stringify({...c,...upd}));}catch(e){}};
-  const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
-  const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
-
+// ============================================================
+// COMPOSANT PRINCIPAL
+// ============================================================
+export default function App() {
   // AUTH
-  const tryLogin=code=>{const emp=empRef.current.find(e=>e.pin===code);if(emp){setUser(emp);setPinErr(false);}else{setPinErr(true);setTimeout(()=>setPinErr(false),1200);}};
-  const requirePatron=onSuccess=>{if(user?.role==="patron"){onSuccess();return;}setPinModal({onSuccess});};
-  const tryPatronModal=code=>{const p=empRef.current.find(e=>e.role==="patron");if(p&&code===p.pin){setPinModal(null);setPinMErr(false);pinModal.onSuccess();}else{setPinMErr(true);setTimeout(()=>setPinMErr(false),1200);}};
+  const [user, setUser] = useState(null) // null | 'patron' | {id, nom}
+  const [pins, setPins] = useState(() => loadData('pins', DEFAULT_PINS))
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState('')
+  const [locked, setLocked] = useState(false)
+  const lockTimer = useRef(null)
 
-  // COMPUTED
-  const soldQty=id=>sales.reduce((s,sale)=>s+(sale.items.find(i=>i.id===id)?.qty||0),0);
-  const prodQtyFn=id=>productions.filter(p=>p.snackId===id).reduce((s,p)=>s+p.qty,0);
-  const remQty=id=>Math.max(0,prodQtyFn(id)-soldQty(id));
-  const lossQty=id=>{const p=finPhys[id];if(p==null)return null;return remQty(id)-p;};
-  const ingUsed=id=>productions.reduce((s,p)=>{const rec=recipes.find(r=>r.snackId===p.snackId);const ri=rec?.ingredients.find(i=>i.id===id);return s+(ri?ri.qty*p.qty:0);},0);
-  const ingRem=id=>Math.max(0,(ingStock[id]?.opening||0)-ingUsed(id));
-  const ingAlert=id=>{const p=ingPhys[id];if(p==null)return null;const t=ingRem(id);const diff=t-p;return diff!==0?{diff,t,p}:null;};
-  const totalCA=sales.reduce((s,sale)=>s+sale.total,0)+photoCount*photoPrice;
-  const totalGaming=doneSess.reduce((s,d)=>s+d.total,0);
-  const totalFood=sales.filter(s=>s.items[0]?.cat!=="gaming").reduce((s,sale)=>s+sale.total,0);
-  const totalExpenses=expenses.reduce((s,e)=>s+e.amount,0);
-  const netProfit=totalCA-totalExpenses;
-  const goalPct=Math.min(100,Math.round((totalCA/dailyGoal)*100));
-  const lossAlerts=snacks.filter(p=>{const l=lossQty(p.id);return l!==null&&l>0;});
-  const ingAlerts=ingredients.filter(i=>ingAlert(i.id)!==null);
-  const top5=[...boissons,...snacks].map(p=>({...p,sold:soldQty(p.id)})).filter(p=>p.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,5);
-  const last7=Array.from({length:7},(_,i)=>{const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];const h=i===0?{sales,expenses,pc:photoCount}:history[ds]||{sales:[],expenses:[],pc:0};const ca=h.sales.reduce((s,sale)=>s+sale.total,0)+(h.pc||0)*photoPrice;const dep=h.expenses.reduce((s,e)=>s+e.amount,0);return{ds,label:i===0?"Auj":i===1?"Hier":dt.toLocaleDateString("fr-FR",{weekday:"short"}),ca,dep,net:ca-dep};}).reverse();
-  const cashTotal=BILLETS.reduce((s,b)=>s+(Number(cashCount[b]||0)*b),0);
-  const cashDiff=cashTotal-totalCA;
+  // DONNÉES
+  const [boissons, setBoissons] = useState(() => loadData('boissons', DEFAULT_BOISSONS))
+  const [snacks, setSnacks] = useState(() => loadData('snacks', DEFAULT_SNACKS))
+  const [stations, setStations] = useState(() => loadData('stations', DEFAULT_STATIONS))
+  const [ingredients, setIngredients] = useState(() => loadData('ingredients', DEFAULT_INGREDIENTS))
+  const [recettes, setRecettes] = useState(() => loadData('recettes', DEFAULT_RECETTES))
 
-  // TICKET + SALE
-  const addToCart=(p,cat)=>{touch();setCart(prev=>{const ex=prev.find(i=>i.id===p.id);return ex?prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i):[...prev,{...p,qty:1,cat}];});};
-  const updQty=(id,d)=>{touch();setCart(prev=>prev.map(i=>i.id===id?{...i,qty:Math.max(0,i.qty+d)}:i).filter(i=>i.qty>0));};
-  const cartTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const requestTicket=()=>{if(!cart.length)return;setPendingTicket({items:[...cart],total:cartTotal});};
-  const confirmSaleAfterPrint=async()=>{
-    if(!pendingTicket)return;
-    const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};
-    setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
-    const newTno=ticketNo+1;setTicketNo(newTno);
-    saveProds(boissons,snacks,ingredients,recipes,photoPrice,dailyGoal,newTno);
-    setCart([]);setPendingTicket(null);
-    addAudit("VENTE",`#${ticketNo} ${fmt(pendingTicket.total)} — ${pendingTicket.items.map(i=>`${i.name}×${i.qty}`).join(", ")}`);
-    showToast(`✓ Ticket #${ticketNo} — ${fmt(pendingTicket.total)}`);
-  };
-  const deleteSale=id=>requirePatron(()=>{setSales(prev=>{const ns=prev.filter(s=>s.id!==id);saveDay({sales:ns});return ns;});addAudit("ANNULATION","Patron");showToast("Vente annulée",S.orange);});
-
-  // STOCK
-  const setIngField=(id,field,val)=>{setIngStock(prev=>{const ns={...prev,[id]:{...prev[id]||{},[field]:Number(val)||0}};if(field==="opening")ns[id].current=Number(val)||0;saveDay({ingStock:ns});return ns;});};
-  const setIngPhysVal=(id,val)=>{setIngPhys(prev=>{const np={...prev,[id]:Number(val)||0};saveDay({ingPhys:np});return np;});};
-  const recordProduction=()=>{if(!prodModal||!prodQtyVal)return;const qty=parseInt(prodQtyVal)||0;const rec=recipes.find(r=>r.snackId===prodModal.id);const newIS={...ingStock};if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*qty)};});}const prod={id:uid(),snackId:prodModal.id,snackName:prodModal.name,snackEmoji:prodModal.emoji,qty,time:timeStr()};const np=[...productions,prod];setIngStock(newIS);setProductions(np);saveDay({ingStock:newIS,productions:np});addAudit("PRODUCTION",`${prodModal.emoji}${prodModal.name} × ${qty}`);setProdModal(null);setProdQtyVal("");showToast(`✓ ${qty} ${prodModal.name} produit(s)`);};
-
-  // ACHATS
-  const addAchat=()=>{
-    if(!newAchat.ingId||!newAchat.qty||!newAchat.price)return;
-    const ing=ingredients.find(i=>i.id===newAchat.ingId);
-    if(!ing)return;
-    const a={id:uid(),ingId:newAchat.ingId,ingName:ing.name,ingEmoji:ing.emoji,unit:ing.unit,qty:parseFloat(newAchat.qty)||0,price:parseInt(newAchat.price)||0,note:newAchat.note,time:timeStr()};
-    // Add to stock
-    setIngStock(prev=>{const ns={...prev,[a.ingId]:{...prev[a.ingId]||{},opening:(prev[a.ingId]?.opening||0)+a.qty}};saveDay({ingStock:ns});return ns;});
-    // Add to achats + expenses
-    const na=[...achats,a];setAchats(na);
-    const ne=[...expenses,{id:uid(),label:`Achat ${ing.name} ${a.qty}${ing.unit}`,amount:a.price,emoji:ing.emoji,time:timeStr()}];
-    setExpenses(ne);
-    saveDay({achats:na,expenses:ne});
-    addAudit("ACHAT",`${ing.emoji}${ing.name} ${a.qty}${ing.unit} = ${fmt(a.price)}`);
-    setAchatModal(false);setNewAchat({ingId:"",qty:"",price:"",note:""});
-    showToast(`✓ ${ing.name} +${a.qty}${ing.unit} ajouté au stock`);
-  };
-
-  const readInvoiceWithAI=async(imageBase64)=>{
-    setPhotoLoading(true);
-    try{
-      const ingList=ingredients.map(i=>`${i.id}:${i.name}(${i.unit})`).join(", ");
-      const r=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({
-          model:"claude-haiku-4-5-20251001",max_tokens:500,
-          messages:[{role:"user",content:[
-            {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imageBase64}},
-            {type:"text",text:`Lis cette facture et extrait les achats. Ingrédients disponibles: ${ingList}. Réponds UNIQUEMENT en JSON: [{"ingId":"...","ingName":"...","qty":0.0,"unit":"kg","price":0}]. Si tu ne reconnais pas un ingrédient, utilise l'ID le plus proche.`}
-          ]}]
-        })
-      });
-      const d=await r.json();
-      const txt=d.content?.[0]?.text||"[]";
-      const items=JSON.parse(txt.replace(/```json|```/g,"").trim());
-      if(Array.isArray(items)&&items.length>0){
-        let newStock={...ingStock};let newExp=[...expenses];let newAchats=[...achats];
-        items.forEach(item=>{
-          const ing=ingredients.find(i=>i.id===item.ingId);
-          if(!ing)return;
-          newStock[item.ingId]={...newStock[item.ingId]||{},opening:(newStock[item.ingId]?.opening||0)+item.qty};
-          const a={id:uid(),ingId:item.ingId,ingName:ing.name,ingEmoji:ing.emoji,unit:ing.unit,qty:item.qty,price:item.price,note:"Via photo facture",time:timeStr()};
-          newAchats.push(a);
-          newExp.push({id:uid(),label:`Achat ${ing.name} ${item.qty}${ing.unit}`,amount:item.price,emoji:ing.emoji,time:timeStr()});
-        });
-        setIngStock(newStock);setAchats(newAchats);setExpenses(newExp);
-        saveDay({ingStock:newStock,achats:newAchats,expenses:newExp});
-        showToast(`✓ ${items.length} achats enregistrés depuis la photo !`);
-      }else{showToast("IA: aucun achat trouvé dans la photo",S.orange);}
-    }catch(e){showToast("Erreur lecture photo",S.red);}
-    setPhotoLoading(false);
-  };
+  // CAISSE
+  const [panier, setPanier] = useState([])
+  const [ventes, setVentes] = useState(() => loadData('ventes_' + today(), []))
+  const [ticketVisible, setTicketVisible] = useState(false)
+  const [ticketData, setTicketData] = useState(null)
+  const [ticketNum, setTicketNum] = useState(() => loadData('ticket_num', 1000))
 
   // GAMING
-  const elapsed=start=>{const s=Math.floor((Date.now()-start)/1000);return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;};
-  const liveCost=(ses,st)=>{const slots=Math.ceil((Date.now()-ses.start)/60000/30)||1;return slots*(ses.players===2?st.rate2:st.rate1);};
-  const startSess=(sid,players)=>{touch();setSessions(prev=>({...prev,[sid]:{start:Date.now(),players}}));};
-  const stopSess=sid=>{touch();const ses=sessions[sid];if(!ses)return;const st=STATIONS.find(s=>s.id===sid);const mins=(Date.now()-ses.start)/60000;const slots=Math.ceil(mins/30)||1;const total=slots*(ses.players===2?st.rate2:st.rate1);const sale={id:uid(),items:[{id:sid,name:`${st.emoji}${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};const newTno=ticketNo+1;setSessions(prev=>{const n={...prev};delete n[sid];return n;});setDoneSess(prev=>[...prev,{id:uid(),sid,name:st.name,emoji:st.emoji,mins:Math.round(mins),players:ses.players,total,time:timeStr()}]);setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});setTicketNo(newTno);saveProds(boissons,snacks,ingredients,recipes,photoPrice,dailyGoal,newTno);addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)}`);showToast(`${st.name} — ${fmt(total)}`);};
-  const addPhoto=n=>{touch();setPhotoCount(prev=>{const np=Math.max(0,prev+n);saveDay({pc:np});return np;});if(n>0){addAudit("PHOTOCOPIE",`${n}p`);showToast(`📄 ${n}p — ${fmt(n*photoPrice)}`);}};
+  const [sessions, setSessions] = useState({}) // id -> {status, duree, joueurs, prixPaye, startTime, elapsed}
+  const [gamingVentes, setGamingVentes] = useState(() => loadData('gaming_ventes_' + today(), []))
 
-  // SMART EMOJI SUGGESTION
-  const suggestEmoji=async(name)=>{
-    if(!name||name.length<3)return;
-    setEmojiSuggesting(true);
-    const txt=await callAI("Tu es un assistant. Réponds UNIQUEMENT par 1 seul emoji qui correspond au produit alimentaire donné. Rien d'autre.",name);
-    if(txt&&txt.trim().length<=4){setNewProd(p=>({...p,emoji:txt.trim()}));}
-    setEmojiSuggesting(false);
-  };
+  // STOCKS
+  const [stockMatin, setStockMatin] = useState(() => loadData('stock_matin_' + today(), {}))
+  const [productions, setProductions] = useState(() => loadData('productions_' + today(), []))
+  const [stockSoir, setStockSoir] = useState(() => loadData('stock_soir_' + today(), {}))
 
-  // AI WEEKLY SUGGESTIONS
-  const generateSuggestions=async()=>{
-    setSuggestLoading(true);
-    const ctx=buildCtx();
-    const txt=await callAI(ctx,"Génère 4 suggestions concrètes et actionnables pour améliorer cette boutique. Format JSON array: [{\"id\":1,\"emoji\":\"💡\",\"title\":\"Titre court\",\"description\":\"Détail actionnable avec chiffres\",\"impact\":\"high|medium|low\",\"category\":\"rentabilite|anti-vol|efficacite|client\"}]",1200);
-    try{const clean=txt.replace(/```json|```/g,"").trim();const parsed=JSON.parse(clean);setAiSuggestions(Array.isArray(parsed)?parsed:parsed.suggestions||[]);}catch(e){setAiSuggestions([{id:1,emoji:"💡",title:"Analysez vos données",description:"Entrez vos stocks et ventes pour obtenir des suggestions personnalisées.",impact:"high",category:"efficacite"}]);}
-    setSuggestLoading(false);
-  };
+  // ACHATS
+  const [achats, setAchats] = useState(() => loadData('achats_' + today(), []))
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const fileInputRef = useRef(null)
 
-  // AI CHAT
-  const buildCtx=()=>{
-    const recLines=recipes.map(r=>`${r.name}: `+r.ingredients.map(ri=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(", ")).join(" | ");
-    const lossLines=lossAlerts.map(p=>`${p.name}: ${lossQty(p.id)} manquant(s) valeur ${fmt(lossQty(p.id)*p.price)}`).join("; ");
-    const hist7=last7.map(d=>`${d.label}: CA ${fmt(d.ca)} net ${fmt(d.net)}`).join("; ");
-    return `Tu es l'assistant IA de Game & Gaufre, cyber café restaurant à ${currentStore.name}, Dakar, Sénégal. Réponds toujours en français, concis, avec chiffres en FCFA.\n\nDONNÉES TEMPS RÉEL:\nCA: ${fmt(totalCA)} | Objectif: ${goalPct}% | Net: ${fmt(netProfit)}\nFood: ${fmt(totalFood)} | Gaming: ${fmt(totalGaming)} | Dépenses: ${fmt(totalExpenses)}\nVentes: ${sales.length} | Sessions: ${doneSess.length}\nTop: ${top5.map(p=>`${p.name} ${p.sold}×`).join(", ")}\nPERTES: ${lossLines||"Aucune"}\nHISTO 7J: ${hist7}\nRECETTES: ${recLines}\nINGRÉDIENTS: ${ingredients.map(i=>`${i.name}:${fmtQ(ingRem(i.id),i.unit)} restant`).join("; ")}`;
-  };
-  const sendAiMessage=async()=>{
-    if(!aiInput.trim()||aiLoading)return;
-    const msg=aiInput.trim();setAiInput("");
-    const nm=[...aiMessages,{role:"user",content:msg}];setAiMessages(nm);setAiLoading(true);
-    const ctx=buildCtx();
-    const hist=nm.slice(-8).map(m=>({role:m.role,content:m.content}));
-    try{
-      const key=getKey();
-      if(!key){setAiMessages(prev=>[...prev,{role:"assistant",content:"⚠️ Clé API non configurée. Vérifiez Vercel → Settings → Environment Variables → VITE_ANTHROPIC_KEY"}]);setAiLoading(false);return;}
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,system:ctx,messages:hist})});
-      if(!r.ok){const err=await r.text();setAiMessages(prev=>[...prev,{role:"assistant",content:`Erreur ${r.status}: ${err.slice(0,100)}`}]);setAiLoading(false);return;}
-      const d=await r.json();
-      const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";
-      setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
-    catch(e){setAiMessages(prev=>[...prev,{role:"assistant",content:"❌ Erreur de connexion."}]);}
-    setAiLoading(false);
-    setTimeout(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},100);
-  };
-  const generateInsight=async()=>{setInsightLoading(true);const ctx=buildCtx();const txt=await callAI(ctx,"3 insights clés du jour en bullet points courts avec emoji. Max 2 lignes chacun.");setAiInsight(txt);setInsightLoading(false);};
+  // AUDIT
+  const [audit, setAudit] = useState(() => loadData('audit_' + today(), []))
 
-  // SHOPPING
-  const computeShopping=()=>{const needs={};Object.entries(planQty).forEach(([recId,qty])=>{if(!qty||qty<=0)return;const rec=recipes.find(r=>r.id===recId);if(!rec)return;rec.ingredients.forEach(ri=>{const ing=ingredients.find(i=>i.id===ri.id);if(!ing)return;if(!needs[ing.id])needs[ing.id]={...ing,needed:0};needs[ing.id].needed+=ri.qty*qty;});});return Object.values(needs).map(n=>{const sv=planStock[n.id]||0;return{...n,stockVal:sv,toBuy:Math.max(0,n.needed-sv)};}).sort((a,b)=>b.needed-a.needed);};
-  const shopping=computeShopping();
-  const totalPlanUnits=Object.values(planQty).reduce((s,v)=>s+(Number(v)||0),0);
+  // NAVIGATION
+  const [onglet, setOnglet] = useState('accueil')
 
+  // MODALS
+  const [modal, setModal] = useState(null)
+  const [editItem, setEditItem] = useState(null)
+  const [emojiPicker, setEmojiPicker] = useState(null)
+
+  // IA
+  const [iaMessages, setIaMessages] = useState([])
+  const [iaInput, setIaInput] = useState('')
+  const [iaLoading, setIaLoading] = useState(false)
+
+  // Boutique
+  const [boutique, setBoutique] = useState(() => loadData('boutique', 'Limamoulaye'))
+
+  // Auto-save
+  useEffect(() => { saveData('pins', pins) }, [pins])
+  useEffect(() => { saveData('boissons', boissons) }, [boissons])
+  useEffect(() => { saveData('snacks', snacks) }, [snacks])
+  useEffect(() => { saveData('stations', stations) }, [stations])
+  useEffect(() => { saveData('ingredients', ingredients) }, [ingredients])
+  useEffect(() => { saveData('recettes', recettes) }, [recettes])
+  useEffect(() => { saveData('ventes_' + today(), ventes) }, [ventes])
+  useEffect(() => { saveData('gaming_ventes_' + today(), gamingVentes) }, [gamingVentes])
+  useEffect(() => { saveData('stock_matin_' + today(), stockMatin) }, [stockMatin])
+  useEffect(() => { saveData('productions_' + today(), productions) }, [productions])
+  useEffect(() => { saveData('stock_soir_' + today(), stockSoir) }, [stockSoir])
+  useEffect(() => { saveData('achats_' + today(), achats) }, [achats])
+  useEffect(() => { saveData('audit_' + today(), audit) }, [audit])
+  useEffect(() => { saveData('ticket_num', ticketNum) }, [ticketNum])
+  useEffect(() => { saveData('boutique', boutique) }, [boutique])
+
+  // Timer gaming
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setSessions(prev => {
+        const next = { ...prev }
+        let changed = false
+        Object.keys(next).forEach(id => {
+          const s = next[id]
+          if (s.status === 'en_cours' && s.startTime) {
+            const elapsed = Math.floor((Date.now() - s.startTime) / 1000)
+            if (elapsed !== s.elapsed) {
+              next[id] = { ...s, elapsed }
+              changed = true
+            }
+          }
+        })
+        return changed ? next : prev
+      })
+    }, 1000)
+    return () => clearInterval(iv)
+  }, [])
+
+  // Lock auto
+  const resetLock = () => {
+    clearTimeout(lockTimer.current)
+    lockTimer.current = setTimeout(() => { if (user) { setUser(null); setPinInput('') } }, 5 * 60 * 1000)
+  }
+  useEffect(() => {
+    if (user) resetLock()
+    return () => clearTimeout(lockTimer.current)
+  }, [user])
+
+  // LOG AUDIT
+  function logAudit(action) {
+    const nom = user === 'patron' ? '👑 Patron' : (user && user.nom ? user.nom : '?')
+    setAudit(prev => [...prev, { heure: now(), who: nom, action }])
+  }
+
+  // ============================================================
+  // LOGIN
+  // ============================================================
+  function tryLogin(p) {
+    if (p === pins.patron) {
+      setUser('patron')
+      setPinInput('')
+      setPinError('')
+      logAudit('Connexion patron')
+      return
+    }
+    for (const e of pins.employes) {
+      if (p === e.pin) {
+        setUser(e)
+        setPinInput('')
+        setPinError('')
+        logAudit('Connexion ' + e.nom)
+        return
+      }
+    }
+    setPinError('PIN incorrect')
+    setPinInput('')
+    setTimeout(() => setPinError(''), 2000)
+  }
+
+  function handlePinPress(v) {
+    if (v === 'del') { setPinInput(p => p.slice(0, -1)); return }
+    if (v === 'ok') { if (pinInput.length >= 4) tryLogin(pinInput); return }
+    const next = pinInput + v
+    setPinInput(next)
+    if (next.length === 4) setTimeout(() => tryLogin(next), 100)
+  }
+
+  // ============================================================
+  // CAISSE
+  // ============================================================
+  function addToPanier(produit, cat) {
+    setPanier(prev => {
+      const ex = prev.find(x => x.id === produit.id && x.cat === cat)
+      if (ex) return prev.map(x => x.id === produit.id && x.cat === cat ? { ...x, qte: x.qte + 1 } : x)
+      return [...prev, { ...produit, cat, qte: 1 }]
+    })
+  }
+  function removeFromPanier(id, cat) {
+    setPanier(prev => prev.filter(x => !(x.id === id && x.cat === cat)))
+  }
+  function totalPanier() { return panier.reduce((s, x) => s + x.prix * x.qte, 0) }
+
+  function validerVente(sansPrint = false) {
+    if (panier.length === 0) return
+    const num = ticketNum + 1
+    setTicketNum(num)
+    const t = {
+      num,
+      heure: now(),
+      items: [...panier],
+      total: totalPanier(),
+      employe: user === 'patron' ? 'Patron' : (user && user.nom),
+      sansPrint
+    }
+    setTicketData(t)
+    setVentes(prev => [...prev, t])
+    logAudit(`Vente #${num} — ${fmt(t.total)}${sansPrint ? ' [SANS TICKET]' : ''}`)
+    setPanier([])
+    setTicketVisible(true)
+  }
+
+  function imprimerTicket() {
+    const t = ticketData
+    if (!t) return
+    const contenu = `
+================================
+    🎮 GAME & GAUFRE
+    ${boutique}
+================================
+Ticket #${t.num}     ${t.heure}
+Employé: ${t.employe}
+--------------------------------
+${t.items.map(i => `${i.emoji} ${i.nom}\n   ${i.qte} × ${fmt(i.prix)} = ${fmt(i.prix * i.qte)}`).join('\n')}
+--------------------------------
+TOTAL: ${fmt(t.total)}
+================================
+     Merci & à bientôt !
+================================`
+    const w = window.open('', '_blank', 'width=300,height=400')
+    if (w) {
+      w.document.write(`<pre style="font-family:monospace;font-size:12px;padding:10px">${contenu}</pre>`)
+      w.document.close()
+      w.print()
+    }
+  }
+
+  // ============================================================
+  // GAMING
+  // ============================================================
+  function payerSession(stId, duree, joueurs) {
+    const st = stations.find(s => s.id === stId)
+    if (!st) return
+    const prix = joueurs === 2 ? st.prix2j : st.prix1j
+    const num = ticketNum + 1
+    setTicketNum(num)
+    const t = {
+      num,
+      heure: now(),
+      items: [{ nom: `${st.nom} — ${duree}min ${joueurs}J`, emoji: st.emoji, qte: 1, prix }],
+      total: prix,
+      employe: user === 'patron' ? 'Patron' : (user && user.nom),
+      gaming: true
+    }
+    setTicketData(t)
+    setGamingVentes(prev => [...prev, { ...t, stId, duree, joueurs }])
+    setSessions(prev => ({ ...prev, [stId]: { status: 'paye', duree, joueurs, prix, prixPaye: prix, startTime: null, elapsed: 0 } }))
+    logAudit(`Gaming #${num} — ${st.nom} ${duree}min — ${fmt(prix)}`)
+    setTicketVisible(true)
+  }
+
+  function demarrerSession(stId) {
+    setSessions(prev => {
+      const s = prev[stId]
+      if (!s) return prev
+      return { ...prev, [stId]: { ...s, status: 'en_cours', startTime: Date.now(), elapsed: 0 } }
+    })
+    logAudit('Démarrage partie ' + stId)
+  }
+
+  function terminerSession(stId) {
+    setSessions(prev => {
+      const next = { ...prev }
+      delete next[stId]
+      return next
+    })
+  }
+
+  function fmtTimer(s) {
+    if (!s || !s.elapsed) return '0:00'
+    const m = Math.floor(s.elapsed / 60)
+    const sec = s.elapsed % 60
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  // ============================================================
+  // ACHATS (photo facture)
+  // ============================================================
+  async function analyserPhoto(file) {
+    setPhotoLoading(true)
+    try {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_KEY
+      if (!apiKey) { alert('Clé API non configurée'); setPhotoLoading(false); return }
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader()
+        r.onload = () => res(r.result.split(',')[1])
+        r.onerror = rej
+        r.readAsDataURL(file)
+      })
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+              { type: 'text', text: 'Lis cette facture et liste les produits achetés avec quantité et prix. Réponds UNIQUEMENT en JSON: {"achats":[{"nom":"...","quantite":0,"unite":"kg","prixTotal":0}]}' }
+            ]
+          }]
+        })
+      })
+      const data = await resp.json()
+      const txt = data.content?.[0]?.text || ''
+      const match = txt.match(/\{[\s\S]*\}/)
+      if (match) {
+        const parsed = JSON.parse(match[0])
+        setModal({ type: 'confirm_achats', data: parsed.achats })
+      } else {
+        alert('Impossible de lire la facture. Essaie la saisie manuelle.')
+      }
+    } catch (e) {
+      alert('Erreur: ' + e.message)
+    }
+    setPhotoLoading(false)
+  }
+
+  function confirmerAchats(liste) {
+    const now2 = now()
+    const nouveaux = liste.map(a => ({
+      id: Date.now() + Math.random(),
+      heure: now2,
+      nom: a.nom,
+      quantite: parseFloat(a.quantite) || 0,
+      unite: a.unite || 'kg',
+      prixTotal: parseInt(a.prixTotal) || 0,
+      employe: user === 'patron' ? 'Patron' : (user && user.nom)
+    }))
+    setAchats(prev => [...prev, ...nouveaux])
+    nouveaux.forEach(a => logAudit(`Achat: ${a.nom} ${a.quantite}${a.unite} = ${fmt(a.prixTotal)}`))
+    setModal(null)
+  }
+
+  // ============================================================
+  // IA ASSISTANT
+  // ============================================================
+  async function envoyerIA(msg) {
+    if (!msg.trim()) return
+    const apiKey = import.meta.env.VITE_ANTHROPIC_KEY
+    const userMsg = { role: 'user', content: msg }
+    setIaMessages(prev => [...prev, userMsg])
+    setIaInput('')
+    setIaLoading(true)
+    try {
+      if (!apiKey) throw new Error('Clé API manquante. Vérifiez la variable VITE_ANTHROPIC_KEY dans Vercel.')
+      const caTotal = ventes.reduce((s, v) => s + v.total, 0)
+      const caGaming = gamingVentes.reduce((s, v) => s + v.total, 0)
+      const totalAchats = achats.reduce((s, a) => s + a.prixTotal, 0)
+      const context = `Tu es l'assistant IA de Game & Gaufre ${boutique}. Données du jour:
+- CA food: ${fmt(caTotal)} (${ventes.length} ventes)
+- CA gaming: ${fmt(caGaming)} (${gamingVentes.length} sessions)
+- Achats fournisseurs: ${fmt(totalAchats)}
+- Bénéfice estimé: ${fmt(caTotal + caGaming - totalAchats)}
+- Productions: ${productions.map(p => p.nom + ' ×' + p.qte).join(', ') || 'aucune'}
+Réponds en français, de façon concise et pratique.`
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 600,
+          system: context,
+          messages: [...iaMessages, userMsg]
+        })
+      })
+      if (!resp.ok) {
+        const err = await resp.json()
+        throw new Error(err.error?.message || `Erreur ${resp.status}`)
+      }
+      const data = await resp.json()
+      const reply = data.content?.[0]?.text || 'Pas de réponse'
+      setIaMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    } catch (e) {
+      setIaMessages(prev => [...prev, { role: 'assistant', content: '❌ ' + e.message }])
+    }
+    setIaLoading(false)
+  }
+
+  // ============================================================
+  // BILAN
+  // ============================================================
+  function getBilan() {
+    const caFood = ventes.reduce((s, v) => s + v.total, 0)
+    const caGaming = gamingVentes.reduce((s, v) => s + v.total, 0)
+    const totalAchats = achats.reduce((s, a) => s + a.prixTotal, 0)
+    const ca = caFood + caGaming
+    const net = ca - totalAchats
+    return { caFood, caGaming, ca, totalAchats, net }
+  }
+
+  function rapportWhatsApp() {
+    const b = getBilan()
+    const txt = `🎮 GAME & GAUFRE — ${boutique}
+📅 ${today()} à ${now()}
+
+💰 CA Food: ${fmt(b.caFood)}
+🎮 CA Gaming: ${fmt(b.caGaming)}
+📦 Achats: ${fmt(b.totalAchats)}
+─────────────────
+✅ NET: ${fmt(b.net)}
+
+Tickets: ${ventes.length} | Sessions: ${gamingVentes.length}
+${audit.filter(a => a.action.includes('SANS TICKET')).length > 0 ? '⚠️ Ventes sans ticket: ' + audit.filter(a => a.action.includes('SANS TICKET')).length : ''}
+Envoyé depuis l'app Game & Gaufre`
+    navigator.clipboard.writeText(txt).then(() => alert('Rapport copié ! Colle-le dans WhatsApp ✅'))
+  }
+
+  // ============================================================
+  // GESTION PRODUITS (CRUD)
+  // ============================================================
+  function genId() { return 'x' + Date.now() + Math.random().toString(36).slice(2, 6) }
+
+  function sauvegarderProduit(data) {
+    const { type, item } = data
+    if (type === 'boisson') {
+      if (item.id) setBoissons(prev => prev.map(x => x.id === item.id ? item : x))
+      else setBoissons(prev => [...prev, { ...item, id: genId() }])
+    } else if (type === 'snack') {
+      if (item.id) setSnacks(prev => prev.map(x => x.id === item.id ? item : x))
+      else setSnacks(prev => [...prev, { ...item, id: genId() }])
+    } else if (type === 'station') {
+      if (item.id) setStations(prev => prev.map(x => x.id === item.id ? item : x))
+      else setStations(prev => [...prev, { ...item, id: genId() }])
+    } else if (type === 'ingredient') {
+      if (item.id) setIngredients(prev => prev.map(x => x.id === item.id ? item : x))
+      else setIngredients(prev => [...prev, { ...item, id: genId() }])
+    } else if (type === 'recette') {
+      if (item.id) setRecettes(prev => prev.map(x => x.id === item.id ? item : x))
+      else setRecettes(prev => [...prev, { ...item, id: genId() }])
+    }
+    logAudit((item.id ? 'Modifié' : 'Ajouté') + ': ' + (item.nom || ''))
+    setModal(null)
+  }
+
+  function supprimerProduit(type, id) {
+    if (!window.confirm('Supprimer ce produit ?')) return
+    if (type === 'boisson') setBoissons(prev => prev.filter(x => x.id !== id))
+    else if (type === 'snack') setSnacks(prev => prev.filter(x => x.id !== id))
+    else if (type === 'station') setStations(prev => prev.filter(x => x.id !== id))
+    else if (type === 'ingredient') setIngredients(prev => prev.filter(x => x.id !== id))
+    else if (type === 'recette') setRecettes(prev => prev.filter(x => x.id !== id))
+    logAudit('Supprimé produit ' + id)
+  }
+
+  // ============================================================
   // STYLES
-  const T=a=>({flex:1,padding:"9px 2px",background:a?S.gold:"transparent",color:a?S.bg:S.muted,border:"none",cursor:"pointer",fontSize:9,fontWeight:700,letterSpacing:.3,textTransform:"uppercase",fontFamily:"monospace",transition:"all .15s",whiteSpace:"nowrap"});
-  const Btn=(col=S.gold,txt=S.bg)=>({background:col,color:txt,border:"none",borderRadius:8,padding:"10px 14px",fontWeight:700,cursor:"pointer",fontSize:13});
-  const Sub=a=>({flex:1,padding:"7px 4px",background:a?S.card3:"transparent",color:a?S.text:S.muted,border:`1px solid ${a?S.border:"transparent"}`,borderRadius:8,cursor:"pointer",fontSize:10,fontWeight:600,textAlign:"center"});
-  const Inp=(w="100%")=>({width:w,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"9px 12px",fontSize:14,outline:"none",boxSizing:"border-box"});
-  const Card=(col=S.border)=>({background:S.card,borderRadius:12,padding:14,border:`1px solid ${col}`,marginBottom:12});
+  // ============================================================
+  const S = {
+    app: { background: '#0f0f1a', minHeight: '100vh', color: '#e8e8f0', fontFamily: 'system-ui, sans-serif', display: 'flex', flexDirection: 'column' },
+    header: { background: '#1a1a2e', borderBottom: '2px solid #4a4a8a', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 },
+    headerTitle: { fontWeight: 'bold', fontSize: 16, color: '#fff', flex: 1 },
+    tabs: { display: 'flex', gap: 2, padding: '6px 8px', background: '#12122a', overflowX: 'auto', flexShrink: 0 },
+    tab: (active) => ({ background: active ? '#4a4a8a' : '#1e1e3a', color: active ? '#fff' : '#aaa', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 11, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, minWidth: 52, whiteSpace: 'nowrap' }),
+    tabEmoji: { fontSize: 18 },
+    tabLabel: { fontSize: 9 },
+    body: { flex: 1, overflowY: 'auto', padding: '10px 8px 60px' },
+    card: { background: '#1e1e3a', borderRadius: 12, padding: 12, marginBottom: 10 },
+    btn: (col = '#4a4a8a') => ({ background: col, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 'bold' }),
+    btnSmall: (col = '#4a4a8a') => ({ background: col, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }),
+    prodBtn: { background: '#252545', border: '1px solid #3a3a6a', borderRadius: 10, padding: '10px 8px', cursor: 'pointer', textAlign: 'center', fontSize: 12 },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 6 },
+    grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
+    grid4: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 },
+    input: { background: '#252545', border: '1px solid #4a4a8a', color: '#e8e8f0', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box' },
+    label: { fontSize: 11, color: '#9090b0', marginBottom: 2, display: 'block' },
+    h2: { fontSize: 14, fontWeight: 'bold', marginBottom: 10, color: '#c0c0ff' },
+    h3: { fontSize: 12, fontWeight: 'bold', marginBottom: 6, color: '#9090c0' },
+    badge: (col) => ({ background: col, borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 'bold' }),
+    overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
+    modalBox: { background: '#1e1e3a', borderRadius: 14, padding: 16, width: '100%', maxWidth: 380, maxHeight: '90vh', overflowY: 'auto' },
+    pinScreen: { position: 'fixed', inset: 0, background: '#0f0f1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 },
+    pinDots: { display: 'flex', gap: 8 },
+    pinDot: (filled) => ({ width: 14, height: 14, borderRadius: '50%', background: filled ? '#7070ff' : '#3a3a5a', border: '2px solid #5a5a9a' }),
+    pinGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, width: 240 },
+    pinBtn: { background: '#1e1e3a', border: '2px solid #3a3a6a', color: '#fff', borderRadius: 10, padding: '14px 0', fontSize: 20, fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' },
+  }
 
-  // ══════════════════ LOCK SCREEN ══════════════════
-  if(!user)return(
-    <div style={{background:S.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{fontSize:52,marginBottom:6}}>🎮</div>
-      <div style={{fontSize:22,fontWeight:800,color:S.gold,marginBottom:2}}>GAME & GAUFRE</div>
-      <button onClick={()=>setStoreModal(true)} style={{background:S.card,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,marginBottom:20}}>{currentStore.emoji} {currentStore.name} ▾</button>
-      <PinPad onConfirm={tryLogin} error={pinErr}/>
-      <div style={{marginTop:20,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6}}>
-        {emps.map(e=><div key={e.id} style={{background:S.card,border:`1px solid ${e.role==="patron"?S.gold:S.border}`,borderRadius:8,padding:"4px 10px",fontSize:11,color:e.role==="patron"?S.gold:S.muted}}>{e.role==="patron"?"👑":"👤"} {e.name}</div>)}
-      </div>
-    </div>
-  );
-
-  // ══════════════════ MAIN APP ══════════════════
-  return(
-    <div style={{background:S.bg,minHeight:"100vh",color:S.text,fontFamily:"system-ui,sans-serif",maxWidth:560,margin:"0 auto",paddingBottom:60}} onClick={touch}>
-      {toast&&<div style={{position:"fixed",top:14,left:"50%",transform:"translateX(-50%)",background:toast.color,color:S.bg,padding:"10px 22px",borderRadius:20,fontWeight:700,fontSize:13,zIndex:999,whiteSpace:"nowrap",boxShadow:"0 4px 20px rgba(0,0,0,.5)"}}>{toast.msg}</div>}
-      {pinModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:400,gap:20}}><div style={{color:S.gold,fontWeight:800,fontSize:16}}>🔒 CODE PATRON REQUIS</div><PinPad onConfirm={tryPatronModal} error={pinMErr}/><button onClick={()=>setPinModal(null)} style={{...Btn(S.card2,S.muted),border:`1px solid ${S.border}`}}>Annuler</button></div>}
-
-      {/* TICKET MODAL */}
-      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
-        <Ticket
-          items={pendingTicket.items}
-          total={pendingTicket.total}
-          storeName={currentStore.name}
-          employeeName={user.name}
-          ticketNo={ticketNo}
-          onPrint={()=>{
-            confirmSaleAfterPrint();
-            if(pendingTicket.onConfirm)pendingTicket.onConfirm();
-          }}
-          onCancel={()=>setPendingTicket(null)}
-          onSkipPrint={()=>{
-            // Validate without printing - emergency mode
-            const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo,noTicket:true};
-            setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
-            const newTno=ticketNo+1;setTicketNo(newTno);
-            saveProds(boissons,snacks,ingredients,recipes,photoPrice,dailyGoal,newTno);
-            addAudit("⚠️ VENTE SANS TICKET",`${fmt(pendingTicket.total)} — Imprimante en panne`);
-            if(pendingTicket.onConfirm)pendingTicket.onConfirm();
-            setPendingTicket(null);
-            showToast("Vente enregistrée — Sans ticket ⚠️",S.orange);
-          }}
-        />
-      </div>}
-
-      {/* HEADER */}
-      <div style={{background:S.card,padding:"11px 16px",borderBottom:`3px solid ${S.gold}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
-        <div>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <div style={{fontSize:14,fontWeight:800,color:S.gold}}>🎮 G&G</div>
-            <button onClick={()=>setStoreModal(true)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10}}>{currentStore.emoji} {currentStore.name.split("—")[1]?.trim()||currentStore.name} ▾</button>
-          </div>
-          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}
-            {Object.keys(paidSessions).length>0&&<span style={{color:S.gold,marginLeft:4}}>💰{Object.keys(paidSessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}</div>
+  // ============================================================
+  // ECRAN PIN
+  // ============================================================
+  if (!user) {
+    return (
+      <div style={S.pinScreen} onClick={resetLock}>
+        <div style={{ fontSize: 48 }}>🎮</div>
+        <div style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>GAME & GAUFRE</div>
+        <div style={{ fontSize: 12, color: '#7070b0' }}>{boutique}</div>
+        {pinError && <div style={{ color: '#ff6060', fontSize: 13 }}>{pinError}</div>}
+        <div style={S.pinDots}>
+          {[0,1,2,3].map(i => <div key={i} style={S.pinDot(i < pinInput.length)} />)}
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:17,fontWeight:800,color:S.green}}>{fmt(totalCA)}</div>
-            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:50,height:4,background:S.card3,borderRadius:2}}><div style={{width:`${goalPct}%`,height:"100%",background:goalPct>=100?S.green:goalPct>=70?S.gold:S.orange,borderRadius:2}}/></div><span style={{fontSize:9,color:S.muted}}>{goalPct}%</span></div>
-          </div>
-          <button onClick={()=>setUser(null)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:11}}>🔒</button>
-        </div>
-      </div>
-
-      {/* TABS */}
-      <div style={{display:"flex",background:S.card,borderBottom:`2px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-        {[["home","🏠","Accueil"],["caisse","🛒","Caisse"],["gaming","🎮","Gaming"],["stocks","📦","Stocks"],["planning","🧮","Courses"],["achats","🛍️","Achats"],["recettes","📖","Recettes"],["ia","🤖","Assistant"],["bilan","📊","Bilan"],["aide","❓","Guide"],["audit","🔍","Audit"]].map(([id,emoji,label])=>(
-          <button key={id} onClick={()=>{setTab(id);touch();}} style={{
-            flexShrink:0,
-            padding:"10px 12px",
-            background:tab===id?S.gold:"transparent",
-            color:tab===id?S.bg:S.muted,
-            border:"none",
-            borderBottom:tab===id?`3px solid ${S.gold}`:"3px solid transparent",
-            cursor:"pointer",
-            display:"flex",
-            flexDirection:"column",
-            alignItems:"center",
-            gap:3,
-            transition:"all .15s",
-            minWidth:60,
-          }}>
-            <span style={{fontSize:20}}>{emoji}</span>
-            <span style={{fontSize:10,fontWeight:700,letterSpacing:.3,whiteSpace:"nowrap"}}>{label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* ══ HOME ══ */}
-      {tab==="home"&&<div style={{padding:14}}>
-        {CHECKLIST.filter(i=>!checklist[i]).length>0?
-          <div style={{...Card(S.orange),marginBottom:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div style={{fontWeight:700,color:S.orange,fontSize:13}}>✅ OUVERTURE</div><span style={{fontSize:11,color:S.muted}}>{CHECKLIST.filter(i=>checklist[i]).length}/{CHECKLIST.length}</span></div>
-            <div style={{height:4,background:S.card2,borderRadius:2,marginBottom:10}}><div style={{width:`${(CHECKLIST.filter(i=>checklist[i]).length/CHECKLIST.length)*100}%`,height:"100%",background:S.orange,borderRadius:2}}/></div>
-            {CHECKLIST.map(item=><button key={item} onClick={()=>{const nc={...checklist,[item]:!checklist[item]};setChecklist(nc);saveDay({checklist:nc});}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",background:"transparent",border:"none",cursor:"pointer",color:S.text,padding:"7px 0",borderBottom:`1px solid ${S.border}`,textAlign:"left"}}><div style={{width:22,height:22,borderRadius:6,border:`2px solid ${checklist[item]?S.green:S.border}`,background:checklist[item]?S.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:S.bg}}>{checklist[item]&&"✓"}</div><span style={{fontSize:13,color:checklist[item]?S.muted:S.text,textDecoration:checklist[item]?"line-through":"none"}}>{item}</span></button>)}
-          </div>:<div style={{...Card(S.green),textAlign:"center",padding:"10px"}}><span style={{color:S.green,fontWeight:700,fontSize:13}}>✅ Ouverture OK — Bonne journée, {user.name} !</span></div>}
-        <div style={{...Card(S.purple)}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-            <div style={{fontWeight:700,color:S.purple,fontSize:12}}>🤖 ANALYSE IA</div>
-            <button onClick={generateInsight} disabled={insightLoading} style={{...Btn(S.purple,"#fff"),fontSize:11,padding:"5px 10px",opacity:insightLoading?0.5:1}}>{insightLoading?"⏳":"↺ Actualiser"}</button>
-          </div>
-          {insightLoading?<div style={{color:S.muted,fontSize:12,textAlign:"center",padding:8}}>⏳ Analyse...</div>:aiInsight?<div style={{fontSize:12,color:"#ddd",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{aiInsight}</div>:<div style={{fontSize:12,color:S.muted}}>Appuyez Actualiser pour une analyse personnalisée de votre journée.</div>}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {[{l:"CA DU JOUR",v:fmt(totalCA),c:S.green,sub:`${goalPct}% obj.`},{l:"BÉNÉFICE NET",v:fmt(netProfit),c:netProfit>=0?S.green:S.red,sub:`Dép. ${fmt(totalExpenses)}`},{l:"FOOD",v:fmt(totalFood),c:S.gold,sub:`${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes`},{l:"GAMING",v:fmt(totalGaming),c:S.blue,sub:`${doneSess.length} sessions`}].map(c=>(<div key={c.l} style={Card()}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:16,fontWeight:800,color:c.c}}>{c.v}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{c.sub}</div></div>))}
-        </div>
-        <div style={Card()}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,fontWeight:700}}>🎯 Objectif {fmt(dailyGoal)}</span>{user.role==="patron"&&<button onClick={()=>{setNewGoal(String(dailyGoal));setGoalModal(true);}} style={{background:"transparent",border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:11}}>Modifier</button>}</div>
-          <div style={{height:12,background:S.card2,borderRadius:6,marginBottom:6,overflow:"hidden"}}><div style={{width:`${goalPct}%`,height:"100%",background:`linear-gradient(90deg,${goalPct>=100?S.green:goalPct>=70?S.gold:S.orange},${goalPct>=100?"#00ff9d":goalPct>=70?"#ffed4a":"#ff9500"})`,borderRadius:6,transition:"width .5s",display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:4}}>{goalPct>=15&&<span style={{fontSize:9,fontWeight:700,color:S.bg}}>{goalPct}%</span>}</div></div>
-          <div style={{fontSize:11,color:S.muted}}>{goalPct>=100?<span style={{color:S.green,fontWeight:700}}>🎉 Objectif atteint !</span>:<span>Manque <strong style={{color:S.gold}}>{fmt(dailyGoal-totalCA)}</strong></span>}</div>
-        </div>
-        {(lossAlerts.length>0||ingAlerts.length>0)&&<div style={{...Card(S.red),cursor:"pointer"}} onClick={()=>setTab("stocks")}><div style={{color:S.red,fontWeight:700,fontSize:12,marginBottom:6}}>🚨 {lossAlerts.length+ingAlerts.length} ALERTE(S)</div>{lossAlerts.map(p=><div key={p.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:2}}>{p.emoji} {p.name}: {lossQty(p.id)} manquant(s) — {fmt(lossQty(p.id)*p.price)}</div>)}</div>}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[{t:"caisse",i:"🛒",l:"Caisse",c:S.gold,s:`Ticket #${ticketNo}`},{t:"gaming",i:"🎮",l:"Gaming",c:S.green,s:Object.keys(sessions).length>0?`${Object.keys(sessions).length} en cours`:"Libre"},{t:"aide",i:"❓",l:"Guide Employé",c:S.teal,s:"Comment utiliser"},{t:"ia",i:"🤖",l:"Assistant IA",c:S.purple,s:"Conseils & alertes"}].map(r=>(
-            <button key={r.t} onClick={()=>setTab(r.t)} style={{...Card(r.c),cursor:"pointer",textAlign:"center",padding:"14px 10px",border:`2px solid ${r.c}`}}><div style={{fontSize:26}}>{r.i}</div><div style={{fontSize:12,fontWeight:700,color:r.c,marginTop:4}}>{r.l}</div><div style={{fontSize:10,color:S.muted}}>{r.s}</div></button>
+        <div style={S.pinGrid}>
+          {['1','2','3','4','5','6','7','8','9','del','0','ok'].map(v => (
+            <button key={v} style={{...S.pinBtn, background: v === 'ok' ? '#4a6a4a' : v === 'del' ? '#6a4a4a' : '#1e1e3a'}}
+              onClick={() => handlePinPress(v)}>
+              {v === 'del' ? '⌫' : v === 'ok' ? '✓' : v}
+            </button>
           ))}
         </div>
-      </div>}
+        <div style={{ fontSize: 11, color: '#5a5a7a', marginTop: 8 }}>Entrez votre PIN à 4 chiffres</div>
+      </div>
+    )
+  }
 
-      {/* ══ CAISSE ══ */}
-      {tab==="caisse"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button></div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
-          {(cTab==="boissons"?boissons:snacks).map(p=>(
-            <div key={p.id} style={{position:"relative"}}>
-              <button onClick={()=>addToCart(p,cTab)} style={{width:"100%",background:S.card2,border:`1px solid ${S.border}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",transition:"transform .1s"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.95)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
-                <div style={{fontSize:24}}>{p.emoji}</div>
-                <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
-                <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
-                {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
-              </button>
-              {user.role==="patron"&&<div style={{display:"flex",gap:2,marginTop:4}}>
-                <button onClick={()=>setEditProd({...p,cat:cTab})} style={{flex:1,background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"3px",cursor:"pointer",fontSize:11}}>✏️</button>
-                <button onClick={()=>{if(cTab==="boissons"){const nb=boissons.filter(x=>x.id!==p.id);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.filter(x=>x.id!==p.id);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}showToast("Supprimé",S.orange);}} style={{flex:1,background:S.card2,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"3px",cursor:"pointer",fontSize:11}}>🗑</button>
-              </div>}
+  const isPatron = user === 'patron'
+  const userName = isPatron ? '👑 Patron' : user.nom
+
+  // ============================================================
+  // ONGLETS VISIBLES
+  // ============================================================
+  const TABS = [
+    { id: 'accueil', emoji: '🏠', label: 'Accueil' },
+    { id: 'caisse', emoji: '🛒', label: 'Caisse' },
+    { id: 'gaming', emoji: '🎮', label: 'Gaming' },
+    { id: 'achats', emoji: '📸', label: 'Achats' },
+    { id: 'stocks', emoji: '📦', label: 'Stocks' },
+    { id: 'bilan', emoji: '📊', label: 'Bilan' },
+    ...(isPatron ? [
+      { id: 'recettes', emoji: '📖', label: 'Recettes' },
+      { id: 'produits', emoji: '✏️', label: 'Produits' },
+      { id: 'equipe', emoji: '👥', label: 'Équipe' },
+      { id: 'audit', emoji: '🔍', label: 'Audit' },
+    ] : []),
+    { id: 'ia', emoji: '🤖', label: 'Assistant' },
+    { id: 'guide', emoji: '❓', label: 'Guide' },
+  ]
+
+  // ============================================================
+  // RENDER ONGLET — ACCUEIL
+  // ============================================================
+  function renderAccueil() {
+    const b = getBilan()
+    const steps = [
+      { id: 'achats', label: 'Enregistrer les achats', done: achats.length > 0, emoji: '📸', onglet: 'achats' },
+      { id: 'stock', label: 'Saisir le stock matin', done: Object.keys(stockMatin).length > 0, emoji: '📦', onglet: 'stocks' },
+      { id: 'prod', label: 'Enregistrer la production', done: productions.length > 0, emoji: '🍳', onglet: 'stocks' },
+      { id: 'caisse', label: 'Ouvrir la caisse', done: ventes.length > 0 || gamingVentes.length > 0, emoji: '🛒', onglet: 'caisse' },
+      { id: 'bilan', label: 'Clôturer et rapport', done: false, emoji: '📊', onglet: 'bilan' },
+    ]
+    return (
+      <div>
+        <div style={{ ...S.card, background: '#1a1a3a', textAlign: 'center', padding: 16 }}>
+          <div style={{ fontSize: 32, marginBottom: 4 }}>🎮</div>
+          <div style={{ fontWeight: 'bold', fontSize: 16 }}>Game & Gaufre</div>
+          <div style={{ color: '#7070b0', fontSize: 12 }}>{boutique} — {today()}</div>
+          <div style={{ marginTop: 8, fontSize: 13, color: '#7070ff' }}>Bonjour {userName} !</div>
+        </div>
+        <div style={S.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 'bold' }}>📊 Résumé du jour</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <div style={{ background: '#0f2a1f', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: '#7070b0' }}>CA Total</div>
+              <div style={{ fontSize: 15, fontWeight: 'bold', color: '#50e090' }}>{fmt(b.ca)}</div>
+            </div>
+            <div style={{ background: '#1a1a0f', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: '#7070b0' }}>Bénéfice</div>
+              <div style={{ fontSize: 15, fontWeight: 'bold', color: b.net >= 0 ? '#90e050' : '#ff6060' }}>{fmt(b.net)}</div>
+            </div>
+          </div>
+        </div>
+        <div style={S.card}>
+          <div style={S.h2}>📋 Tâches du jour</div>
+          {steps.map(s => (
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #2a2a4a', cursor: 'pointer' }}
+              onClick={() => setOnglet(s.onglet)}>
+              <span style={{ fontSize: 20 }}>{s.done ? '✅' : '🔲'}</span>
+              <span style={{ fontSize: 13, flex: 1 }}>{s.emoji} {s.label}</span>
+              <span style={{ color: '#5a5a8a', fontSize: 14 }}>›</span>
             </div>
           ))}
-          {user.role==="patron"&&<button onClick={()=>setAddProdModal(cTab)} style={{background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.gold,textAlign:"center"}}>
-            <div style={{fontSize:22}}>＋</div>
-            <div style={{fontSize:10,marginTop:4,fontWeight:700}}>Ajouter</div>
-          </button>}
         </div>
-        {cart.length>0?<div style={Card()}>
-          <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
-          {cart.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:15}}>{item.emoji}</span><div style={{flex:1,fontSize:12}}>{item.name}</div><button onClick={()=>updQty(item.id,-1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>−</button><span style={{fontSize:14,fontWeight:700,minWidth:20,textAlign:"center"}}>{item.qty}</span><button onClick={()=>updQty(item.id,+1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>+</button><div style={{minWidth:68,textAlign:"right",fontSize:12,fontWeight:700}}>{fmt(item.price*item.qty)}</div><button onClick={()=>updQty(item.id,-99)} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:16}}>✕</button></div>)}
-          <div style={{borderTop:`1px solid ${S.border}`,marginTop:10,paddingTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{fontSize:16,fontWeight:800}}>TOTAL <span style={{color:S.green}}>{fmt(cartTotal)}</span></div>
-            <div style={{display:"flex",gap:8}}><button onClick={()=>setCart([])} style={{...Btn(S.card3,S.red),border:`1px solid ${S.red}`,fontSize:12}}>✕</button><button onClick={requestTicket} style={{...Btn(S.teal),fontSize:13,padding:"10px 14px"}}>🎫 Ticket & Payer</button></div>
-          </div>
-          <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:6}}>⚠️ Le ticket doit être imprimé avant validation</div>
-        </div>:<div style={{...Card(),textAlign:"center",color:S.muted,fontSize:13,padding:24}}><div style={{fontSize:36,marginBottom:8}}>🛒</div>Appuie sur un produit</div>}
-      </div>}
+        <div style={{ ...S.grid2, marginBottom: 10 }}>
+          <button style={{ ...S.btn('#2a4a2a'), padding: 14, fontSize: 13, borderRadius: 12 }} onClick={() => setOnglet('caisse')}>🛒 Caisse</button>
+          <button style={{ ...S.btn('#2a2a5a'), padding: 14, fontSize: 13, borderRadius: 12 }} onClick={() => setOnglet('gaming')}>🎮 Gaming</button>
+          <button style={{ ...S.btn('#4a2a2a'), padding: 14, fontSize: 13, borderRadius: 12 }} onClick={() => setOnglet('achats')}>📸 Achats</button>
+          <button style={{ ...S.btn('#2a3a4a'), padding: 14, fontSize: 13, borderRadius: 12 }} onClick={() => setOnglet('bilan')}>📊 Bilan</button>
+        </div>
+      </div>
+    )
+  }
 
-      {/* ══ GAMING ══ */}
-      {tab==="gaming"&&<div style={{padding:14}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
-            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
-              <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
-              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
-              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
-              :paidSessions[st.id]?(
-                // PAID but not started yet
-                <div style={{background:"#0a0d00",border:`1px solid ${S.gold}`,borderRadius:8,padding:10}}>
-                  <div style={{fontSize:11,color:S.gold,fontWeight:700,marginBottom:4}}>✅ Payé — {paidSessions[st.id].label}</div>
-                  <div style={{fontSize:10,color:S.muted,marginBottom:8}}>En attente de démarrage</div>
-                  <button onClick={()=>{
-                    const p=paidSessions[st.id];
-                    startSess(st.id,p.players);
-                    setPaidSessions(prev=>{const n={...prev};delete n[st.id];return n;});
-                  }} style={{...Btn(S.green),width:"100%",fontSize:13,padding:"10px"}}>▶ Démarrer la partie</button>
+  // ============================================================
+  // RENDER ONGLET — CAISSE
+  // ============================================================
+  function renderCaisse() {
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={S.h2}>☕ Boissons</div>
+          <div style={S.grid}>
+            {boissons.map(b => (
+              <button key={b.id} style={S.prodBtn} onClick={() => addToPanier(b, 'boisson')}>
+                <div style={{ fontSize: 22 }}>{b.emoji}</div>
+                <div style={{ fontSize: 10, marginTop: 2 }}>{b.nom}</div>
+                <div style={{ fontSize: 11, color: '#80e0a0', fontWeight: 'bold' }}>{fmt(b.prix)}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={S.card}>
+          <div style={S.h2}>🥞 Snacks</div>
+          <div style={S.grid}>
+            {snacks.map(s => (
+              <button key={s.id} style={S.prodBtn} onClick={() => addToPanier(s, 'snack')}>
+                <div style={{ fontSize: 22 }}>{s.emoji}</div>
+                <div style={{ fontSize: 10, marginTop: 2 }}>{s.nom}</div>
+                <div style={{ fontSize: 11, color: '#80e0a0', fontWeight: 'bold' }}>{fmt(s.prix)}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        {panier.length > 0 && (
+          <div style={{ ...S.card, position: 'sticky', bottom: 60, zIndex: 10, background: '#12122a', border: '2px solid #4a4a8a' }}>
+            <div style={S.h2}>🛒 Panier</div>
+            {panier.map(item => (
+              <div key={item.id + item.cat} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                <span style={{ flex: 1, fontSize: 12 }}>{item.emoji} {item.nom} ×{item.qte}</span>
+                <span style={{ fontSize: 12, color: '#80e0a0' }}>{fmt(item.prix * item.qte)}</span>
+                <button style={S.btnSmall('#6a2a2a')} onClick={() => removeFromPanier(item.id, item.cat)}>✕</button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: '1px solid #3a3a6a' }}>
+              <span style={{ fontWeight: 'bold', color: '#80e0a0' }}>TOTAL: {fmt(totalPanier())}</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button style={S.btnSmall('#3a3a3a')} onClick={() => setPanier([])}>Vider</button>
+                <button style={S.btn('#2a4a2a')} onClick={() => validerVente(false)}>🖨️ Ticket</button>
+                <button style={{ ...S.btnSmall('#4a3a1a') }} onClick={() => validerVente(true)}>⚠️ Sans impr.</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — GAMING
+  // ============================================================
+  function renderGaming() {
+    return (
+      <div>
+        {stations.map(st => {
+          const sess = sessions[st.id]
+          const status = sess ? sess.status : 'libre'
+          let cardColor = '#1e1e3a'
+          if (status === 'paye') cardColor = '#1a2a1a'
+          if (status === 'en_cours') cardColor = '#2a1a1a'
+          return (
+            <div key={st.id} style={{ ...S.card, background: cardColor, border: status !== 'libre' ? '1px solid #4a6a4a' : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 24 }}>{st.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 13 }}>{st.nom}</div>
+                  <div style={{ fontSize: 11, color: '#9090b0' }}>1J: {fmt(st.prix1j)}/30min &nbsp; 2J: {fmt(st.prix2j)}/30min</div>
                 </div>
-              ):(
-                <div>
-                  <div style={{fontSize:10,color:S.muted,marginBottom:6,textAlign:"center"}}>Choisir durée — Payer avant</div>
-                  <div style={{display:"flex",gap:4,marginBottom:4}}>
-                    {[30,60,90].map(min=>{
-                      const slots=min/30;const total=slots*st.rate1;
-                      return <button key={min} onClick={()=>{
-                        setPendingTicket({
-                          items:[{id:st.id,name:`${st.emoji}${st.name} 1J ${min}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],
-                          total,
-                          onConfirm:()=>setPaidSessions(prev=>({...prev,[st.id]:{players:1,label:`1J ${min}min`}}))
-                        });
-                      }} style={{flex:1,background:S.card2,border:`1px solid ${S.green}`,color:S.green,borderRadius:6,padding:"6px 2px",cursor:"pointer",fontSize:10,fontWeight:700}}>{min}min<br/>{fmt(total)}</button>;
-                    })}
+                {status === 'libre' && <span style={{ ...S.badge('#2a4a2a'), fontSize: 10 }}>🟢 LIBRE</span>}
+                {status === 'paye' && <span style={{ ...S.badge('#4a4a2a'), fontSize: 10 }}>🟡 PAYÉ</span>}
+                {status === 'en_cours' && (
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ ...S.badge('#4a2a2a'), fontSize: 10, display: 'block' }}>🔴 EN JEU</span>
+                    <span style={{ fontSize: 14, fontWeight: 'bold', color: '#ff8060' }}>{fmtTimer(sess)}</span>
+                    <span style={{ fontSize: 10, color: '#9090b0', display: 'block' }}>{sess.duree} min</span>
                   </div>
-                  <div style={{display:"flex",gap:4}}>
-                    {[30,60,90].map(min=>{
-                      const slots=min/30;const total=slots*st.rate2;
-                      return <button key={min} onClick={()=>{
-                        setPendingTicket({
-                          items:[{id:st.id,name:`${st.emoji}${st.name} 2J ${min}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],
-                          total,
-                          onConfirm:()=>setPaidSessions(prev=>({...prev,[st.id]:{players:2,label:`2J ${min}min`}}))
-                        });
-                      }} style={{flex:1,background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"6px 2px",cursor:"pointer",fontSize:10,fontWeight:700}}>{min}min 2J<br/>{fmt(total)}</button>;
-                    })}
+                )}
+              </div>
+              {status === 'libre' && (
+                <div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {[30, 60, 90].map(d => (
+                      <React.Fragment key={d}>
+                        <button style={S.btnSmall('#2a3a5a')} onClick={() => payerSession(st.id, d, 1)}>
+                          {d}min 1J — {fmt(st.prix1j * d / 30)}
+                        </button>
+                        <button style={S.btnSmall('#3a3a2a')} onClick={() => payerSession(st.id, d, 2)}>
+                          {d}min 2J — {fmt(st.prix2j * d / 30)}
+                        </button>
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
               )}
-            </div>);})}
-        </div>
-        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {user.role==="patron"?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
-        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
-      </div>}
-
-      {/* ══ STOCKS ══ */}
-      {tab==="stocks"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
-          <button style={Sub(stSub==="ing")} onClick={()=>setStSub("ing")}>🌾 Ingrédients</button>
-          <button style={Sub(stSub==="prod")} onClick={()=>setStSub("prod")}>🍳 Production</button>
-          <button style={Sub(stSub==="finis")} onClick={()=>setStSub("finis")}>📊 Produits Finis</button>
-          <button style={Sub(stSub==="verif")} onClick={()=>setStSub("verif")}>🔍 Vérif</button>
-        </div>
-        {stSub==="ing"&&<div>
-          <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
-          {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-              <span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span>
-              <div style={{display:"flex",alignItems:"center",gap:4}}>
-                {user.role==="patron"
-                  ?<div style={{display:"flex",alignItems:"center",gap:4}}>
-                    <input type="number" value={ing.unitCost} onChange={e=>{const ni=ingredients.map(x=>x.id===ing.id?{...x,unitCost:parseFloat(e.target.value)||0}:x);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);}} style={{width:70,background:S.card2,border:`1px solid ${S.gold}`,color:S.gold,borderRadius:6,padding:"3px 6px",fontSize:11,outline:"none",textAlign:"right"}}/>
-                    <span style={{fontSize:10,color:S.gold}}>F/{ing.unit}</span>
-                  </div>
-                  :<span style={{fontSize:10,color:S.muted}}>{fmt(ing.unitCost)}/{ing.unit}</span>
-                }
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
-              <div style={{flex:1,minWidth:90}}><div style={{fontSize:10,color:S.muted,marginBottom:3}}>Stock matin ({ing.unit})</div><input type="number" step="0.001" value={s.opening??""} placeholder="0" onChange={e=>setIngField(ing.id,"opening",e.target.value)} style={{...Inp("100%"),padding:"7px 8px",fontSize:13}}/></div>
-              <div style={{display:"flex",gap:6}}>
-                <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Utilisé</div><div style={{fontSize:14,fontWeight:800,color:S.orange,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(used,ing.unit)}</div></div>
-                <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Restant</div><div style={{fontSize:14,fontWeight:800,color:rem>0?S.green:S.muted,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(rem,ing.unit)}</div></div>
-                <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Valeur</div><div style={{fontSize:12,fontWeight:700,color:S.gold,background:S.card2,borderRadius:6,padding:"4px 6px"}}>{fmt(rem*ing.unitCost)}</div></div>
-              </div>
-            </div>
-            {al&&<div style={{marginTop:6,background:S.red,borderRadius:6,padding:"4px 8px",fontSize:11,color:"#fff",fontWeight:700}}>⚠️ {al.diff>0?`MANQUE ${fmtQ(al.diff,ing.unit)} = ${fmt(al.diff*ing.unitCost)}`:`SURPLUS`}</div>}
-          </div>);})}
-          {user.role==="patron"&&<button onClick={()=>setAddIngModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.blue}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.blue,fontWeight:700,fontSize:13,marginTop:4}}>＋ Ajouter ingrédient</button>}
-        </div>}
-        {stSub==="prod"&&<div>
-          <div style={{background:"#0d1a0d",border:`1px solid ${S.green}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🍳 Enregistrez chaque fabrication. Ingrédients déduits automatiquement.</div>
-          {snacks.map(p=>{const rec=recipes.find(r=>r.snackId===p.id);return(<div key={p.id} style={Card()}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:24}}>{p.emoji}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{p.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec?rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • "):"Pas de recette"}</div><div style={{fontSize:11,color:S.green,marginTop:2}}>Fab: <strong>{prodQtyFn(p.id)}</strong> | Vendu: <strong>{soldQty(p.id)}</strong> | Rest: <strong>{remQty(p.id)}</strong></div></div><button onClick={()=>{setProdModal(p);setProdQtyVal("");}} style={{...Btn(S.green),fontSize:12,padding:"8px 12px"}}>🍳</button></div></div>);})}
-          {productions.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>PRODUCTIONS DU JOUR</div>{[...productions].reverse().map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{p.time} </span>{p.snackEmoji}{p.snackName}</div><div style={{color:S.green,fontWeight:700}}>× {p.qty}</div></div>)}</div>}
-        </div>}
-        {stSub==="finis"&&<div>
-          <div style={{background:"#0d0a1a",border:`1px solid ${S.purple}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>📊 Fabriqué − Vendu = Restant. Comptez pour détecter pertes/vols.</div>
-          {snacks.map(p=>{const prod=prodQtyFn(p.id);const sold=soldQty(p.id);const rem=remQty(p.id);const loss=lossQty(p.id);return(<div key={p.id} style={{background:loss!==null&&loss>0?"#1a0000":S.card,border:`1px solid ${loss!==null&&loss>0?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:13,fontWeight:700}}>{p.emoji} {p.name}</span>{loss!==null&&loss>0&&<span style={{background:S.red,color:"#fff",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>🚨 -{loss}</span>}{loss===0&&finPhys[p.id]!=null&&<span style={{background:S.green,color:S.bg,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>✓ OK</span>}</div>
-            <div style={{display:"flex",gap:8,marginBottom:8}}>{[{l:"Fabriqués",v:prod,c:S.blue},{l:"Vendus",v:sold,c:S.orange},{l:"Restant",v:rem,c:S.green}].map(x=><div key={x.l} style={{flex:1,textAlign:"center",background:S.card2,borderRadius:8,padding:"6px 4px"}}><div style={{fontSize:9,color:S.muted}}>{x.l}</div><div style={{fontSize:16,fontWeight:800,color:x.c}}>{x.v}</div></div>)}</div>
-            <input type="number" value={finPhys[p.id]??""} placeholder={`Compter les ${p.name}s restants...`} onChange={e=>{const nf={...finPhys,[p.id]:Number(e.target.value)||0};setFinPhys(nf);saveDay({finPhys:nf});}} style={{...Inp(),padding:"7px 10px",fontSize:13}}/>
-            {loss!==null&&loss>0&&<div style={{marginTop:6,fontSize:12,color:S.red,fontWeight:700}}>⚠️ {loss} manquant(s) — {fmt(loss*p.price)}</div>}
-          </div>);})}
-        </div>}
-        {stSub==="verif"&&<div>
-          {ingredients.map(ing=>{const th=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:10,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,fontWeight:600}}>{ing.emoji} {ing.name}</span><span style={{fontSize:11,color:S.blue}}>Théo: <strong>{fmtQ(th,ing.unit)}</strong></span></div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <input type="number" step="0.001" value={ingPhys[ing.id]??""} placeholder={`Peser (${ing.unit})...`} onChange={e=>setIngPhysVal(ing.id,e.target.value)} style={{...Inp("130px"),padding:"7px 10px",fontSize:13}}/>
-              {al&&<div style={{flex:1,background:S.red,color:"#fff",borderRadius:8,padding:"6px 8px",fontSize:11,fontWeight:700}}>{al.diff>0?`⚠️ MANQUE ${fmtQ(al.diff,ing.unit)}`:`➕ SURPLUS`}</div>}
-              {!al&&ingPhys[ing.id]!=null&&<div style={{flex:1,background:"#0d1a0d",color:S.green,borderRadius:8,padding:"6px 8px",fontSize:11,fontWeight:700}}>✓ OK</div>}
-            </div>
-          </div>);})}
-          {ingAlerts.length>0&&<div style={{background:"#1a0000",border:`1px solid ${S.red}`,borderRadius:12,padding:12,marginTop:8}}><div style={{fontWeight:700,color:S.red,marginBottom:6,fontSize:12}}>🚨 {ingAlerts.length} ÉCART(S)</div>{ingAlerts.map(i=>{const a=ingAlert(i.id);return<div key={i.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:3}}>{i.emoji} {i.name} → Manque {fmtQ(a.diff,i.unit)} — {fmt(a.diff*i.unitCost)}</div>;})} <div style={{marginTop:6,fontSize:12,fontWeight:700,color:S.red,borderTop:`1px solid ${S.red}`,paddingTop:6}}>Perte totale: {fmt(ingAlerts.reduce((s,i)=>{const a=ingAlert(i.id);return s+a.diff*i.unitCost;},0))}</div></div>}
-        </div>}
-      </div>}
-
-      {/* ══ ACHATS ══ */}
-      {tab==="achats"&&<div style={{padding:14}}>
-        <div style={{background:"#0a1a0a",border:`1px solid ${S.green}`,borderRadius:10,padding:12,marginBottom:14,fontSize:12,color:"#aaa",lineHeight:1.6}}>
-          🛍️ <strong style={{color:S.green}}>Enregistrez chaque achat fournisseur.</strong><br/>
-          Le stock se met à jour automatiquement. La dépense est comptabilisée dans le bilan.
-        </div>
-
-        {/* Photo facture */}
-        <div style={{...Card(S.purple),marginBottom:12}}>
-          <div style={{fontWeight:700,color:S.purple,fontSize:13,marginBottom:8}}>📸 Photo de facture — IA lit automatiquement</div>
-          <div style={{fontSize:11,color:S.muted,marginBottom:10}}>Prenez une photo de votre facture et l'IA enregistre tous les achats automatiquement.</div>
-          <label style={{display:"block",width:"100%",background:photoLoading?S.card2:S.purple,color:"#fff",border:"none",borderRadius:8,padding:"12px",cursor:"pointer",fontSize:13,fontWeight:700,textAlign:"center"}}>
-            {photoLoading?"⏳ L'IA analyse la photo...":"📸 Prendre/Choisir une photo de facture"}
-            <input type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={async e=>{
-              const file=e.target.files[0];if(!file)return;
-              const reader=new FileReader();
-              reader.onload=async ev=>{
-                const base64=ev.target.result.split(",")[1];
-                await readInvoiceWithAI(base64);
-              };
-              reader.readAsDataURL(file);
-            }}/>
-          </label>
-        </div>
-
-        {/* Saisie manuelle */}
-        <div style={Card()}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontWeight:700,color:S.gold,fontSize:13}}>✏️ Saisie manuelle</div>
-            <button onClick={()=>setAchatModal(true)} style={{...Btn(S.gold),fontSize:12,padding:"7px 14px"}}>+ Ajouter</button>
-          </div>
-          {achats.length===0?<div style={{color:S.muted,fontSize:12,textAlign:"center",padding:12}}>Aucun achat aujourd'hui</div>:
-          achats.map(a=>(
-            <div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
-              <div><span style={{fontSize:16}}>{a.ingEmoji}</span> {a.ingName} <span style={{color:S.blue,fontWeight:700}}>+{a.qty}{a.unit}</span></div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontWeight:700,color:S.red}}>{fmt(a.price)}</div>
-                <div style={{fontSize:10,color:S.muted}}>{a.time}</div>
-              </div>
-            </div>
-          ))}
-          {achats.length>0&&<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}>
-            <span>Total achats</span>
-            <span style={{color:S.red}}>{fmt(achats.reduce((s,a)=>s+a.price,0))}</span>
-          </div>}
-        </div>
-
-        {/* Impact stock */}
-        {achats.length>0&&<div style={Card()}>
-          <div style={{fontWeight:700,color:S.blue,fontSize:12,marginBottom:8,letterSpacing:1}}>📦 IMPACT SUR LE STOCK</div>
-          {ingredients.filter(ing=>achats.some(a=>a.ingId===ing.id)).map(ing=>{
-            const totalAchat=achats.filter(a=>a.ingId===ing.id).reduce((s,a)=>s+a.qty,0);
-            return(
-              <div key={ing.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
-                <span>{ing.emoji} {ing.name}</span>
-                <span style={{color:S.green,fontWeight:700}}>+{fmtQ(totalAchat,ing.unit)} ajouté au stock</span>
-              </div>
-            );
-          })}
-        </div>}
-      </div>}
-
-      {/* ══ PLANNING ══ */}
-      {tab==="planning"&&<div style={{padding:14}}>
-        <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:12,marginBottom:14,fontSize:12,color:"#aaa",lineHeight:1.6}}>🧮 Entrez les quantités à produire. L'outil calcule les ingrédients en KG et votre liste de courses exacte.</div>
-        {[...new Set(recipes.map(r=>r.category))].map(cat=>(
-          <div key={cat} style={Card()}>
-            <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
-            {recipes.filter(r=>r.category===cat).map(rec=>(
-              <div key={rec.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${S.border}`}}>
-                <div style={{fontSize:22,minWidth:28}}>{rec.emoji}</div>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{rec.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • ")}</div></div>
-                <input type="number" min="0" placeholder="0" value={planQty[rec.id]||""} onChange={e=>setPlanQty(p=>({...p,[rec.id]:parseInt(e.target.value)||0}))} style={{...Inp("65px"),padding:"7px 8px",fontSize:14,textAlign:"center",fontWeight:700}}/>
-                <span style={{fontSize:10,color:S.muted,minWidth:20}}>pcs</span>
-                {user.role==="patron"&&<button onClick={()=>{const nr=recipes.filter(r=>r.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);showToast("Retiré du planning",S.orange);}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"3px 6px",cursor:"pointer",fontSize:11}}>🗑</button>}
-              </div>
-            ))}
-          </div>
-        ))}
-        {totalPlanUnits>0&&<>
-          <div style={Card(S.gold)}>
-            <div style={{fontSize:11,fontWeight:700,color:S.gold,letterSpacing:1,marginBottom:10}}>🛒 INGRÉDIENTS NÉCESSAIRES</div>
-            {shopping.map((ing,i)=>(
-              <div key={i} style={{marginBottom:8,paddingBottom:8,borderBottom:`1px solid ${S.border}`}}>
-                <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:700}}>{ing.name}</span><span style={{fontSize:14,fontWeight:800,color:S.gold}}>{fmtQ(ing.needed,ing.unit)}</span></div>
-                <div style={{display:"flex",gap:8,marginTop:4}}>
-                  <div style={{flex:1,background:S.card2,borderRadius:6,padding:"3px 8px",textAlign:"center"}}><div style={{fontSize:9,color:S.muted}}>En stock</div><input type="number" step="0.001" value={planStock[ing.id]||""} placeholder="0" onChange={e=>setPlanStock(p=>({...p,[ing.id]:parseFloat(e.target.value)||0}))} style={{width:"100%",background:"transparent",border:"none",color:S.blue,fontSize:12,fontWeight:700,textAlign:"center",outline:"none"}}/></div>
-                  <div style={{flex:1,background:ing.toBuy>0?"#1a0000":"#0d1a0d",borderRadius:6,padding:"4px 8px",textAlign:"center",border:`1px solid ${ing.toBuy>0?S.red:S.green}`}}><div style={{fontSize:9,color:S.muted}}>À acheter</div><div style={{fontSize:13,fontWeight:800,color:ing.toBuy>0?S.red:S.green}}>{ing.toBuy>0?fmtQ(ing.toBuy,ing.unit):"✓ OK"}</div></div>
+              {status === 'paye' && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: '#70b070' }}>✅ Payé — {sess.duree}min {sess.joueurs}J — {fmt(sess.prixPaye)}</span>
+                  <button style={S.btn('#2a6a2a')} onClick={() => demarrerSession(st.id)}>▶ Démarrer la partie</button>
                 </div>
-              </div>
-            ))}
-          </div>
-          {shopping.some(s=>s.toBuy>0)&&<div style={Card(S.red)}><div style={{fontSize:11,fontWeight:700,color:S.red,letterSpacing:1,marginBottom:8}}>🛒 LISTE DE COURSES</div>{shopping.filter(s=>s.toBuy>0).map((ing,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${S.border}`,fontSize:13}}><span>□ {ing.name}</span><span style={{fontWeight:800,color:S.red}}>{fmtQ(ing.toBuy,ing.unit)}</span></div>)}<button onClick={()=>{const txt=`🛒 COURSES ${currentStore.name}\nPour ${totalPlanUnits} pièces\n\n${shopping.filter(s=>s.toBuy>0).map(s=>`□ ${s.name} : ${fmtQ(s.toBuy,s.unit)}`).join("\n")}\n\n${timeStr()}`;try{navigator.clipboard.writeText(txt);}catch(e){}showToast("✓ Copié","#25D366");}} style={{...Btn("#25D366"),width:"100%",marginTop:12,fontSize:12}}>📱 Copier pour WhatsApp</button></div>}
-        </>}
-        <button onClick={()=>setPlanQty({})} style={{width:"100%",background:"transparent",border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:10,cursor:"pointer",fontSize:12,marginTop:8}}>🔄 Remettre à zéro</button>
-      </div>}
-
-      {/* ══ RECETTES ══ */}
-      {tab==="recettes"&&<div style={{padding:14}}>
-        {[...new Set(recipes.map(r=>r.category))].map(cat=>(
-          <div key={cat} style={Card()}>
-            <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
-            {recipes.filter(r=>r.category===cat).map(rec=>(
-              <div key={rec.id} style={{background:S.card2,borderRadius:10,padding:12,marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>
-                  {user.role==="patron"&&<div style={{display:"flex",gap:6}}>
-                    <button onClick={()=>setEditRecModal({...rec,ingredients:rec.ingredients.map(i=>({...i}))})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button>
-                    <button onClick={()=>{const nr=recipes.filter(r=>r.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);showToast("Recette supprimée",S.orange);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>🗑</button>
-                  </div>}
+              )}
+              {status === 'en_cours' && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button style={S.btnSmall('#6a2a2a')} onClick={() => terminerSession(st.id)}>⏹ Fin de partie</button>
                 </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:4}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-                  <span style={{fontSize:10,color:S.muted}}>Coût de revient :</span>
-                  <span style={{fontSize:12,fontWeight:800,color:S.gold}}>{fmt(rec.ingredients.reduce((s,ri)=>{const ing=ingredients.find(x=>x.id===ri.id);return s+(ing?ri.qty*ing.unitCost:0);},0))}</span>
+              )}
+              {isPatron && (
+                <div style={{ display: 'flex', gap: 4, marginTop: 6, paddingTop: 6, borderTop: '1px solid #2a2a4a' }}>
+                  <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'station', item: st })}>✏️</button>
+                  <button style={S.btnSmall('#5a2a2a')} onClick={() => supprimerProduit('station', st.id)}>🗑</button>
                 </div>
-              </div>
-            ))}
-          </div>
-        ))}
-        {user.role==="patron"&&<button onClick={()=>setAddRecModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une recette manuellement</button>}
-        <div style={{background:"#0d0a1a",border:`1px solid ${S.purple}`,borderRadius:12,padding:14}}>
-          <div style={{fontWeight:700,color:S.purple,marginBottom:10,fontSize:13}}>🤖 Créer une recette avec l'IA</div>
-          <textarea value={aiRecInput} onChange={e=>setAiRecInput(e.target.value)} placeholder={"Décrivez votre plat...\nEx: Poulet yassa mariné oignon citron moutarde"} style={{...Inp(),height:70,resize:"none",fontSize:12,padding:"10px"}}/>
-          <button onClick={async()=>{if(!aiRecInput.trim())return;setAiRecLoading(true);const sys="Réponds UNIQUEMENT en JSON valide. Format: {name,emoji,category,snackId,ingredients:[{id,qty}]}. IDs: i1=Farine,i2=Lait,i3=Beurre,i4=Sucre,i5=Oeufs,i6=Confiture,i7=Nutella,i8=Poulet,i9=Fromage,i10=Thon,i11=Pain,i12=Levure. Quantités en kg.";const usr="Recette pour: "+aiRecInput;const txt=await callAI(sys,usr);try{const p=JSON.parse(txt.replace(/```json|```/g,"").trim());if(p.name){const nr=[...recipes,{...p,id:"r"+uid()}];setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);setAiRecInput("");showToast("✓ Recette IA ajoutée !");}}catch(e){showToast("IA: réessayez avec plus de détails",S.orange);}setAiRecLoading(false);}} disabled={aiRecLoading||!aiRecInput.trim()} style={{...Btn(S.purple,"#fff"),width:"100%",marginTop:10,fontSize:12,opacity:aiRecLoading||!aiRecInput.trim()?0.5:1}}>{aiRecLoading?"⏳ Génération...":"🤖 Générer"}</button>
-        </div>
-      </div>}
-
-      {/* ══ IA ══ */}
-      {tab==="ia"&&<div style={{padding:14,display:"flex",flexDirection:"column",minHeight:"calc(100vh - 160px)"}}>
-        <div style={{display:"flex",gap:8,marginBottom:12}}>
-          <button onClick={generateSuggestions} disabled={suggestLoading} style={{...Btn(S.purple,"#fff"),flex:1,fontSize:12,opacity:suggestLoading?0.5:1}}>{suggestLoading?"⏳ Analyse...":"💡 Suggestions Hebdo"}</button>
-          <button onClick={generateInsight} disabled={insightLoading} style={{...Btn(S.card2,S.gold),flex:1,fontSize:12,border:`1px solid ${S.gold}`,opacity:insightLoading?0.5:1}}>{insightLoading?"⏳":"📊 Insight"}</button>
-        </div>
-        {aiSuggestions.length>0&&<div style={{marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:700,color:S.purple,marginBottom:8,letterSpacing:1}}>💡 SUGGESTIONS D'AMÉLIORATION</div>
-          {aiSuggestions.map(s=>(
-            <div key={s.id} style={{...Card(s.impact==="high"?S.red:s.impact==="medium"?S.gold:S.border),marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <span style={{fontSize:14}}>{s.emoji}</span>
-                <span style={{fontSize:9,background:s.impact==="high"?S.red:s.impact==="medium"?S.gold:S.border,color:s.impact==="high"?"#fff":S.bg,padding:"2px 6px",borderRadius:10,fontWeight:700}}>{s.impact==="high"?"URGENT":s.impact==="medium"?"IMPORTANT":"INFO"}</span>
-              </div>
-              <div style={{fontSize:12,fontWeight:700,marginBottom:4}}>{s.title}</div>
-              <div style={{fontSize:11,color:"#ccc",lineHeight:1.5}}>{s.description}</div>
+              )}
             </div>
-          ))}
-        </div>}
-        <div ref={chatRef} style={{flex:1,overflowY:"auto",marginBottom:12,display:"flex",flexDirection:"column",gap:10,minHeight:200}}>
-          {aiMessages.map((m,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-              <div style={{maxWidth:"88%",background:m.role==="user"?S.gold:S.card2,color:m.role==="user"?S.bg:S.text,borderRadius:12,padding:"10px 14px",fontSize:12,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
-            </div>
-          ))}
-          {aiLoading&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{background:S.card2,borderRadius:12,padding:"10px 14px",fontSize:12,color:S.muted}}>⏳ Analyse...</div></div>}
-        </div>
-        <div style={{display:"flex",gap:8}}><input value={aiInput} onChange={e=>setAiInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendAiMessage()} placeholder="Posez votre question..." style={{...Inp(),fontSize:13}}/><button onClick={sendAiMessage} disabled={aiLoading||!aiInput.trim()} style={{...Btn(S.purple,"#fff"),padding:"10px 14px",fontSize:18,opacity:aiLoading||!aiInput.trim()?0.5:1}}>▶</button></div>
-        <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
-          {["🔍 Analyse les pertes","🛒 Courses pour 100 crêpes","💡 Comment augmenter le CA","📈 Meilleur produit à pousser"].map(q=><button key={q} onClick={()=>setAiInput(q)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:20,padding:"5px 10px",cursor:"pointer",fontSize:10}}>{q}</button>)}
-        </div>
-      </div>}
+          )
+        })}
+        {isPatron && (
+          <button style={{ ...S.btn('#2a4a2a'), width: '100%', padding: 12, marginTop: 6 }}
+            onClick={() => setModal({ type: 'edit_produit', prodType: 'station', item: { nom: '', emoji: '🎮', prix1j: 500, prix2j: 1000 } })}>
+            ＋ Ajouter une station
+          </button>
+        )}
+      </div>
+    )
+  }
 
-      {/* ══ BILAN ══ */}
-      {tab==="bilan"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-          <button onClick={()=>setCashModal(true)} style={{...Btn(S.orange),flex:1,fontSize:12}}>💵 Clôturer</button>
-          <button onClick={()=>setWhatsModal(true)} style={{...Btn("#25D366"),flex:1,fontSize:12}}>📱 WhatsApp</button>
-          {user.role==="patron"&&<button onClick={()=>setEmpModal(true)} style={{...Btn(S.card2,S.gold),border:`1px solid ${S.gold}`,flex:1,fontSize:12}}>👥 Équipe</button>}
-          <button onClick={()=>setExpModal(true)} style={{...Btn(S.orange,"#fff"),flex:1,fontSize:12}}>💸 Dépense</button>
-        </div>
-        {expenses.length>0&&<div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontWeight:700,color:S.orange,fontSize:12}}>💸 DÉPENSES</div></div>{expenses.map(e=><div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><div>{e.emoji} {e.label}</div><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:S.red,fontWeight:700}}>{fmt(e.amount)}</span>{user.role==="patron"&&<button onClick={()=>{const ne=expenses.filter(x=>x.id!==e.id);setExpenses(ne);saveDay({expenses:ne});}} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div>)}<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}><span>Total</span><span style={{color:S.red}}>{fmt(totalExpenses)}</span></div></div>}
-        {/* Flux financier cohérent */}
-        <div style={Card()}>
-          <div style={{fontWeight:700,color:S.gold,fontSize:12,marginBottom:10,letterSpacing:1}}>🔄 FLUX FINANCIER DU JOUR</div>
-          {[
-            {icon:"🛍️",label:"Achats fournisseurs",value:-achats.reduce((s,a)=>s+a.price,0),color:S.red},
-            {icon:"🥞",label:"CA Food & Boissons",value:totalFood,color:S.gold},
-            {icon:"🎮",label:"CA Gaming",value:totalGaming,color:S.blue},
-            {icon:"🖨️",label:"CA Photocopies",value:photoCount*photoPrice,color:S.purple},
-          ].map((x,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${S.border}`,fontSize:13}}>
-              <span>{x.icon} {x.label}</span>
-              <span style={{fontWeight:700,color:x.color}}>{x.value<0?"− ":"+ "}{fmt(Math.abs(x.value))}</span>
-            </div>
-          ))}
-          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",marginTop:4,borderTop:`2px solid ${S.border}`}}>
-            <span style={{fontWeight:800,fontSize:14}}>BÉNÉFICE NET</span>
-            <span style={{fontWeight:800,fontSize:18,color:netProfit>=0?S.green:S.red}}>{fmt(netProfit)}</span>
-          </div>
-        </div>
-
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {[{l:"CA TOTAL",v:totalCA,c:S.green},{l:"ACHATS",v:achats.reduce((s,a)=>s+a.price,0),c:S.red},{l:"BÉNÉFICE NET",v:netProfit,c:netProfit>=0?S.green:S.red},{l:"GAMING",v:totalGaming,c:S.blue},{l:"VENTES",v:sales.length,c:S.orange,n:true},{l:"TICKETS",v:ticketNo-1001,c:S.teal,n:true}].map(c=><div key={c.l} style={{...Card(),textAlign:"center"}}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:c.n?28:16,fontWeight:800,color:c.c}}>{c.n?c.v:fmt(c.v)}</div></div>)}
-        </div>
-        <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>📅 7 JOURS</div>{last7.map(d=><div key={d.ds} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><span style={{color:S.muted,minWidth:36}}>{d.label}</span><div style={{display:"flex",gap:16}}><span style={{color:d.ca>0?S.green:S.muted,fontWeight:700}}>{fmt(d.ca)}</span><span style={{color:d.net>=0?S.green:S.red,fontSize:11}}>net {fmt(d.net)}</span></div></div>)}</div>
-        <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{sale.noTicket&&<span style={{background:S.orange,color:"#fff",fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,marginLeft:4}}>Sans ticket</span>}{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{fontSize:10,color:"#aaa",marginTop:2}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</div></div>)}</div>
-      </div>}
-
-      {/* ══ AIDE ══ */}
-      {tab==="aide"&&<div style={{padding:14}}>
-        {guideSection===null?<>
-          <div style={{textAlign:"center",marginBottom:20}}>
-            <div style={{fontSize:40,marginBottom:8}}>❓</div>
-            <div style={{fontSize:18,fontWeight:800,color:S.gold}}>GUIDE EMPLOYÉ</div>
-            <div style={{fontSize:12,color:S.muted,marginTop:4}}>Appuyez sur une section pour apprendre</div>
-          </div>
-          {/* Progress indicator */}
-          <div style={Card()}>
-            <div style={{fontSize:11,fontWeight:700,color:S.muted,marginBottom:10,letterSpacing:1}}>📊 VOTRE PROGRESSION</div>
-            <div style={{display:"flex",gap:8}}>
-              {GUIDE_SECTIONS.map((gs,i)=>(
-                <div key={gs.id} style={{flex:1,textAlign:"center"}}>
-                  <div style={{fontSize:18}}>{gs.emoji}</div>
-                  <div style={{width:"100%",height:4,background:S.card2,borderRadius:2,marginTop:4}}><div style={{width:"0%",height:"100%",background:gs.color,borderRadius:2}}/></div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {GUIDE_SECTIONS.map(gs=>(
-              <button key={gs.id} onClick={()=>setGuideSection(gs.id)} style={{background:S.card,border:`2px solid ${gs.color}`,borderRadius:12,padding:"16px 12px",cursor:"pointer",textAlign:"center",transition:"transform .15s"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.97)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
-                <div style={{fontSize:32,marginBottom:6}}>{gs.emoji}</div>
-                <div style={{fontSize:12,fontWeight:700,color:gs.color}}>{gs.title}</div>
-                <div style={{fontSize:10,color:S.muted,marginTop:4}}>{gs.steps.length} étapes</div>
-              </button>
-            ))}
-          </div>
-          <div style={{...Card(S.teal),marginTop:4}}>
-            <div style={{fontWeight:700,color:S.teal,fontSize:13,marginBottom:10}}>📱 VIDÉOS DE FORMATION</div>
-            <div style={{fontSize:11,color:"#aaa",lineHeight:1.7}}>
-              Des vidéos de formation sont disponibles sur WhatsApp.<br/>
-              Demandez le lien à votre patron.
-            </div>
-            <div style={{marginTop:12,display:"flex",flexDirection:"column",gap:6}}>
-              {["📹 Vidéo 1 : Prendre une commande","📹 Vidéo 2 : Gérer le gaming","📹 Vidéo 3 : Saisir les stocks","📹 Vidéo 4 : Rapport du soir"].map(v=>(
-                <div key={v} style={{background:S.card2,borderRadius:8,padding:"8px 12px",fontSize:12,color:S.muted}}>{v}</div>
-              ))}
-            </div>
-          </div>
-          <div style={{...Card(S.gold),marginTop:4}}>
-            <div style={{fontWeight:700,color:S.gold,fontSize:13,marginBottom:8}}>🚀 À RETENIR ABSOLUMENT</div>
-            {["Toujours imprimer le ticket avant d'encaisser","Jamais vendre sans enregistrer dans l'outil","Compter le stock physiquement chaque soir","En cas de doute → appeler le patron"].map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:S.gold,color:S.bg,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:11,flexShrink:0}}>{i+1}</div>
-                <span>{r}</span>
-              </div>
-            ))}
-          </div>
-        </>:
-        <div>
-          {(() => {
-            const gs=GUIDE_SECTIONS.find(x=>x.id===guideSection);
-            if(!gs) return null;
-            return(<>
-              <button onClick={()=>setGuideSection(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,marginBottom:16}}>← Retour au guide</button>
-              <div style={{textAlign:"center",marginBottom:20}}>
-                <div style={{fontSize:52,marginBottom:8}}>{gs.emoji}</div>
-                <div style={{fontSize:20,fontWeight:800,color:gs.color}}>{gs.title}</div>
-              </div>
-              {gs.steps.map((step,i)=>(
-                <div key={i} style={{display:"flex",gap:14,marginBottom:16,padding:14,background:S.card,borderRadius:12,border:`1px solid ${S.border}`,borderLeft:`4px solid ${gs.color}`}}>
-                  <div style={{fontSize:24,flexShrink:0,marginTop:2}}>{step.icon}</div>
-                  <div style={{fontSize:13,color:"#ddd",lineHeight:1.7}}>{step.text}</div>
-                </div>
-              ))}
-              <div style={{background:`${gs.color}15`,border:`1px solid ${gs.color}`,borderRadius:12,padding:16,textAlign:"center"}}>
-                <div style={{fontSize:14,fontWeight:700,color:gs.color}}>✅ Compris !</div>
-                <div style={{fontSize:11,color:S.muted,marginTop:4}}>Si vous avez des questions, demandez à votre responsable.</div>
-              </div>
-            </>);
-          })()}
-        </div>}
-      </div>}
-
-      {/* ══ AUDIT ══ */}
-      {tab==="audit"&&<div style={{padding:14}}>
-        {audit.map(e=><div key={e.id} style={{background:S.card,borderRadius:8,padding:"8px 12px",marginBottom:6,borderLeft:`3px solid ${e.action.includes("SUPPR")?S.red:e.action.includes("VENTE")||e.action.includes("SESSION")?S.green:e.action.includes("DÉP")?S.orange:S.border}`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:11,fontWeight:700,color:e.action.includes("SUPPR")?S.red:S.text}}>{e.action}</span><span style={{fontSize:10,color:S.muted}}>{e.time}</span></div><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#aaa"}}>{e.details}</span><span style={{fontSize:10,color:e.role==="patron"?S.gold:S.blue}}>{e.who}</span></div></div>)}
-        {audit.length===0&&<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:20}}>Aucune action</div>}
-      </div>}
-
-      {/* ══ MODALS ══ */}
-
-      {/* Store selector */}
-      {storeModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🏪 SÉLECTIONNER LA BOUTIQUE</div>
-          {STORES.map(store=>(
-            <button key={store.id} onClick={()=>{setCurrentStore(store);setStoreModal(false);showToast(`✓ ${store.name}`);}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",background:store.id===currentStore.id?S.card2:S.card,border:`2px solid ${store.id===currentStore.id?S.gold:S.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",color:S.text,marginBottom:8,textAlign:"left"}}>
-              <span style={{fontSize:28}}>{store.emoji}</span>
-              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:store.id===currentStore.id?S.gold:S.text}}>{store.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>Appuyez pour sélectionner</div></div>
-              {store.id===currentStore.id&&<span style={{color:S.gold,fontSize:18}}>✓</span>}
+  // ============================================================
+  // RENDER ONGLET — ACHATS
+  // ============================================================
+  function renderAchats() {
+    const totalJ = achats.reduce((s, a) => s + a.prixTotal, 0)
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={S.h2}>📸 Enregistrer un achat</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button style={S.btn('#4a2a5a')} onClick={() => fileInputRef.current && fileInputRef.current.click()}>
+              {photoLoading ? '⏳ Analyse...' : '📷 Photo de facture'}
             </button>
-          ))}
-          <button onClick={()=>setStoreModal(false)} style={{...{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%"},marginTop:8}}>Fermer</button>
-        </div>
-      </div>}
-
-      {/* Edit Station Modal */}
-      {editStationModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`2px solid ${S.blue}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>✏️ Modifier la console</div>
-          <div style={{display:"flex",gap:8,marginBottom:12}}>
-            <div style={{flex:1}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Emoji</div><input value={editStationModal.emoji} onChange={e=>setEditStationModal(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:20,textAlign:"center",padding:"8px"}}/></div>
-            <div style={{flex:3}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Nom</div><input value={editStationModal.name} onChange={e=>setEditStationModal(p=>({...p,name:e.target.value}))} style={Inp()}/></div>
+            <button style={S.btn('#2a3a5a')} onClick={() => setModal({ type: 'achat_manuel' })}>
+              ✏️ Saisie manuelle
+            </button>
           </div>
-          {[{label:"Prix 1 joueur (F/30min)",key:"rate1"},{label:"Prix 2 joueurs (F/30min)",key:"rate2"}].map(f=>(
-            <div key={f.key} style={{marginBottom:12}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.label}</div>
-              <input type="number" value={editStationModal[f.key]} onChange={e=>setEditStationModal(p=>({...p,[f.key]:parseInt(e.target.value)||0}))} style={Inp()}/>
-            </div>
-          ))}
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>setEditStationModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{const ns=stations.map(s=>s.id===editStationModal.id?editStationModal:s);setStations(ns);saveStations(ns);setEditStationModal(null);showToast("✓ Console mise à jour");}} style={{...Btn(S.blue),flex:1}}>✓ Sauvegarder</button>
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={e => { if (e.target.files[0]) analyserPhoto(e.target.files[0]) }} />
+          <div style={{ fontSize: 11, color: '#6060a0', marginTop: 8 }}>
+            📷 Prends en photo une facture fournisseur → l'IA lit et enregistre automatiquement
           </div>
         </div>
-      </div>}
-
-      {/* Add Station Modal */}
-      {addStationModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`2px solid ${S.purple}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.purple,marginBottom:16}}>＋ Nouvelle console</div>
-          <div style={{display:"flex",gap:8,marginBottom:12}}>
-            <div style={{flex:1}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Emoji</div><input value={newStation.emoji} onChange={e=>setNewStation(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:20,textAlign:"center",padding:"8px"}}/></div>
-            <div style={{flex:3}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Nom</div><input value={newStation.name} placeholder="Ex: PS5 N°7" onChange={e=>setNewStation(p=>({...p,name:e.target.value}))} style={Inp()}/></div>
+        <div style={S.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={S.h2}>📋 Achats du jour</span>
+            <span style={{ fontSize: 13, color: '#ff8060', fontWeight: 'bold' }}>−{fmt(totalJ)}</span>
           </div>
-          {[{label:"Prix 1 joueur (F/30min)",key:"rate1",ph:"1000"},{label:"Prix 2 joueurs (F/30min)",key:"rate2",ph:"1500"}].map(f=>(
-            <div key={f.key} style={{marginBottom:12}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.label}</div>
-              <input type="number" value={newStation[f.key]} placeholder={f.ph} onChange={e=>setNewStation(p=>({...p,[f.key]:parseInt(e.target.value)||0}))} style={Inp()}/>
-            </div>
-          ))}
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>setAddStationModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(!newStation.name)return;const s={...newStation,id:`st${uid()}`};const ns=[...stations,s];setStations(ns);saveStations(ns);setAddStationModal(false);setNewStation({name:"",emoji:"🎮",rate1:1000,rate2:1500});showToast("✓ Console ajoutée");}} style={{...Btn(S.purple,"#fff"),flex:1}}>✓ Ajouter</button>
-          </div>
-        </div>
-      </div>}
-
-      {/* Achat Modal */}
-      {achatModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🛍️ Nouvel achat</div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Ingrédient</div>
-            <select value={newAchat.ingId} onChange={e=>setNewAchat(p=>({...p,ingId:e.target.value}))} style={{...Inp(),fontSize:13}}>
-              <option value="">-- Choisir --</option>
-              {ingredients.map(i=><option key={i.id} value={i.id}>{i.emoji} {i.name} ({i.unit})</option>)}
-            </select>
-          </div>
-          <div style={{display:"flex",gap:10,marginBottom:12}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Quantité ({newAchat.ingId?ingredients.find(i=>i.id===newAchat.ingId)?.unit||"":""}) </div>
-              <input type="number" step="0.001" value={newAchat.qty} placeholder="Ex: 5" onChange={e=>setNewAchat(p=>({...p,qty:e.target.value}))} style={Inp()}/>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix payé (FCFA)</div>
-              <input type="number" value={newAchat.price} placeholder="Ex: 1500" onChange={e=>setNewAchat(p=>({...p,price:e.target.value}))} style={Inp()}/>
-            </div>
-          </div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Note (optionnel)</div>
-            <input type="text" value={newAchat.note} placeholder="Ex: Marché Sandaga" onChange={e=>setNewAchat(p=>({...p,note:e.target.value}))} style={Inp()}/>
-          </div>
-          {newAchat.ingId&&newAchat.qty&&<div style={{background:"#0d1a0d",borderRadius:8,padding:10,marginBottom:12,fontSize:12,color:S.green}}>
-            ✅ Stock actuel : {fmtQ(ingStock[newAchat.ingId]?.opening||0,ingredients.find(i=>i.id===newAchat.ingId)?.unit||"kg")}
-            → Après achat : {fmtQ((ingStock[newAchat.ingId]?.opening||0)+(parseFloat(newAchat.qty)||0),ingredients.find(i=>i.id===newAchat.ingId)?.unit||"kg")}
-          </div>}
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setAchatModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={addAchat} disabled={!newAchat.ingId||!newAchat.qty||!newAchat.price} style={{...Btn(S.gold),flex:1,opacity:newAchat.ingId&&newAchat.qty&&newAchat.price?1:0.4}}>✓ Enregistrer</button>
-          </div>
-        </div>
-      </div>}
-
-      {/* Production modal */}
-      {prodModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.green}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.green,marginBottom:4}}>🍳 Production</div>
-          <div style={{fontSize:13,color:S.muted,marginBottom:12}}>{prodModal.emoji} {prodModal.name}</div>
-          {(() => {const rec=recipes.find(r=>r.snackId===prodModal.id);return rec?<div style={{background:S.card2,borderRadius:8,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?<div key={ri.id}>{ing.emoji} {fmtQ(ri.qty,ing.unit)} {ing.name} (dispo: {fmtQ(ingRem(ing.id),ing.unit)})</div>:null;})}</div>:null;})()}
-          <input type="number" value={prodQtyVal} placeholder="Quantité à fabriquer" autoFocus onChange={e=>setProdQtyVal(e.target.value)} style={Inp()}/>
-          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setProdModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={recordProduction} style={{...Btn(S.green),flex:1}}>✓ Confirmer</button></div>
-        </div>
-      </div>}
-
-      {/* Add ingredient */}
-      {addIngModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>＋ Nouvel ingrédient</div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:6}}>Emoji — Appuie pour choisir</div>
-            <EmojiPicker selected={newIng.emoji} onSelect={e=>setNewIng(p=>({...p,emoji:e}))}/>
-          </div>
-          {[{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg, L, pcs)",k:"unit",t:"text",ph:"kg"},{l:"Coût/unité (F)",k:"unitCost",t:"number",ph:"300"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newIng[f.k]} placeholder={f.ph} onChange={e=>setNewIng(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setAddIngModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newIng.name)return;const i={id:`i${uid()}`,name:newIng.name,unit:newIng.unit||"kg",emoji:newIng.emoji||"🥄",unitCost:parseFloat(newIng.unitCost)||0};const ni=[...ingredients,i];setIngredients(ni);saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);addAudit("AJOUT ING",`${i.emoji}${i.name}`);setAddIngModal(false);setNewIng({name:"",unit:"kg",emoji:"🥄",unitCost:""});showToast("✓ Ingrédient ajouté");}} style={{...Btn(S.blue),flex:1}}>✓ Ajouter</button></div>
-        </div>
-      </div>}
-
-      {/* Add/Edit product with AI emoji */}
-      {(addProdModal||editProd)&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${addProdModal?S.gold:S.blue}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:addProdModal?S.gold:S.blue,marginBottom:16}}>{addProdModal?"＋ Nouveau produit":"✏️ Modifier"}</div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Nom du produit</div>
-            <div style={{display:"flex",gap:8}}>
-              <input type="text" value={editProd?editProd.name:newProd.name} onChange={e=>{const v=e.target.value;editProd?setEditProd(p=>({...p,name:v})):setNewProd(p=>({...p,name:v}));}} style={{...Inp(),flex:1}} placeholder="Ex: Crêpe Banane"/>
-            </div>
-          </div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span>Emoji — Appuie pour choisir</span>
-              <button onClick={async()=>{const name=editProd?.name||newProd.name;await suggestEmoji(name);}} disabled={emojiSuggesting||!(editProd?.name||newProd.name)} style={{background:S.purple,color:"#fff",border:"none",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10,opacity:emojiSuggesting?0.5:1}}>{emojiSuggesting?"⏳ IA...":"🤖 Suggérer"}</button>
-            </div>
-            <EmojiPicker selected={editProd?editProd.emoji:newProd.emoji} onSelect={e=>editProd?setEditProd(p=>({...p,emoji:e})):setNewProd(p=>({...p,emoji:e}))}/>
-          </div>
-          <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix (FCFA)</div><input type="number" value={editProd?editProd.price:newProd.price} onChange={e=>editProd?setEditProd(p=>({...p,price:e.target.value})):setNewProd(p=>({...p,price:e.target.value}))} style={Inp()}/></div>
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>{setAddProdModal(null);setEditProd(null);}} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(editProd){const up={...editProd,price:parseInt(editProd.price)||0};if(editProd.cat==="boissons"){const nb=boissons.map(p=>p.id===up.id?up:p);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.map(p=>p.id===up.id?up:p);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}addAudit("MODIF",`${up.name}`);setEditProd(null);showToast("✓ Mis à jour");}else{if(!newProd.name||!newProd.price)return;const p={id:`c${uid()}`,name:newProd.name,price:parseInt(newProd.price)||0,emoji:newProd.emoji||"🍽️"};if(addProdModal==="boissons"){const nb=[...boissons,p];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=[...snacks,p];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}addAudit("AJOUT",`${p.emoji}${p.name}`);setAddProdModal(null);setNewProd({name:"",price:"",emoji:"🍽️"});showToast("✓ Produit ajouté");}}} style={{...Btn(editProd?S.blue:S.gold),flex:1}}>✓ {editProd?"Modifier":"Ajouter"}</button>
-          </div>
-        </div>
-      </div>}
-
-      {/* Cash modal */}
-      {cashModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:16,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:380,border:`2px solid ${S.orange}`,marginTop:20}}>
-          <div style={{fontWeight:800,fontSize:16,color:S.orange,marginBottom:16}}>💵 CLÔTURE DE CAISSE</div>
-          {BILLETS.map(b=><div key={b} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}><div style={{width:80,fontSize:13,fontWeight:700,color:S.gold}}>{b.toLocaleString()} F</div><input type="number" value={cashCount[b]??""} placeholder="0" onChange={e=>setCashCount(p=>({...p,[b]:Number(e.target.value)||0}))} style={{...Inp("80px"),padding:"7px 10px",fontSize:13,textAlign:"center"}}/><div style={{fontSize:12,color:"#aaa",flex:1,textAlign:"right"}}>{fmt((cashCount[b]||0)*b)}</div></div>)}
-          <div style={{borderTop:`2px solid ${S.border}`,marginTop:14,paddingTop:14}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span>Caisse comptée</span><span style={{fontSize:16,fontWeight:800,color:S.gold}}>{fmt(cashTotal)}</span></div><div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span>CA système</span><span style={{fontSize:16,fontWeight:800,color:S.blue}}>{fmt(totalCA)}</span></div><div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderTop:`1px solid ${S.border}`}}><span style={{fontWeight:700}}>Écart</span><span style={{fontSize:18,fontWeight:800,color:cashDiff>=0?S.green:S.red}}>{cashDiff>=0?"+":""}{fmt(cashDiff)}</span></div>{cashDiff<0&&<div style={{background:"#1a0000",borderRadius:8,padding:"8px",fontSize:12,color:S.red,fontWeight:700,marginBottom:10}}>⚠️ MANQUE {fmt(Math.abs(cashDiff))} — Audit enregistré</div>}</div>
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setCashModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{addAudit("CLOTURE CAISSE",`Comptée:${fmt(cashTotal)} Écart:${fmt(cashDiff)}`);setCashModal(false);showToast(cashDiff>=0?"✓ Caisse OK":"⚠️ Écart noté",cashDiff>=0?S.green:S.red);}} style={{...Btn(cashDiff>=0?S.green:S.orange),flex:1}}>✓ Valider</button></div>
-        </div>
-      </div>}
-
-      {/* WhatsApp */}
-      {whatsModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid #25D366`}}>
-          <div style={{fontWeight:800,fontSize:15,color:"#25D366",marginBottom:12}}>📱 RAPPORT WHATSAPP</div>
-          <div style={{background:S.card2,borderRadius:10,padding:14,fontSize:11,color:"#ccc",lineHeight:1.8,maxHeight:280,overflowY:"auto",whiteSpace:"pre-wrap",fontFamily:"monospace"}}>
-            {`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 Objectif: ${goalPct}%\n\n🥞 Food: ${fmt(totalFood)} (${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes)\n🎮 Gaming: ${fmt(totalGaming)} (${doneSess.length} sessions)\n🎫 Tickets émis: ${ticketNo-1001}\n💸 Dépenses: ${fmt(totalExpenses)}\n\n${top5.length?`⭐ Top:\n${top5.map(p=>`• ${p.emoji}${p.name}: ${p.sold}×`).join("\n")}\n\n`:""}${lossAlerts.length?`🚨 PERTES:\n${lossAlerts.map(p=>`• ${p.emoji}${p.name}: ${lossQty(p.id)} manquant(s) = ${fmt(lossQty(p.id)*p.price)}`).join("\n")}\n\n`:"✅ Stock OK\n\n"}🔒 ${timeStr()} — ${user.name}`}
-          </div>
-          <div style={{display:"flex",gap:10,marginTop:14}}><button onClick={()=>setWhatsModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Fermer</button><button onClick={()=>{try{navigator.clipboard.writeText(`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 ${goalPct}%\n\nFood: ${fmt(totalFood)} | Gaming: ${fmt(totalGaming)}\n🎫 ${ticketNo-1001} tickets\nDépenses: ${fmt(totalExpenses)}\n\n${lossAlerts.length?`🚨 PERTES: ${lossAlerts.map(p=>`${p.name}: ${lossQty(p.id)} manquant(s)`).join(", ")}\n`:"✅ Stock OK\n"}\n🔒 ${timeStr()} — ${user.name}`);}catch(e){}showToast("✓ Copié","#25D366");}} style={{...Btn("#25D366"),flex:1}}>📋 Copier</button></div>
-        </div>
-      </div>}
-
-      {/* Employees */}
-      {empModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:16,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid ${S.gold}`,marginTop:20}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>👥 ÉQUIPE</div>
-          {editEmp?<div><div style={{fontSize:12,color:S.muted,marginBottom:12}}>Modifier {editEmp.name}</div>{[{l:"Nom",k:"name",t:"text"},{l:"PIN (4 chiffres)",k:"pin",t:"number"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={editEmp[f.k]} onChange={e=>setEditEmp(p=>({...p,[f.k]:f.k==="pin"?e.target.value.slice(0,4):e.target.value}))} style={Inp()}/></div>)}<div style={{display:"flex",gap:10}}><button onClick={()=>setEditEmp(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={async()=>{if(editEmp.pin.length===4&&editEmp.name){const ne=emps.map(e=>e.id===editEmp.id?editEmp:e);setEmps(ne);empRef.current=ne;await saveEmps(ne);setEditEmp(null);showToast("✓ Mis à jour");}}} disabled={editEmp.pin.length!==4} style={{...Btn(S.gold),flex:1,opacity:editEmp.pin.length===4?1:0.4}}>✓ Sauvegarder</button></div></div>
-          :<div>{emps.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${S.border}`}}><div style={{fontSize:22}}>{e.role==="patron"?"👑":"👤"}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:e.role==="patron"?S.gold:S.text}}>{e.name}</div><div style={{fontSize:10,color:S.muted}}>PIN: {"•".repeat(4)} • {e.role}</div></div><button onClick={()=>setEditEmp({...e})} style={{background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}}>✏️</button></div>)}<button onClick={()=>setEmpModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%",marginTop:12}}>Fermer</button></div>}
-        </div>
-      </div>}
-
-      {/* Expense */}
-      {expModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.orange}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.orange,marginBottom:16}}>💸 Nouvelle dépense</div>
-          {[{l:"Emoji",k:"emoji",t:"text",ph:"🛒"},{l:"Description",k:"label",t:"text",ph:"Achat farine..."},{l:"Montant (FCFA)",k:"amount",t:"number",ph:"5000"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newExp[f.k]} placeholder={f.ph} onChange={e=>setNewExp(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setExpModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newExp.label||!newExp.amount)return;const e={id:uid(),label:newExp.label,amount:parseInt(newExp.amount)||0,emoji:newExp.emoji||"🛒",time:timeStr()};const ne=[...expenses,e];setExpenses(ne);saveDay({expenses:ne});addAudit("DÉPENSE",`${e.emoji}${e.label} ${fmt(e.amount)}`);setExpModal(false);setNewExp({label:"",amount:"",emoji:"🛒"});showToast("Dépense enregistrée",S.orange);}} style={{...Btn(S.orange),flex:1}}>✓ Enregistrer</button></div>
-        </div>
-      </div>}
-
-
-      {/* Edit Recipe Modal */}
-      {editRecModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:300,padding:16,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid ${S.purple}`,marginTop:20}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.purple,marginBottom:16}}>✏️ Modifier la recette</div>
-          <div style={{display:"flex",gap:8,marginBottom:10}}>
-            <div style={{flex:1}}><div style={{fontSize:11,color:S.muted,marginBottom:3}}>Emoji</div><input value={editRecModal.emoji} onChange={e=>setEditRecModal(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:20,textAlign:"center",padding:"8px"}}/></div>
-            <div style={{flex:3}}><div style={{fontSize:11,color:S.muted,marginBottom:3}}>Nom</div><input value={editRecModal.name} onChange={e=>setEditRecModal(p=>({...p,name:e.target.value}))} style={Inp()}/></div>
-          </div>
-          <div style={{marginBottom:10}}><div style={{fontSize:11,color:S.muted,marginBottom:3}}>Catégorie</div><input value={editRecModal.category} onChange={e=>setEditRecModal(p=>({...p,category:e.target.value}))} style={Inp()}/></div>
-          <div style={{fontWeight:700,color:S.muted,fontSize:11,marginBottom:8,letterSpacing:1}}>INGRÉDIENTS (quantité par unité produite)</div>
-          {editRecModal.ingredients.map((ing,i)=>{
-            const ingObj=ingredients.find(x=>x.id===ing.id);
-            return(
-              <div key={i} style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
-                <select value={ing.id} onChange={e=>{const ni=[...editRecModal.ingredients];ni[i]={...ni[i],id:e.target.value};setEditRecModal(p=>({...p,ingredients:ni}));}} style={{flex:2,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px 8px",fontSize:12,outline:"none"}}>
-                  {ingredients.map(x=><option key={x.id} value={x.id}>{x.emoji} {x.name} ({x.unit})</option>)}
-                </select>
-                <input type="number" step="0.001" value={ing.qty} onChange={e=>{const ni=[...editRecModal.ingredients];ni[i]={...ni[i],qty:parseFloat(e.target.value)||0};setEditRecModal(p=>({...p,ingredients:ni}));}} style={{width:75,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px 4px",fontSize:12,outline:"none",textAlign:"center"}}/>
-                <div style={{fontSize:11,color:S.muted,minWidth:22}}>{ingObj?.unit||"kg"}</div>
-                <button onClick={()=>{const ni=editRecModal.ingredients.filter((_,j)=>j!==i);setEditRecModal(p=>({...p,ingredients:ni}));}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 6px",cursor:"pointer",fontSize:12}}>✕</button>
+          {achats.length === 0 && <div style={{ color: '#5a5a7a', fontSize: 12 }}>Aucun achat enregistré</div>}
+          {achats.map((a, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #2a2a4a' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13 }}>{a.nom}</div>
+                <div style={{ fontSize: 11, color: '#7070b0' }}>{a.quantite} {a.unite} — {a.heure}</div>
               </div>
-            );
+              <div style={{ color: '#ff8060', fontSize: 13, fontWeight: 'bold' }}>−{fmt(a.prixTotal)}</div>
+              <button style={S.btnSmall('#5a2a2a')} onClick={() => setAchats(prev => prev.filter((_, j) => j !== i))}>✕</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — STOCKS
+  // ============================================================
+  function renderStocks() {
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={S.h2}>📦 Stock matin (en kg/unités)</div>
+          {ingredients.map(ing => (
+            <div key={ing.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0' }}>
+              <span style={{ width: 24, fontSize: 16 }}>{ing.emoji}</span>
+              <span style={{ flex: 1, fontSize: 12 }}>{ing.nom}</span>
+              <input type="number" step="0.01" style={{ ...S.input, width: 80 }}
+                value={stockMatin[ing.id] ?? ''}
+                onChange={e => setStockMatin(prev => ({ ...prev, [ing.id]: parseFloat(e.target.value) || 0 }))}
+                placeholder={`${ing.unite}`} />
+              <span style={{ fontSize: 10, color: '#7070b0', width: 20 }}>{ing.unite}</span>
+            </div>
+          ))}
+        </div>
+        <div style={S.card}>
+          <div style={S.h2}>🍳 Production du jour</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button style={S.btnSmall('#2a4a2a')} onClick={() => setModal({ type: 'production' })}>
+              ＋ Ajouter une production
+            </button>
+          </div>
+          {productions.length === 0 && <div style={{ color: '#5a5a7a', fontSize: 12 }}>Aucune production enregistrée</div>}
+          {productions.map((p, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #2a2a4a' }}>
+              <span style={{ flex: 1, fontSize: 12 }}>{p.emoji} {p.nom} × {p.qte}</span>
+              <button style={S.btnSmall('#5a2a2a')} onClick={() => setProductions(prev => prev.filter((_, j) => j !== i))}>✕</button>
+            </div>
+          ))}
+        </div>
+        <div style={S.card}>
+          <div style={S.h2}>🌙 Stock soir (comptage physique)</div>
+          {ingredients.map(ing => {
+            const matin = stockMatin[ing.id] || 0
+            const theorique = matin // simplifié — à affiner avec déduction recettes
+            const soir = stockSoir[ing.id]
+            const ecart = soir !== undefined ? soir - theorique : null
+            return (
+              <div key={ing.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0' }}>
+                <span style={{ width: 24, fontSize: 16 }}>{ing.emoji}</span>
+                <span style={{ flex: 1, fontSize: 12 }}>{ing.nom}</span>
+                <input type="number" step="0.01" style={{ ...S.input, width: 80 }}
+                  value={stockSoir[ing.id] ?? ''}
+                  onChange={e => setStockSoir(prev => ({ ...prev, [ing.id]: parseFloat(e.target.value) || 0 }))}
+                  placeholder="soir" />
+                {ecart !== null && (
+                  <span style={{ fontSize: 10, color: ecart < -0.05 ? '#ff6060' : '#50e090', width: 50 }}>
+                    {ecart < -0.05 ? `⚠️ ${fmtKg(Math.abs(ecart))}` : '✅'}
+                  </span>
+                )}
+              </div>
+            )
           })}
-          <button onClick={()=>setEditRecModal(p=>({...p,ingredients:[...p.ingredients,{id:ingredients[0]?.id||"i1",qty:0.001}]}))} style={{width:"100%",background:"transparent",border:`1px dashed ${S.border}`,color:S.muted,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,marginBottom:14}}>＋ Ajouter un ingrédient</button>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setEditRecModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{const nr=recipes.map(r=>r.id===editRecModal.id?editRecModal:r);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);setEditRecModal(null);showToast("✓ Recette mise à jour");}} style={{background:S.purple,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — BILAN
+  // ============================================================
+  function renderBilan() {
+    const b = getBilan()
+    return (
+      <div>
+        <div style={{ ...S.card, background: '#0f2a1f' }}>
+          <div style={S.h2}>💰 Bilan du {today()}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13 }}>🛒 CA Food ({ventes.length} ventes)</span>
+              <span style={{ color: '#80e0a0', fontWeight: 'bold' }}>{fmt(b.caFood)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13 }}>🎮 CA Gaming ({gamingVentes.length} sessions)</span>
+              <span style={{ color: '#80e0a0', fontWeight: 'bold' }}>{fmt(b.caGaming)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13 }}>📦 Achats fournisseurs</span>
+              <span style={{ color: '#ff8060', fontWeight: 'bold' }}>−{fmt(b.totalAchats)}</span>
+            </div>
+            <div style={{ borderTop: '2px solid #3a5a3a', paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 16, fontWeight: 'bold' }}>✅ BÉNÉFICE NET</span>
+              <span style={{ fontSize: 18, fontWeight: 'bold', color: b.net >= 0 ? '#90e050' : '#ff6060' }}>{fmt(b.net)}</span>
+            </div>
           </div>
         </div>
-      </div>}
-
-      {/* Goal modal */}
-      {goalModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🎯 Objectif journalier</div>
-          <input type="number" value={newGoal} placeholder="150000" onChange={e=>setNewGoal(e.target.value)} style={Inp()}/>
-          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setGoalModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{const g=parseInt(newGoal)||DEFAULT_GOAL;setDailyGoal(g);saveProds(boissons,snacks,ingredients,recipes,photoPrice,g,ticketNo);setGoalModal(false);showToast("✓ Objectif mis à jour");}} style={{...Btn(S.gold),flex:1}}>✓ OK</button></div>
+        <div style={S.card}>
+          <div style={S.h2}>📱 Rapport WhatsApp</div>
+          <button style={{ ...S.btn('#25a25a'), width: '100%', padding: 12 }} onClick={rapportWhatsApp}>
+            📋 Copier le rapport
+          </button>
         </div>
-      </div>}
+        {isPatron && (
+          <div style={S.card}>
+            <div style={S.h2}>🏪 Boutique</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {['Limamoulaye', 'Guédiawaye 2', 'Pikine', 'Paris'].map(b => (
+                <button key={b} style={{ ...S.btnSmall(boutique === b ? '#4a4a8a' : '#2a2a4a') }} onClick={() => setBoutique(b)}>
+                  {boutique === b ? '✓ ' : ''}{b}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — PRODUITS (patron)
+  // ============================================================
+  function renderProduits() {
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={S.h2}>☕ Boissons</div>
+            <button style={S.btnSmall('#2a4a2a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'boisson', item: { nom: '', emoji: '☕', prix: 200 } })}>＋ Ajouter</button>
+          </div>
+          {boissons.map(b => (
+            <div key={b.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #2a2a4a' }}>
+              <span style={{ fontSize: 20 }}>{b.emoji}</span>
+              <span style={{ flex: 1, fontSize: 12 }}>{b.nom}</span>
+              <span style={{ fontSize: 12, color: '#80e0a0' }}>{fmt(b.prix)}</span>
+              <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'boisson', item: b })}>✏️</button>
+              <button style={S.btnSmall('#5a2a2a')} onClick={() => supprimerProduit('boisson', b.id)}>🗑</button>
+            </div>
+          ))}
+        </div>
+        <div style={S.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={S.h2}>🥞 Snacks</div>
+            <button style={S.btnSmall('#2a4a2a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'snack', item: { nom: '', emoji: '🥞', prix: 500 } })}>＋ Ajouter</button>
+          </div>
+          {snacks.map(s => (
+            <div key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #2a2a4a' }}>
+              <span style={{ fontSize: 20 }}>{s.emoji}</span>
+              <span style={{ flex: 1, fontSize: 12 }}>{s.nom}</span>
+              <span style={{ fontSize: 12, color: '#80e0a0' }}>{fmt(s.prix)}</span>
+              <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'snack', item: s })}>✏️</button>
+              <button style={S.btnSmall('#5a2a2a')} onClick={() => supprimerProduit('snack', s.id)}>🗑</button>
+            </div>
+          ))}
+        </div>
+        <div style={S.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={S.h2}>🌾 Ingrédients</div>
+            <button style={S.btnSmall('#2a4a2a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'ingredient', item: { nom: '', emoji: '🌾', stock: 0, unite: 'kg', prixKg: 0 } })}>＋ Ajouter</button>
+          </div>
+          {ingredients.map(i => (
+            <div key={i.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #2a2a4a' }}>
+              <span style={{ fontSize: 20 }}>{i.emoji}</span>
+              <span style={{ flex: 1, fontSize: 12 }}>{i.nom}</span>
+              <span style={{ fontSize: 11, color: '#7070b0' }}>{fmt(i.prixKg)}/{i.unite}</span>
+              <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'edit_produit', prodType: 'ingredient', item: i })}>✏️</button>
+              <button style={S.btnSmall('#5a2a2a')} onClick={() => supprimerProduit('ingredient', i.id)}>🗑</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — RECETTES (patron)
+  // ============================================================
+  function renderRecettes() {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button style={S.btnSmall('#2a4a2a')} onClick={() => setModal({ type: 'edit_recette', item: { nom: '', emoji: '🥞', ingredients: [] } })}>
+            ＋ Nouvelle recette
+          </button>
+        </div>
+        {recettes.map(r => {
+          const cout = r.ingredients.reduce((s, ri) => {
+            const ing = ingredients.find(x => x.id === ri.id)
+            return s + (ing ? ri.qte * ing.prixKg : 0)
+          }, 0)
+          return (
+            <div key={r.id} style={S.card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 24 }}>{r.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 13 }}>{r.nom}</div>
+                  <div style={{ fontSize: 11, color: '#9090b0' }}>Coût de revient: {fmt(Math.round(cout))}</div>
+                </div>
+                <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'edit_recette', item: r })}>✏️</button>
+                <button style={S.btnSmall('#5a2a2a')} onClick={() => supprimerProduit('recette', r.id)}>🗑</button>
+              </div>
+              {r.ingredients.map((ri, i) => {
+                const ing = ingredients.find(x => x.id === ri.id)
+                return (
+                  <div key={i} style={{ fontSize: 11, color: '#7070b0', paddingLeft: 32 }}>
+                    • {ing ? ing.emoji + ' ' + ing.nom : '?'}: {fmtKg(ri.qte)}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — ÉQUIPE (patron)
+  // ============================================================
+  function renderEquipe() {
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={S.h2}>👑 Patron</div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ flex: 1, fontSize: 13 }}>PIN Patron</span>
+            <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'change_pin', who: 'patron' })}>Changer PIN</button>
+          </div>
+        </div>
+        <div style={S.card}>
+          <div style={S.h2}>👥 Employés</div>
+          {pins.employes.map((e, i) => (
+            <div key={e.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #2a2a4a' }}>
+              <span style={{ fontSize: 20 }}>👤</span>
+              <span style={{ flex: 1, fontSize: 13 }}>{e.nom}</span>
+              <button style={S.btnSmall('#2a2a5a')} onClick={() => setModal({ type: 'edit_employe', employe: e, idx: i })}>✏️</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — AUDIT (patron)
+  // ============================================================
+  function renderAudit() {
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={S.h2}>🔍 Journal d'audit — {today()}</div>
+          {audit.length === 0 && <div style={{ color: '#5a5a7a', fontSize: 12 }}>Aucune action enregistrée</div>}
+          {[...audit].reverse().map((a, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, padding: '4px 0', borderBottom: '1px solid #1a1a3a', fontSize: 11 }}>
+              <span style={{ color: '#5a5a8a', minWidth: 40 }}>{a.heure}</span>
+              <span style={{ color: '#8080c0', minWidth: 70 }}>{a.who}</span>
+              <span style={{ color: a.action.includes('SANS TICKET') ? '#ff6060' : '#c0c0e0', flex: 1 }}>{a.action}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — IA
+  // ============================================================
+  function renderIA() {
+    return (
+      <div>
+        <div style={S.card}>
+          <div style={S.h2}>🤖 Assistant IA</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+            {['Analyse mes ventes', 'Optimise mes stocks', 'Donne-moi 3 conseils', 'Compare cette semaine'].map(q => (
+              <button key={q} style={S.btnSmall('#2a2a5a')} onClick={() => envoyerIA(q)}>{q}</button>
+            ))}
+          </div>
+          <div style={{ background: '#12122a', borderRadius: 8, padding: 8, minHeight: 200, maxHeight: 300, overflowY: 'auto', marginBottom: 8 }}>
+            {iaMessages.length === 0 && <div style={{ color: '#5a5a7a', fontSize: 12, textAlign: 'center', marginTop: 80 }}>Pose-moi une question sur ton business !</div>}
+            {iaMessages.map((m, i) => (
+              <div key={i} style={{ marginBottom: 8, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                <div style={{ display: 'inline-block', background: m.role === 'user' ? '#2a4a2a' : '#2a2a4a', borderRadius: 8, padding: '6px 10px', maxWidth: '85%', fontSize: 12, textAlign: 'left' }}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {iaLoading && <div style={{ color: '#7070b0', fontSize: 12 }}>⏳ Analyse en cours...</div>}
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input style={{ ...S.input, flex: 1 }} value={iaInput} onChange={e => setIaInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && envoyerIA(iaInput)}
+              placeholder="Pose une question..." />
+            <button style={S.btn('#4a4a8a')} onClick={() => envoyerIA(iaInput)}>▶</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // RENDER ONGLET — GUIDE
+  // ============================================================
+  function renderGuide() {
+    const sections = [
+      { emoji: '🔑', titre: 'Se connecter', texte: 'Entrez votre PIN à 4 chiffres sur l\'écran d\'accueil. PIN Patron: 1234. Employés: voir votre responsable.' },
+      { emoji: '🛒', titre: 'Encaisser', texte: 'Onglet Caisse → tapez les produits → le panier s\'affiche → appuyez "Ticket" → imprimez → validé.' },
+      { emoji: '🎮', titre: 'Gaming', texte: 'Choisissez durée + joueurs → ticket s\'affiche → client paie → appuyez "Démarrer" quand la partie commence.' },
+      { emoji: '📸', titre: 'Achats matin', texte: 'Onglet Achats → photo de facture → l\'IA lit automatiquement → confirmer. Ou saisie manuelle.' },
+      { emoji: '📦', titre: 'Stock matin', texte: 'Onglet Stocks → entrez la quantité de chaque ingrédient disponible ce matin (en kg).' },
+      { emoji: '📊', titre: 'Rapport soir', texte: 'Onglet Bilan → "Copier le rapport" → collez dans WhatsApp pour le patron.' },
+      { emoji: '🚫', titre: 'Interdit', texte: 'Ne JAMAIS: annuler une vente sans le patron, donner le PIN à quelqu\'un, encaisser sans ticket.' },
+    ]
+    return (
+      <div>
+        {sections.map((s, i) => (
+          <div key={i} style={S.card}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 28 }}>{s.emoji}</span>
+              <div>
+                <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 4 }}>{s.titre}</div>
+                <div style={{ fontSize: 12, color: '#a0a0c0', lineHeight: 1.5 }}>{s.texte}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // ============================================================
+  // MODALS
+  // ============================================================
+  function renderModal() {
+    if (!modal) return null
+    const close = () => setModal(null)
+
+    // TICKET
+    if (ticketVisible && ticketData) {
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={{ textAlign: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 32 }}>🎫</div>
+              <div style={{ fontWeight: 'bold', fontSize: 16 }}>Ticket #{ticketData.num}</div>
+              <div style={{ fontSize: 11, color: '#7070b0' }}>{ticketData.heure}</div>
+            </div>
+            {ticketData.items.map((it, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12 }}>
+                <span>{it.emoji} {it.nom} ×{it.qte}</span>
+                <span style={{ color: '#80e0a0' }}>{fmt(it.prix * it.qte)}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: '2px solid #3a3a6a', marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+              <span>TOTAL</span>
+              <span style={{ color: '#80e0a0' }}>{fmt(ticketData.total)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => { imprimerTicket(); setTicketVisible(false); setTicketData(null) }}>🖨️ Imprimer</button>
+              <button style={{ ...S.btnSmall('#3a3a3a'), padding: '8px 12px' }} onClick={() => { setTicketVisible(false); setTicketData(null) }}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // CONFIRM ACHATS (depuis photo IA)
+    if (modal.type === 'confirm_achats') {
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>📸 Achats détectés</div>
+            {modal.data.map((a, i) => (
+              <div key={i} style={{ padding: '4px 0', fontSize: 12, borderBottom: '1px solid #2a2a4a' }}>
+                {a.nom} — {a.quantite}{a.unite} — {fmt(a.prixTotal)}
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => confirmerAchats(modal.data)}>✅ Confirmer</button>
+              <button style={S.btnSmall('#5a2a2a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // ACHAT MANUEL
+    if (modal.type === 'achat_manuel') {
+      const [form, setForm] = useState({ nom: '', quantite: '', unite: 'kg', prixTotal: '' })
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>✏️ Saisie achat</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div><label style={S.label}>Produit</label><input style={S.input} value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Ex: Farine" /></div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ flex: 1 }}><label style={S.label}>Quantité</label><input type="number" style={S.input} value={form.quantite} onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))} /></div>
+                <div style={{ width: 70 }}>
+                  <label style={S.label}>Unité</label>
+                  <select style={S.input} value={form.unite} onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}>
+                    <option>kg</option><option>g</option><option>L</option><option>u</option>
+                  </select>
+                </div>
+              </div>
+              <div><label style={S.label}>Prix total (FCFA)</label><input type="number" style={S.input} value={form.prixTotal} onChange={e => setForm(f => ({ ...f, prixTotal: e.target.value }))} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => { if (form.nom) { confirmerAchats([form]); close() } }}>✅ Ajouter</button>
+              <button style={S.btnSmall('#3a3a3a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // PRODUCTION
+    if (modal.type === 'production') {
+      const [selRec, setSelRec] = useState('')
+      const [qte, setQte] = useState('')
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>🍳 Enregistrer une production</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>
+                <label style={S.label}>Produit</label>
+                <select style={S.input} value={selRec} onChange={e => setSelRec(e.target.value)}>
+                  <option value="">-- Choisir --</option>
+                  {recettes.map(r => <option key={r.id} value={r.id}>{r.emoji} {r.nom}</option>)}
+                  <option value="custom">Autre...</option>
+                </select>
+              </div>
+              <div><label style={S.label}>Quantité produite</label><input type="number" style={S.input} value={qte} onChange={e => setQte(e.target.value)} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => {
+                if (!selRec || !qte) return
+                const rec = recettes.find(r => r.id === selRec)
+                const nom = rec ? rec.nom : 'Autre'
+                const emoji = rec ? rec.emoji : '🍳'
+                setProductions(prev => [...prev, { nom, emoji, qte: parseInt(qte), recId: selRec, heure: now() }])
+                logAudit(`Production: ${nom} × ${qte}`)
+                close()
+              }}>✅ Enregistrer</button>
+              <button style={S.btnSmall('#3a3a3a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // EDIT PRODUIT (boisson/snack/station/ingredient)
+    if (modal.type === 'edit_produit') {
+      const [form, setForm] = useState({ ...modal.item })
+      const [showEmoji, setShowEmoji] = useState(false)
+      const isNew = !form.id
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>{isNew ? '＋ Nouveau' : '✏️ Modifier'} {modal.prodType}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>
+                <label style={S.label}>Emoji</label>
+                <button style={{ background: '#252545', border: '1px solid #4a4a8a', borderRadius: 8, padding: '8px 16px', fontSize: 24, cursor: 'pointer' }}
+                  onClick={() => setShowEmoji(!showEmoji)}>{form.emoji || '?'}</button>
+                {showEmoji && (
+                  <div style={{ background: '#12122a', borderRadius: 8, padding: 8, marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4, maxHeight: 120, overflowY: 'auto' }}>
+                    {EMOJIS.map(e => (
+                      <button key={e} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: 2 }}
+                        onClick={() => { setForm(f => ({ ...f, emoji: e })); setShowEmoji(false) }}>{e}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div><label style={S.label}>Nom</label><input style={S.input} value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} /></div>
+              {(modal.prodType === 'boisson' || modal.prodType === 'snack') && (
+                <div><label style={S.label}>Prix (FCFA)</label><input type="number" style={S.input} value={form.prix} onChange={e => setForm(f => ({ ...f, prix: parseInt(e.target.value) || 0 }))} /></div>
+              )}
+              {modal.prodType === 'station' && (
+                <>
+                  <div><label style={S.label}>Prix 1 joueur / 30min (FCFA)</label><input type="number" style={S.input} value={form.prix1j} onChange={e => setForm(f => ({ ...f, prix1j: parseInt(e.target.value) || 0 }))} /></div>
+                  <div><label style={S.label}>Prix 2 joueurs / 30min (FCFA)</label><input type="number" style={S.input} value={form.prix2j} onChange={e => setForm(f => ({ ...f, prix2j: parseInt(e.target.value) || 0 }))} /></div>
+                </>
+              )}
+              {modal.prodType === 'ingredient' && (
+                <>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ flex: 1 }}><label style={S.label}>Stock actuel</label><input type="number" step="0.01" style={S.input} value={form.stock} onChange={e => setForm(f => ({ ...f, stock: parseFloat(e.target.value) || 0 }))} /></div>
+                    <div style={{ width: 70 }}>
+                      <label style={S.label}>Unité</label>
+                      <select style={S.input} value={form.unite} onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}>
+                        <option>kg</option><option>g</option><option>L</option><option>u</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div><label style={S.label}>Prix d'achat / unité (FCFA)</label><input type="number" style={S.input} value={form.prixKg} onChange={e => setForm(f => ({ ...f, prixKg: parseInt(e.target.value) || 0 }))} /></div>
+                </>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => sauvegarderProduit({ type: modal.prodType, item: form })}>✅ Sauvegarder</button>
+              <button style={S.btnSmall('#3a3a3a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // EDIT RECETTE
+    if (modal.type === 'edit_recette') {
+      const [form, setForm] = useState({ ...modal.item, ingredients: [...(modal.item.ingredients || [])] })
+      const [showEmoji, setShowEmoji] = useState(false)
+      const isNew = !form.id
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>{isNew ? '＋ Nouvelle' : '✏️ Modifier'} recette</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>
+                <label style={S.label}>Emoji</label>
+                <button style={{ background: '#252545', border: '1px solid #4a4a8a', borderRadius: 8, padding: '8px 16px', fontSize: 24, cursor: 'pointer' }}
+                  onClick={() => setShowEmoji(!showEmoji)}>{form.emoji || '?'}</button>
+                {showEmoji && (
+                  <div style={{ background: '#12122a', borderRadius: 8, padding: 8, marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 4, maxHeight: 100, overflowY: 'auto' }}>
+                    {EMOJIS.map(e => (
+                      <button key={e} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', padding: 2 }}
+                        onClick={() => { setForm(f => ({ ...f, emoji: e })); setShowEmoji(false) }}>{e}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div><label style={S.label}>Nom de la recette</label><input style={S.input} value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} /></div>
+              <div style={S.h3}>Ingrédients</div>
+              {form.ingredients.map((ri, i) => {
+                const ing = ingredients.find(x => x.id === ri.id)
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <select style={{ ...S.input, flex: 1 }} value={ri.id} onChange={e => {
+                      const newIngs = [...form.ingredients]
+                      newIngs[i] = { ...newIngs[i], id: e.target.value }
+                      setForm(f => ({ ...f, ingredients: newIngs }))
+                    }}>
+                      {ingredients.map(x => <option key={x.id} value={x.id}>{x.emoji} {x.nom}</option>)}
+                    </select>
+                    <input type="number" step="0.001" style={{ ...S.input, width: 80 }} value={ri.qte} onChange={e => {
+                      const newIngs = [...form.ingredients]
+                      newIngs[i] = { ...newIngs[i], qte: parseFloat(e.target.value) || 0 }
+                      setForm(f => ({ ...f, ingredients: newIngs }))
+                    }} placeholder="kg" />
+                    <span style={{ fontSize: 9, color: '#6a6a8a' }}>{ing ? ing.unite : 'kg'}</span>
+                    <button style={S.btnSmall('#5a2a2a')} onClick={() => setForm(f => ({ ...f, ingredients: f.ingredients.filter((_, j) => j !== i) }))}>✕</button>
+                  </div>
+                )
+              })}
+              <button style={S.btnSmall('#2a3a5a')} onClick={() => setForm(f => ({ ...f, ingredients: [...f.ingredients, { id: ingredients[0]?.id || '', qte: 0 }] }))}>
+                ＋ Ajouter ingrédient
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => sauvegarderProduit({ type: 'recette', item: form })}>✅ Sauvegarder</button>
+              <button style={S.btnSmall('#3a3a3a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // EDIT EMPLOYE
+    if (modal.type === 'edit_employe') {
+      const [form, setForm] = useState({ nom: modal.employe.nom, pin: '' })
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>✏️ Modifier employé</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div><label style={S.label}>Nom</label><input style={S.input} value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} /></div>
+              <div><label style={S.label}>Nouveau PIN (4 chiffres)</label><input type="password" maxLength={4} style={S.input} value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} placeholder="Laisser vide = inchangé" /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => {
+                setPins(prev => ({
+                  ...prev,
+                  employes: prev.employes.map((e, i) => i === modal.idx ? { ...e, nom: form.nom, pin: form.pin || e.pin } : e)
+                }))
+                logAudit('Modification employé: ' + form.nom)
+                close()
+              }}>✅ Sauvegarder</button>
+              <button style={S.btnSmall('#3a3a3a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // CHANGE PIN PATRON
+    if (modal.type === 'change_pin') {
+      const [p1, setP1] = useState('')
+      const [p2, setP2] = useState('')
+      return (
+        <div style={S.overlay}>
+          <div style={S.modalBox}>
+            <div style={S.h2}>🔑 Changer le PIN Patron</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div><label style={S.label}>Nouveau PIN</label><input type="password" maxLength={4} style={S.input} value={p1} onChange={e => setP1(e.target.value)} /></div>
+              <div><label style={S.label}>Confirmer</label><input type="password" maxLength={4} style={S.input} value={p2} onChange={e => setP2(e.target.value)} /></div>
+              {p1 && p2 && p1 !== p2 && <div style={{ color: '#ff6060', fontSize: 12 }}>Les PINs ne correspondent pas</div>}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button style={{ ...S.btn('#2a4a2a'), flex: 1 }} onClick={() => {
+                if (p1 === p2 && p1.length === 4) { setPins(prev => ({ ...prev, patron: p1 })); logAudit('PIN patron modifié'); close() }
+              }}>✅ Changer</button>
+              <button style={S.btnSmall('#3a3a3a')} onClick={close}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  // ============================================================
+  // RENDER PRINCIPAL
+  // ============================================================
+  const sessionCount = Object.values(sessions).filter(s => s.status === 'en_cours').length
+  const paidCount = Object.values(sessions).filter(s => s.status === 'paye').length
+
+  return (
+    <div style={S.app} onClick={resetLock}>
+      <div style={S.header}>
+        <span style={{ fontSize: 20 }}>🎮</span>
+        <span style={S.headerTitle}>Game & Gaufre</span>
+        <span style={{ fontSize: 11, color: '#7070b0' }}>{userName}</span>
+        {sessionCount > 0 && <span style={{ ...S.badge('#4a2a2a'), fontSize: 10 }}>🎮 {sessionCount}</span>}
+        {paidCount > 0 && <span style={{ ...S.badge('#4a4a2a'), fontSize: 10 }}>💰 {paidCount}</span>}
+        <button style={{ background: 'none', border: 'none', color: '#7070b0', cursor: 'pointer', fontSize: 16 }}
+          onClick={() => { setUser(null); setPinInput('') }}>⎋</button>
+      </div>
+      <div style={S.tabs}>
+        {TABS.map(t => (
+          <button key={t.id} style={S.tab(onglet === t.id)} onClick={() => setOnglet(t.id)}>
+            <span style={S.tabEmoji}>{t.emoji}</span>
+            <span style={S.tabLabel}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+      <div style={S.body}>
+        {onglet === 'accueil' && renderAccueil()}
+        {onglet === 'caisse' && renderCaisse()}
+        {onglet === 'gaming' && renderGaming()}
+        {onglet === 'achats' && renderAchats()}
+        {onglet === 'stocks' && renderStocks()}
+        {onglet === 'bilan' && renderBilan()}
+        {onglet === 'recettes' && isPatron && renderRecettes()}
+        {onglet === 'produits' && isPatron && renderProduits()}
+        {onglet === 'equipe' && isPatron && renderEquipe()}
+        {onglet === 'audit' && isPatron && renderAudit()}
+        {onglet === 'ia' && renderIA()}
+        {onglet === 'guide' && renderGuide()}
+      </div>
+      {ticketVisible ? renderModal() : modal ? renderModal() : null}
     </div>
-  );
+  )
 }
-// PATCH: add editRecModal JSX after goal modal
