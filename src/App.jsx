@@ -305,7 +305,8 @@ export default function App(){
   useEffect(()=>{(async()=>{
     try{const r=await window.storage.get("gg3-emps");if(r){const e=JSON.parse(r.value);setEmps(e);empRef.current=e;}}catch(e){}
     try{const r=await window.storage.get("gg3-prods");if(r){const d=JSON.parse(r.value);if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
-    try{const r=await window.storage.get("gg3-day-"+todayStr());if(r){const d=JSON.parse(r.value);if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
+    try{const r=await window.storage.get("gg3-day-"+todayStr());if(r){const d=JSON.parse(r.value);if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);if(d.achats)setAchats(d.achats);}}catch(e){}
+    try{const r=await window.storage.get("gg3-stations");if(r)setStations(JSON.parse(r.value));}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const r=await window.storage.get("gg3-day-"+ds);if(r){const d=JSON.parse(r.value);hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}}catch(e){}}
     setHistory(hist);
   })();},[]);
