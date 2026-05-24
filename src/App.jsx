@@ -362,19 +362,17 @@ TOTAL: ${fmt(t.total)}
   async function analyserPhoto(file) {
     setPhotoLoading(true)
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_KEY
-      if (!apiKey) { alert('Clé API non configurée'); setPhotoLoading(false); return }
       const base64 = await new Promise((res, rej) => {
         const r = new FileReader()
         r.onload = () => res(r.result.split(',')[1])
         r.onerror = rej
         r.readAsDataURL(file)
       })
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-opus-4-5',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -386,6 +384,7 @@ TOTAL: ${fmt(t.total)}
         })
       })
       const data = await resp.json()
+      if (!resp.ok) throw new Error(data.error?.message || 'Erreur serveur')
       const txt = data.content?.[0]?.text || ''
       const match = txt.match(/\{[\s\S]*\}/)
       if (match) {
@@ -421,13 +420,11 @@ TOTAL: ${fmt(t.total)}
   // ============================================================
   async function envoyerIA(msg) {
     if (!msg.trim()) return
-    const apiKey = import.meta.env.VITE_ANTHROPIC_KEY
     const userMsg = { role: 'user', content: msg }
     setIaMessages(prev => [...prev, userMsg])
     setIaInput('')
     setIaLoading(true)
     try {
-      if (!apiKey) throw new Error('Clé API manquante. Vérifiez la variable VITE_ANTHROPIC_KEY dans Vercel.')
       const caTotal = ventes.reduce((s, v) => s + v.total, 0)
       const caGaming = gamingVentes.reduce((s, v) => s + v.total, 0)
       const totalAchats = achats.reduce((s, a) => s + a.prixTotal, 0)
@@ -438,9 +435,9 @@ TOTAL: ${fmt(t.total)}
 - Bénéfice estimé: ${fmt(caTotal + caGaming - totalAchats)}
 - Productions: ${productions.map(p => p.nom + ' ×' + p.qte).join(', ') || 'aucune'}
 Réponds en français, de façon concise et pratique.`
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 600,
