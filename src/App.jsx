@@ -16,7 +16,7 @@ const INIT_B=[{id:"b1",name:"Café",price:200,emoji:"☕"},{id:"b2",name:"Café 
 const INIT_S=[{id:"s1",name:"Crêpe Sucre",price:500,emoji:"🥞"},{id:"s2",name:"Crêpe Confiture",price:600,emoji:"🥞"},{id:"s3",name:"Crêpe Nutella",price:1500,emoji:"🥞"},{id:"s4",name:"Gaufre Sucre",price:500,emoji:"🧇"},{id:"s5",name:"Gaufre Nutella",price:1200,emoji:"🧇"},{id:"s6",name:"Poulet-Fromage",price:1500,emoji:"🍗"},{id:"s7",name:"Bœuf-Fromage",price:2000,emoji:"🥩"},{id:"s8",name:"Sandwich",price:1000,emoji:"🥪"}];
 const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62},{id:"i6",name:"Confiture",unit:"kg",emoji:"🍓",unitCost:5000},{id:"i7",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000},{id:"i8",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200},{id:"i9",name:"Fromage",unit:"kg",emoji:"🧀",unitCost:6000},{id:"i10",name:"Thon",unit:"kg",emoji:"🐟",unitCost:3000},{id:"i11",name:"Pain",unit:"pcs",emoji:"🍞",unitCost:50},{id:"i12",name:"Levure",unit:"kg",emoji:"🧪",unitCost:5000}];
 const INIT_REC=[{id:"r1",emoji:"🥞",name:"Crêpe Sucre",category:"Crêpes",snackId:"s1",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i4",qty:0.005},{id:"i5",qty:0.5}]},{id:"r2",emoji:"🥞",name:"Crêpe Confiture",category:"Crêpes",snackId:"s2",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i6",qty:0.030},{id:"i5",qty:0.5}]},{id:"r3",emoji:"🥞",name:"Crêpe Nutella",category:"Crêpes",snackId:"s3",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i7",qty:0.040},{id:"i5",qty:0.5}]},{id:"r4",emoji:"🧇",name:"Gaufre Sucre",category:"Gaufres",snackId:"s4",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i4",qty:0.008},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r5",emoji:"🧇",name:"Gaufre Nutella",category:"Gaufres",snackId:"s5",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i7",qty:0.040},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r6",emoji:"🍗",name:"Poulet-Fromage",category:"Salées",snackId:"s6",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r7",emoji:"🥩",name:"Bœuf-Fromage",category:"Salées",snackId:"s7",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r8",emoji:"🥪",name:"Sandwich Thon",category:"Sandwichs",snackId:"s8",ingredients:[{id:"i10",qty:0.060},{id:"i9",qty:0.030},{id:"i11",qty:2}]}];
-const STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
+const INIT_STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
 
 // GUIDE CONTENT
 const GUIDE_SECTIONS=[
@@ -51,7 +51,7 @@ function PinPad({onConfirm,error}){
 }
 
 // TICKET COMPONENT
-function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
+function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkip}){
   const printTicket=()=>{
     const w=window.open("","_blank","width=300,height=600");
     w.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:12px;width:250px;margin:0;padding:8px;}h2{text-align:center;font-size:14px;margin:4px 0;}hr{border-top:1px dashed #000;}td{padding:2px 0;}.r{text-align:right;}.total{font-weight:bold;font-size:14px;}</style></head><body>
@@ -82,7 +82,8 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
         <button onClick={onCancel} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
         <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
       </div>
-      <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:8}}>Obligatoire avant encaissement</div>
+      <button onClick={onSkip} style={{width:"100%",marginTop:8,background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12}}>⚠️ Valider sans imprimante (urgence)</button>
+      <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:4}}>Sans ticket = enregistré dans l'audit</div>
     </div>
   );
 }
@@ -101,6 +102,7 @@ export default function App(){
   const [guideSection,setGuideSection]=useState(null);
   const [boissons,setBoissons]=useState(INIT_B);
   const [snacks,setSnacks]=useState(INIT_S);
+  const [stations,setStations]=useState(INIT_STATIONS);
   const [ingredients,setIngredients]=useState(INIT_ING);
   const [recipes,setRecipes]=useState(INIT_REC);
   const [ingStock,setIngStock]=useState({});
@@ -133,6 +135,7 @@ export default function App(){
   const [newProd,setNewProd]=useState({name:"",price:"",emoji:"🍽️"});
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
+  const [editStation,setEditStation]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
   const [newIng,setNewIng]=useState({name:"",unit:"kg",emoji:"🥄",unitCost:""});
   const [prodModal,setProdModal]=useState(null);
@@ -161,14 +164,14 @@ export default function App(){
 
   useEffect(()=>{(async()=>{
     try{const r=await window.storage.get("gg3-emps");if(r){const e=JSON.parse(r.value);setEmps(e);empRef.current=e;}}catch(e){}
-    try{const r=await window.storage.get("gg3-prods");if(r){const d=JSON.parse(r.value);if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
+    try{const r=await window.storage.get("gg3-prods");if(r){const d=JSON.parse(r.value);if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
     try{const r=await window.storage.get("gg3-day-"+todayStr());if(r){const d=JSON.parse(r.value);if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const r=await window.storage.get("gg3-day-"+ds);if(r){const d=JSON.parse(r.value);hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}}catch(e){}}
     setHistory(hist);
   })();},[]);
 
   const saveEmps=async e=>{try{await window.storage.set("gg3-emps",JSON.stringify(e));}catch(e){}};
-  const saveProds=async(b,s,ing,rec,pp,g,tno)=>{try{await window.storage.set("gg3-prods",JSON.stringify({b,s,ing,rec,pp,goal:g,tno}));}catch(e){}};
+  const saveProds=async(b,s,ing,rec,sta,pp,g,tno)=>{try{await window.storage.set("gg3-prods",JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno}));}catch(e){}};
   const saveDay=async upd=>{try{let c={};try{const r=await window.storage.get("gg3-day-"+todayStr());if(r)c=JSON.parse(r.value);}catch(e){}await window.storage.set("gg3-day-"+todayStr(),JSON.stringify({...c,...upd}));}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
@@ -204,14 +207,14 @@ export default function App(){
   const updQty=(id,d)=>{touch();setCart(prev=>prev.map(i=>i.id===id?{...i,qty:Math.max(0,i.qty+d)}:i).filter(i=>i.qty>0));};
   const cartTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
   const requestTicket=()=>{if(!cart.length)return;setPendingTicket({items:[...cart],total:cartTotal});};
-  const confirmSaleAfterPrint=async()=>{
+  const confirmSaleAfterPrint=async(noTicket=false)=>{
     if(!pendingTicket)return;
     const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};
     setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
     const newTno=ticketNo+1;setTicketNo(newTno);
-    saveProds(boissons,snacks,ingredients,recipes,photoPrice,dailyGoal,newTno);
+    saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);
     setCart([]);setPendingTicket(null);
-    addAudit("VENTE",`#${ticketNo} ${fmt(pendingTicket.total)} — ${pendingTicket.items.map(i=>`${i.name}×${i.qty}`).join(", ")}`);
+    addAudit("VENTE",`#${ticketNo} ${fmt(pendingTicket.total)} — ${pendingTicket.items.map(i=>`${i.name}×${i.qty}`).join(", ")}${noTicket?" [SANS TICKET]":""}`);
     showToast(`✓ Ticket #${ticketNo} — ${fmt(pendingTicket.total)}`);
   };
   const deleteSale=id=>requirePatron(()=>{setSales(prev=>{const ns=prev.filter(s=>s.id!==id);saveDay({sales:ns});return ns;});addAudit("ANNULATION","Patron");showToast("Vente annulée",S.orange);});
@@ -224,8 +227,12 @@ export default function App(){
   // GAMING
   const elapsed=start=>{const s=Math.floor((Date.now()-start)/1000);return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;};
   const liveCost=(ses,st)=>{const slots=Math.ceil((Date.now()-ses.start)/60000/30)||1;return slots*(ses.players===2?st.rate2:st.rate1);};
-  const startSess=(sid,players)=>{touch();setSessions(prev=>({...prev,[sid]:{start:Date.now(),players}}));};
-  const stopSess=sid=>{touch();const ses=sessions[sid];if(!ses)return;const st=STATIONS.find(s=>s.id===sid);const mins=(Date.now()-ses.start)/60000;const slots=Math.ceil(mins/30)||1;const total=slots*(ses.players===2?st.rate2:st.rate1);const sale={id:uid(),items:[{id:sid,name:`${st.emoji}${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};const newTno=ticketNo+1;setSessions(prev=>{const n={...prev};delete n[sid];return n;});setDoneSess(prev=>[...prev,{id:uid(),sid,name:st.name,emoji:st.emoji,mins:Math.round(mins),players:ses.players,total,time:timeStr()}]);setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});setTicketNo(newTno);saveProds(boissons,snacks,ingredients,recipes,photoPrice,dailyGoal,newTno);addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)}`);showToast(`${st.name} — ${fmt(total)}`);};
+  const [gamingTicket,setGamingTicket]=useState(null);
+
+  const requestGaming=(sid,players)=>{touch();const st=stations.find(s=>s.id===sid);if(!st)return;setGamingTicket({sid,players,st,items:[{emoji:st.emoji,name:`${st.name} — ${players} joueur(s)`,qty:1,price:st.rate1,note:"Paiement avant démarrage"}],total:st.rate1});};
+  const confirmGaming=(withPrint)=>{if(!gamingTicket)return;const {sid,players,st}=gamingTicket;const newTno=ticketNo+1;setTicketNo(newTno);setSessions(prev=>({...prev,[sid]:{status:"paid",players,st,paidAt:Date.now()}}));addAudit("GAMING PAYÉ",`${st.name} ${players}J — ${withPrint?"ticket":"sans ticket"} #${newTno}`);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);setGamingTicket(null);showToast(`✓ Payé — appuie Démarrer quand la partie commence`);};
+  const startGaming=(sid)=>{touch();setSessions(prev=>({...prev,[sid]:{...prev[sid],status:"playing",start:Date.now()}}));addAudit("GAMING START",sid);};
+  const stopSess=sid=>{touch();const ses=sessions[sid];if(!ses)return;const st=stations.find(s=>s.id===sid);const mins=(Date.now()-ses.start)/60000;const slots=Math.ceil(mins/30)||1;const total=slots*(ses.players===2?st.rate2:st.rate1);const sale={id:uid(),items:[{id:sid,name:`${st.emoji}${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};const newTno=ticketNo+1;setSessions(prev=>{const n={...prev};delete n[sid];return n;});setDoneSess(prev=>[...prev,{id:uid(),sid,name:st.name,emoji:st.emoji,mins:Math.round(mins),players:ses.players,total,time:timeStr()}]);setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});setTicketNo(newTno);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)}`);showToast(`${st.name} — ${fmt(total)}`);};
   const addPhoto=n=>{touch();setPhotoCount(prev=>{const np=Math.max(0,prev+n);saveDay({pc:np});return np;});if(n>0){addAudit("PHOTOCOPIE",`${n}p`);showToast(`📄 ${n}p — ${fmt(n*photoPrice)}`);}};
 
   // SMART EMOJI SUGGESTION
@@ -298,7 +305,7 @@ export default function App(){
       {pinModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:400,gap:20}}><div style={{color:S.gold,fontWeight:800,fontSize:16}}>🔒 CODE PATRON REQUIS</div><PinPad onConfirm={tryPatronModal} error={pinMErr}/><button onClick={()=>setPinModal(null)} style={{...Btn(S.card2,S.muted),border:`1px solid ${S.border}`}}>Annuler</button></div>}
 
       {/* TICKET MODAL */}
-      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)}/></div>}
+      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)} onSkip={()=>{confirmSaleAfterPrint(true);setPendingTicket(null);}}/></div>}
 
       {/* HEADER */}
       <div style={{background:S.card,padding:"11px 16px",borderBottom:`3px solid ${S.gold}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
@@ -370,7 +377,7 @@ export default function App(){
               </button>
               {user.role==="patron"&&<div style={{display:"flex",gap:2,marginTop:2}}>
                 <button onClick={()=>{setEditProd({...p,cat:cTab});}} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>✏️</button>
-                <button onClick={()=>{if(!window.confirm("Supprimer "+p.name+"?"))return;if(cTab==="boissons"){const nb=boissons.filter(x=>x.id!==p.id);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.filter(x=>x.id!==p.id);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}addAudit("SUPPR",p.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>
+                <button onClick={()=>{if(!window.confirm("Supprimer "+p.name+"?"))return;if(cTab==="boissons"){const nb=boissons.filter(x=>x.id!==p.id);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.filter(x=>x.id!==p.id);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("SUPPR",p.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>
               </div>}
             </div>
           ))}
@@ -389,21 +396,43 @@ export default function App(){
 
       {/* ══ GAMING ══ */}
       {tab==="gaming"&&<div style={{padding:14}}>
+        {gamingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={gamingTicket.items} total={gamingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={()=>confirmGaming(true)} onCancel={()=>setGamingTicket(null)} onSkip={()=>confirmGaming(false)}/></div>}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {STATIONS.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
-            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
-              <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
+          {stations.map(st=>{const ses=sessions[st.id];const status=ses?.status||"libre";
+            const bgColor=status==="playing"?"#051505":status==="paid"?"#050a15":S.card;
+            const borderColor=status==="playing"?S.green:status==="paid"?S.gold:S.border;
+            return(
+            <div key={st.id} style={{background:bgColor,border:`2px solid ${borderColor}`,borderRadius:12,padding:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <span style={{fontSize:20}}>{st.emoji}</span>
+                {status==="playing"&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>🔴 EN JEU</div>}
+                {status==="paid"&&<div style={{background:S.gold,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>💛 PAYÉ</div>}
+              </div>
+              <div style={{fontSize:11,fontWeight:700,color:status==="playing"?S.green:status==="paid"?S.gold:S.text,marginBottom:2}}>{st.name}</div>
               <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
-              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
-              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
+              {status==="playing"&&<>
+                <div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div>
+                <div style={{fontSize:11,color:S.muted,margin:"2px 0 8px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div>
+                <button onClick={()=>stopSess(st.id,true)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"8px"}}>⏹ Stop & Ticket</button>
+                <button onClick={()=>stopSess(st.id,false)} style={{width:"100%",background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"6px",cursor:"pointer",fontSize:11,marginTop:4}}>⚠️ Stop sans ticket</button>
+              </>}
+              {status==="paid"&&<>
+                <div style={{fontSize:11,color:S.gold,marginBottom:8,fontWeight:700}}>✅ Payé — {ses.players}J<br/>En attente...</div>
+                <button onClick={()=>startGaming(st.id)} style={{...Btn(S.green),width:"100%",fontSize:12,padding:"10px"}}>▶ Démarrer la partie</button>
+              </>}
+              {status==="libre"&&<div style={{display:"flex",gap:6}}>
+                <button onClick={()=>requestGaming(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>💰 1J</button>
+                <button onClick={()=>requestGaming(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>💰 2J</button>
+              </div>}
+              {user.role==="patron"&&status==="libre"&&<div style={{display:"flex",gap:4,marginTop:6}}>
+                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>✏️</button>
+                <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR STATION",st.name);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>
+              </div>}
             </div>);})}
         </div>
-        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {user.role==="patron"?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
-        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
+        {user.role==="patron"&&<button onClick={()=>setEditStation({id:"",name:"",emoji:"🎮",rate1:1000,rate2:1500})} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"10px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / station</button>}
       </div>}
 
-      {/* ══ STOCKS ══ */}
       {tab==="stocks"&&<div style={{padding:14}}>
         <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
           <button style={Sub(stSub==="ing")} onClick={()=>setStSub("ing")}>🌾 Ingrédients</button>
@@ -674,7 +703,7 @@ export default function App(){
         <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
           <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>＋ Nouvel ingrédient</div>
           {[{l:"Emoji",k:"emoji",t:"text",ph:"🥄"},{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg, L, pcs)",k:"unit",t:"text",ph:"kg"},{l:"Coût/unité (F)",k:"unitCost",t:"number",ph:"300"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newIng[f.k]} placeholder={f.ph} onChange={e=>setNewIng(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setAddIngModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newIng.name)return;const i={id:`i${uid()}`,name:newIng.name,unit:newIng.unit||"kg",emoji:newIng.emoji||"🥄",unitCost:parseFloat(newIng.unitCost)||0};const ni=[...ingredients,i];setIngredients(ni);saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);addAudit("AJOUT ING",`${i.emoji}${i.name}`);setAddIngModal(false);setNewIng({name:"",unit:"kg",emoji:"🥄",unitCost:""});showToast("✓ Ingrédient ajouté");}} style={{...Btn(S.blue),flex:1}}>✓ Ajouter</button></div>
+          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setAddIngModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newIng.name)return;const i={id:`i${uid()}`,name:newIng.name,unit:newIng.unit||"kg",emoji:newIng.emoji||"🥄",unitCost:parseFloat(newIng.unitCost)||0};const ni=[...ingredients,i];setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);addAudit("AJOUT ING",`${i.emoji}${i.name}`);setAddIngModal(false);setNewIng({name:"",unit:"kg",emoji:"🥄",unitCost:""});showToast("✓ Ingrédient ajouté");}} style={{...Btn(S.blue),flex:1}}>✓ Ajouter</button></div>
         </div>
       </div>}
 
@@ -698,7 +727,24 @@ export default function App(){
           <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix (FCFA)</div><input type="number" value={editProd?editProd.price:newProd.price} onChange={e=>editProd?setEditProd(p=>({...p,price:e.target.value})):setNewProd(p=>({...p,price:e.target.value}))} style={Inp()}/></div>
           <div style={{display:"flex",gap:10,marginTop:8}}>
             <button onClick={()=>{setAddProdModal(null);setEditProd(null);}} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(editProd){const up={...editProd,price:parseInt(editProd.price)||0};if(editProd.cat==="boissons"){const nb=boissons.map(p=>p.id===up.id?up:p);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.map(p=>p.id===up.id?up:p);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}addAudit("MODIF",`${up.name}`);setEditProd(null);showToast("✓ Mis à jour");}else{if(!newProd.name||!newProd.price)return;const p={id:`c${uid()}`,name:newProd.name,price:parseInt(newProd.price)||0,emoji:newProd.emoji||"🍽️"};if(addProdModal==="boissons"){const nb=[...boissons,p];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=[...snacks,p];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}addAudit("AJOUT",`${p.emoji}${p.name}`);setAddProdModal(null);setNewProd({name:"",price:"",emoji:"🍽️"});showToast("✓ Produit ajouté");}}} style={{...Btn(editProd?S.blue:S.gold),flex:1}}>✓ {editProd?"Modifier":"Ajouter"}</button>
+            <button onClick={()=>{if(editProd){const up={...editProd,price:parseInt(editProd.price)||0};if(editProd.cat==="boissons"){const nb=boissons.map(p=>p.id===up.id?up:p);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.map(p=>p.id===up.id?up:p);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("MODIF",`${up.name}`);setEditProd(null);showToast("✓ Mis à jour");}else{if(!newProd.name||!newProd.price)return;const p={id:`c${uid()}`,name:newProd.name,price:parseInt(newProd.price)||0,emoji:newProd.emoji||"🍽️"};if(addProdModal==="boissons"){const nb=[...boissons,p];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=[...snacks,p];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("AJOUT",`${p.emoji}${p.name}`);setAddProdModal(null);setNewProd({name:"",price:"",emoji:"🍽️"});showToast("✓ Produit ajouté");}}} style={{...Btn(editProd?S.blue:S.gold),flex:1}}>✓ {editProd?"Modifier":"Ajouter"}</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Edit/Add Station modal */}
+      {editStation!==null&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.gold}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>{editStation.id?"✏️ Modifier":"＋ Nouvelle station"}</div>
+          {[{l:"Emoji",k:"emoji",t:"text",ph:"🎮"},{l:"Nom",k:"name",t:"text",ph:"PS5 N°1"},{l:"Prix 1 joueur (F/30min)",k:"rate1",t:"number",ph:"1000"},{l:"Prix 2 joueurs (F/30min)",k:"rate2",t:"number",ph:"1500"}].map(f=>(
+            <div key={f.k} style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div>
+              <input type={f.t} value={editStation[f.k]||""} placeholder={f.ph} onChange={e=>setEditStation(p=>({...p,[f.k]:f.t==="number"?Number(e.target.value)||0:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"9px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setEditStation(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{if(!editStation.name)return;let ns;if(editStation.id){ns=stations.map(x=>x.id===editStation.id?editStation:x);}else{ns=[...stations,{...editStation,id:"st"+Date.now()}];}setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit(editStation.id?"MODIF STATION":"AJOUT STATION",editStation.name);setEditStation(null);showToast("✓ Station mise à jour");}} style={{background:S.gold,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
           </div>
         </div>
       </div>}
@@ -747,7 +793,7 @@ export default function App(){
         <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.gold}`}}>
           <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🎯 Objectif journalier</div>
           <input type="number" value={newGoal} placeholder="150000" onChange={e=>setNewGoal(e.target.value)} style={Inp()}/>
-          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setGoalModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{const g=parseInt(newGoal)||DEFAULT_GOAL;setDailyGoal(g);saveProds(boissons,snacks,ingredients,recipes,photoPrice,g,ticketNo);setGoalModal(false);showToast("✓ Objectif mis à jour");}} style={{...Btn(S.gold),flex:1}}>✓ OK</button></div>
+          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setGoalModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{const g=parseInt(newGoal)||DEFAULT_GOAL;setDailyGoal(g);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,g,ticketNo);setGoalModal(false);showToast("✓ Objectif mis à jour");}} style={{...Btn(S.gold),flex:1}}>✓ OK</button></div>
         </div>
       </div>}
     </div>
