@@ -38,7 +38,7 @@ async function callAI(system,user,maxTokens=800){
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens,system,messages:[{role:"user",content:user}]})
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:maxTokens,system,messages:[{role:"user",content:user}]})
     });
     const d=await r.json();
     if(d.error){console.error("API error:",d.error);return "";}
@@ -61,7 +61,7 @@ function PinPad({onConfirm,error}){
 }
 
 // TICKET COMPONENT
-function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
+function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkipPrint}){
   // Build ESC/POS ticket bytes for Epson thermal printer
   const buildEscPos=(items,total,storeName,employeeName,ticketNo)=>{
     const enc=new TextEncoder();
@@ -185,7 +185,12 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
         <button onClick={onCancel} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
         <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
       </div>
-      <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:8}}>Obligatoire avant encaissement</div>
+      <div style={{marginTop:8,borderTop:`1px dashed #2a2a2a`,paddingTop:8,textAlign:"center"}}>
+        <div style={{fontSize:10,color:"#555",marginBottom:6}}>⚠️ Imprimante en panne ?</div>
+        <button type="button" onClick={()=>{onSkipPrint&&onSkipPrint();}} style={{background:"transparent",border:"1px solid #FF6D00",color:"#FF6D00",borderRadius:8,padding:"7px 16px",cursor:"pointer",fontSize:11,fontWeight:700}}>
+          Valider sans imprimer (urgence)
+        </button>
+      </div>
     </div>
   );
 }
@@ -235,6 +240,7 @@ export default function App(){
   const [ticketNo,setTicketNo]=useState(1001);
   const [sales,setSales]=useState([]);
   const [sessions,setSessions]=useState({});
+  const [paidSessions,setPaidSessions]=useState({});
   const [doneSess,setDoneSess]=useState([]);
   const [photoPrice,setPhotoPrice]=useState(50);
   const [photoCount,setPhotoCount]=useState(0);
@@ -251,6 +257,11 @@ export default function App(){
   const [aiInsight,setAiInsight]=useState("");
   const [insightLoading,setInsightLoading]=useState(false);
   const [addProdModal,setAddProdModal]=useState(null);
+  const [achats,setAchats]=useState([]);
+  const [achatModal,setAchatModal]=useState(false);
+  const [newAchat,setNewAchat]=useState({ingId:"",qty:"",price:"",note:""});
+  const [photoLoading,setPhotoLoading]=useState(false);
+  const [routineStep,setRoutineStep]=useState(0);
   const [newProd,setNewProd]=useState({name:"",price:"",emoji:"🍽️"});
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
@@ -343,6 +354,60 @@ export default function App(){
   const setIngPhysVal=(id,val)=>{setIngPhys(prev=>{const np={...prev,[id]:Number(val)||0};saveDay({ingPhys:np});return np;});};
   const recordProduction=()=>{if(!prodModal||!prodQtyVal)return;const qty=parseInt(prodQtyVal)||0;const rec=recipes.find(r=>r.snackId===prodModal.id);const newIS={...ingStock};if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*qty)};});}const prod={id:uid(),snackId:prodModal.id,snackName:prodModal.name,snackEmoji:prodModal.emoji,qty,time:timeStr()};const np=[...productions,prod];setIngStock(newIS);setProductions(np);saveDay({ingStock:newIS,productions:np});addAudit("PRODUCTION",`${prodModal.emoji}${prodModal.name} × ${qty}`);setProdModal(null);setProdQtyVal("");showToast(`✓ ${qty} ${prodModal.name} produit(s)`);};
 
+  // ACHATS
+  const addAchat=()=>{
+    if(!newAchat.ingId||!newAchat.qty||!newAchat.price)return;
+    const ing=ingredients.find(i=>i.id===newAchat.ingId);
+    if(!ing)return;
+    const a={id:uid(),ingId:newAchat.ingId,ingName:ing.name,ingEmoji:ing.emoji,unit:ing.unit,qty:parseFloat(newAchat.qty)||0,price:parseInt(newAchat.price)||0,note:newAchat.note,time:timeStr()};
+    // Add to stock
+    setIngStock(prev=>{const ns={...prev,[a.ingId]:{...prev[a.ingId]||{},opening:(prev[a.ingId]?.opening||0)+a.qty}};saveDay({ingStock:ns});return ns;});
+    // Add to achats + expenses
+    const na=[...achats,a];setAchats(na);
+    const ne=[...expenses,{id:uid(),label:`Achat ${ing.name} ${a.qty}${ing.unit}`,amount:a.price,emoji:ing.emoji,time:timeStr()}];
+    setExpenses(ne);
+    saveDay({achats:na,expenses:ne});
+    addAudit("ACHAT",`${ing.emoji}${ing.name} ${a.qty}${ing.unit} = ${fmt(a.price)}`);
+    setAchatModal(false);setNewAchat({ingId:"",qty:"",price:"",note:""});
+    showToast(`✓ ${ing.name} +${a.qty}${ing.unit} ajouté au stock`);
+  };
+
+  const readInvoiceWithAI=async(imageBase64)=>{
+    setPhotoLoading(true);
+    try{
+      const ingList=ingredients.map(i=>`${i.id}:${i.name}(${i.unit})`).join(", ");
+      const r=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({
+          model:"claude-haiku-4-5-20251001",max_tokens:500,
+          messages:[{role:"user",content:[
+            {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imageBase64}},
+            {type:"text",text:`Lis cette facture et extrait les achats. Ingrédients disponibles: ${ingList}. Réponds UNIQUEMENT en JSON: [{"ingId":"...","ingName":"...","qty":0.0,"unit":"kg","price":0}]. Si tu ne reconnais pas un ingrédient, utilise l'ID le plus proche.`}
+          ]}]
+        })
+      });
+      const d=await r.json();
+      const txt=d.content?.[0]?.text||"[]";
+      const items=JSON.parse(txt.replace(/```json|```/g,"").trim());
+      if(Array.isArray(items)&&items.length>0){
+        let newStock={...ingStock};let newExp=[...expenses];let newAchats=[...achats];
+        items.forEach(item=>{
+          const ing=ingredients.find(i=>i.id===item.ingId);
+          if(!ing)return;
+          newStock[item.ingId]={...newStock[item.ingId]||{},opening:(newStock[item.ingId]?.opening||0)+item.qty};
+          const a={id:uid(),ingId:item.ingId,ingName:ing.name,ingEmoji:ing.emoji,unit:ing.unit,qty:item.qty,price:item.price,note:"Via photo facture",time:timeStr()};
+          newAchats.push(a);
+          newExp.push({id:uid(),label:`Achat ${ing.name} ${item.qty}${ing.unit}`,amount:item.price,emoji:ing.emoji,time:timeStr()});
+        });
+        setIngStock(newStock);setAchats(newAchats);setExpenses(newExp);
+        saveDay({ingStock:newStock,achats:newAchats,expenses:newExp});
+        showToast(`✓ ${items.length} achats enregistrés depuis la photo !`);
+      }else{showToast("IA: aucun achat trouvé dans la photo",S.orange);}
+    }catch(e){showToast("Erreur lecture photo",S.red);}
+    setPhotoLoading(false);
+  };
+
   // GAMING
   const elapsed=start=>{const s=Math.floor((Date.now()-start)/1000);return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;};
   const liveCost=(ses,st)=>{const slots=Math.ceil((Date.now()-ses.start)/60000/30)||1;return slots*(ses.players===2?st.rate2:st.rate1);};
@@ -381,7 +446,7 @@ export default function App(){
     const nm=[...aiMessages,{role:"user",content:msg}];setAiMessages(nm);setAiLoading(true);
     const ctx=buildCtx();
     const hist=nm.slice(-8).map(m=>({role:m.role,content:m.content}));
-    try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:600,system:ctx,messages:hist})});const d=await r.json();const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
+    try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,system:ctx,messages:hist})});const d=await r.json();const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, je n'ai pas pu répondre. Vérifiez votre connexion.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
     catch(e){setAiMessages(prev=>[...prev,{role:"assistant",content:"❌ Erreur de connexion."}]);}
     setAiLoading(false);
     setTimeout(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},100);
@@ -420,7 +485,31 @@ export default function App(){
       {pinModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:400,gap:20}}><div style={{color:S.gold,fontWeight:800,fontSize:16}}>🔒 CODE PATRON REQUIS</div><PinPad onConfirm={tryPatronModal} error={pinMErr}/><button onClick={()=>setPinModal(null)} style={{...Btn(S.card2,S.muted),border:`1px solid ${S.border}`}}>Annuler</button></div>}
 
       {/* TICKET MODAL */}
-      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)}/></div>}
+      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
+        <Ticket
+          items={pendingTicket.items}
+          total={pendingTicket.total}
+          storeName={currentStore.name}
+          employeeName={user.name}
+          ticketNo={ticketNo}
+          onPrint={()=>{
+            confirmSaleAfterPrint();
+            if(pendingTicket.onConfirm)pendingTicket.onConfirm();
+          }}
+          onCancel={()=>setPendingTicket(null)}
+          onSkipPrint={()=>{
+            // Validate without printing - emergency mode
+            const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo,noTicket:true};
+            setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
+            const newTno=ticketNo+1;setTicketNo(newTno);
+            saveProds(boissons,snacks,ingredients,recipes,photoPrice,dailyGoal,newTno);
+            addAudit("⚠️ VENTE SANS TICKET",`${fmt(pendingTicket.total)} — Imprimante en panne`);
+            if(pendingTicket.onConfirm)pendingTicket.onConfirm();
+            setPendingTicket(null);
+            showToast("Vente enregistrée — Sans ticket ⚠️",S.orange);
+          }}
+        />
+      </div>}
 
       {/* HEADER */}
       <div style={{background:S.card,padding:"11px 16px",borderBottom:`3px solid ${S.gold}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
@@ -429,7 +518,8 @@ export default function App(){
             <div style={{fontSize:14,fontWeight:800,color:S.gold}}>🎮 G&G</div>
             <button onClick={()=>setStoreModal(true)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10}}>{currentStore.emoji} {currentStore.name.split("—")[1]?.trim()||currentStore.name} ▾</button>
           </div>
-          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}</div>
+          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}
+            {Object.keys(paidSessions).length>0&&<span style={{color:S.gold,marginLeft:4}}>💰{Object.keys(paidSessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <div style={{textAlign:"right"}}>
@@ -442,7 +532,7 @@ export default function App(){
 
       {/* TABS */}
       <div style={{display:"flex",background:S.card,borderBottom:`2px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-        {[["home","🏠","Accueil"],["caisse","🛒","Caisse"],["gaming","🎮","Gaming"],["stocks","📦","Stocks"],["planning","🧮","Courses"],["recettes","📖","Recettes"],["ia","🤖","Assistant"],["bilan","📊","Bilan"],["aide","❓","Guide"],["audit","🔍","Audit"]].map(([id,emoji,label])=>(
+        {[["home","🏠","Accueil"],["caisse","🛒","Caisse"],["gaming","🎮","Gaming"],["stocks","📦","Stocks"],["planning","🧮","Courses"],["achats","🛍️","Achats"],["recettes","📖","Recettes"],["ia","🤖","Assistant"],["bilan","📊","Bilan"],["aide","❓","Guide"],["audit","🔍","Audit"]].map(([id,emoji,label])=>(
           <button key={id} onClick={()=>{setTab(id);touch();}} style={{
             flexShrink:0,
             padding:"10px 12px",
@@ -538,7 +628,46 @@ export default function App(){
               <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
               <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
               {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
-              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
+              :paidSessions[st.id]?(
+                // PAID but not started yet
+                <div style={{background:"#0a0d00",border:`1px solid ${S.gold}`,borderRadius:8,padding:10}}>
+                  <div style={{fontSize:11,color:S.gold,fontWeight:700,marginBottom:4}}>✅ Payé — {paidSessions[st.id].label}</div>
+                  <div style={{fontSize:10,color:S.muted,marginBottom:8}}>En attente de démarrage</div>
+                  <button onClick={()=>{
+                    const p=paidSessions[st.id];
+                    startSess(st.id,p.players);
+                    setPaidSessions(prev=>{const n={...prev};delete n[st.id];return n;});
+                  }} style={{...Btn(S.green),width:"100%",fontSize:13,padding:"10px"}}>▶ Démarrer la partie</button>
+                </div>
+              ):(
+                <div>
+                  <div style={{fontSize:10,color:S.muted,marginBottom:6,textAlign:"center"}}>Choisir durée — Payer avant</div>
+                  <div style={{display:"flex",gap:4,marginBottom:4}}>
+                    {[30,60,90].map(min=>{
+                      const slots=min/30;const total=slots*st.rate1;
+                      return <button key={min} onClick={()=>{
+                        setPendingTicket({
+                          items:[{id:st.id,name:`${st.emoji}${st.name} 1J ${min}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],
+                          total,
+                          onConfirm:()=>setPaidSessions(prev=>({...prev,[st.id]:{players:1,label:`1J ${min}min`}}))
+                        });
+                      }} style={{flex:1,background:S.card2,border:`1px solid ${S.green}`,color:S.green,borderRadius:6,padding:"6px 2px",cursor:"pointer",fontSize:10,fontWeight:700}}>{min}min<br/>{fmt(total)}</button>;
+                    })}
+                  </div>
+                  <div style={{display:"flex",gap:4}}>
+                    {[30,60,90].map(min=>{
+                      const slots=min/30;const total=slots*st.rate2;
+                      return <button key={min} onClick={()=>{
+                        setPendingTicket({
+                          items:[{id:st.id,name:`${st.emoji}${st.name} 2J ${min}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],
+                          total,
+                          onConfirm:()=>setPaidSessions(prev=>({...prev,[st.id]:{players:2,label:`2J ${min}min`}}))
+                        });
+                      }} style={{flex:1,background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"6px 2px",cursor:"pointer",fontSize:10,fontWeight:700}}>{min}min 2J<br/>{fmt(total)}</button>;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>);})}
         </div>
         <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {user.role==="patron"?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
@@ -604,6 +733,68 @@ export default function App(){
             </div>
           </div>);})}
           {ingAlerts.length>0&&<div style={{background:"#1a0000",border:`1px solid ${S.red}`,borderRadius:12,padding:12,marginTop:8}}><div style={{fontWeight:700,color:S.red,marginBottom:6,fontSize:12}}>🚨 {ingAlerts.length} ÉCART(S)</div>{ingAlerts.map(i=>{const a=ingAlert(i.id);return<div key={i.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:3}}>{i.emoji} {i.name} → Manque {fmtQ(a.diff,i.unit)} — {fmt(a.diff*i.unitCost)}</div>;})} <div style={{marginTop:6,fontSize:12,fontWeight:700,color:S.red,borderTop:`1px solid ${S.red}`,paddingTop:6}}>Perte totale: {fmt(ingAlerts.reduce((s,i)=>{const a=ingAlert(i.id);return s+a.diff*i.unitCost;},0))}</div></div>}
+        </div>}
+      </div>}
+
+      {/* ══ ACHATS ══ */}
+      {tab==="achats"&&<div style={{padding:14}}>
+        <div style={{background:"#0a1a0a",border:`1px solid ${S.green}`,borderRadius:10,padding:12,marginBottom:14,fontSize:12,color:"#aaa",lineHeight:1.6}}>
+          🛍️ <strong style={{color:S.green}}>Enregistrez chaque achat fournisseur.</strong><br/>
+          Le stock se met à jour automatiquement. La dépense est comptabilisée dans le bilan.
+        </div>
+
+        {/* Photo facture */}
+        <div style={{...Card(S.purple),marginBottom:12}}>
+          <div style={{fontWeight:700,color:S.purple,fontSize:13,marginBottom:8}}>📸 Photo de facture — IA lit automatiquement</div>
+          <div style={{fontSize:11,color:S.muted,marginBottom:10}}>Prenez une photo de votre facture et l'IA enregistre tous les achats automatiquement.</div>
+          <label style={{display:"block",width:"100%",background:photoLoading?S.card2:S.purple,color:"#fff",border:"none",borderRadius:8,padding:"12px",cursor:"pointer",fontSize:13,fontWeight:700,textAlign:"center"}}>
+            {photoLoading?"⏳ L'IA analyse la photo...":"📸 Prendre/Choisir une photo de facture"}
+            <input type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={async e=>{
+              const file=e.target.files[0];if(!file)return;
+              const reader=new FileReader();
+              reader.onload=async ev=>{
+                const base64=ev.target.result.split(",")[1];
+                await readInvoiceWithAI(base64);
+              };
+              reader.readAsDataURL(file);
+            }}/>
+          </label>
+        </div>
+
+        {/* Saisie manuelle */}
+        <div style={Card()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{fontWeight:700,color:S.gold,fontSize:13}}>✏️ Saisie manuelle</div>
+            <button onClick={()=>setAchatModal(true)} style={{...Btn(S.gold),fontSize:12,padding:"7px 14px"}}>+ Ajouter</button>
+          </div>
+          {achats.length===0?<div style={{color:S.muted,fontSize:12,textAlign:"center",padding:12}}>Aucun achat aujourd'hui</div>:
+          achats.map(a=>(
+            <div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
+              <div><span style={{fontSize:16}}>{a.ingEmoji}</span> {a.ingName} <span style={{color:S.blue,fontWeight:700}}>+{a.qty}{a.unit}</span></div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontWeight:700,color:S.red}}>{fmt(a.price)}</div>
+                <div style={{fontSize:10,color:S.muted}}>{a.time}</div>
+              </div>
+            </div>
+          ))}
+          {achats.length>0&&<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}>
+            <span>Total achats</span>
+            <span style={{color:S.red}}>{fmt(achats.reduce((s,a)=>s+a.price,0))}</span>
+          </div>}
+        </div>
+
+        {/* Impact stock */}
+        {achats.length>0&&<div style={Card()}>
+          <div style={{fontWeight:700,color:S.blue,fontSize:12,marginBottom:8,letterSpacing:1}}>📦 IMPACT SUR LE STOCK</div>
+          {ingredients.filter(ing=>achats.some(a=>a.ingId===ing.id)).map(ing=>{
+            const totalAchat=achats.filter(a=>a.ingId===ing.id).reduce((s,a)=>s+a.qty,0);
+            return(
+              <div key={ing.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
+                <span>{ing.emoji} {ing.name}</span>
+                <span style={{color:S.green,fontWeight:700}}>+{fmtQ(totalAchat,ing.unit)} ajouté au stock</span>
+              </div>
+            );
+          })}
         </div>}
       </div>}
 
@@ -715,11 +906,31 @@ export default function App(){
           <button onClick={()=>setExpModal(true)} style={{...Btn(S.orange,"#fff"),flex:1,fontSize:12}}>💸 Dépense</button>
         </div>
         {expenses.length>0&&<div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontWeight:700,color:S.orange,fontSize:12}}>💸 DÉPENSES</div></div>{expenses.map(e=><div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><div>{e.emoji} {e.label}</div><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:S.red,fontWeight:700}}>{fmt(e.amount)}</span>{user.role==="patron"&&<button onClick={()=>{const ne=expenses.filter(x=>x.id!==e.id);setExpenses(ne);saveDay({expenses:ne});}} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div>)}<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}><span>Total</span><span style={{color:S.red}}>{fmt(totalExpenses)}</span></div></div>}
+        {/* Flux financier cohérent */}
+        <div style={Card()}>
+          <div style={{fontWeight:700,color:S.gold,fontSize:12,marginBottom:10,letterSpacing:1}}>🔄 FLUX FINANCIER DU JOUR</div>
+          {[
+            {icon:"🛍️",label:"Achats fournisseurs",value:-achats.reduce((s,a)=>s+a.price,0),color:S.red},
+            {icon:"🥞",label:"CA Food & Boissons",value:totalFood,color:S.gold},
+            {icon:"🎮",label:"CA Gaming",value:totalGaming,color:S.blue},
+            {icon:"🖨️",label:"CA Photocopies",value:photoCount*photoPrice,color:S.purple},
+          ].map((x,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${S.border}`,fontSize:13}}>
+              <span>{x.icon} {x.label}</span>
+              <span style={{fontWeight:700,color:x.color}}>{x.value<0?"− ":"+ "}{fmt(Math.abs(x.value))}</span>
+            </div>
+          ))}
+          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",marginTop:4,borderTop:`2px solid ${S.border}`}}>
+            <span style={{fontWeight:800,fontSize:14}}>BÉNÉFICE NET</span>
+            <span style={{fontWeight:800,fontSize:18,color:netProfit>=0?S.green:S.red}}>{fmt(netProfit)}</span>
+          </div>
+        </div>
+
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {[{l:"CA TOTAL",v:totalCA,c:S.green},{l:"DÉPENSES",v:totalExpenses,c:S.red},{l:"BÉNÉFICE NET",v:netProfit,c:netProfit>=0?S.green:S.red},{l:"GAMING",v:totalGaming,c:S.blue},{l:"VENTES",v:sales.length,c:S.orange,n:true},{l:"TICKETS",v:ticketNo-1001,c:S.teal,n:true}].map(c=><div key={c.l} style={{...Card(),textAlign:"center"}}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:c.n?28:16,fontWeight:800,color:c.c}}>{c.n?c.v:fmt(c.v)}</div></div>)}
+          {[{l:"CA TOTAL",v:totalCA,c:S.green},{l:"ACHATS",v:achats.reduce((s,a)=>s+a.price,0),c:S.red},{l:"BÉNÉFICE NET",v:netProfit,c:netProfit>=0?S.green:S.red},{l:"GAMING",v:totalGaming,c:S.blue},{l:"VENTES",v:sales.length,c:S.orange,n:true},{l:"TICKETS",v:ticketNo-1001,c:S.teal,n:true}].map(c=><div key={c.l} style={{...Card(),textAlign:"center"}}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:c.n?28:16,fontWeight:800,color:c.c}}>{c.n?c.v:fmt(c.v)}</div></div>)}
         </div>
         <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>📅 7 JOURS</div>{last7.map(d=><div key={d.ds} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><span style={{color:S.muted,minWidth:36}}>{d.label}</span><div style={{display:"flex",gap:16}}><span style={{color:d.ca>0?S.green:S.muted,fontWeight:700}}>{fmt(d.ca)}</span><span style={{color:d.net>=0?S.green:S.red,fontSize:11}}>net {fmt(d.net)}</span></div></div>)}</div>
-        <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{fontSize:10,color:"#aaa",marginTop:2}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</div></div>)}</div>
+        <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{sale.noTicket&&<span style={{background:S.orange,color:"#fff",fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,marginLeft:4}}>Sans ticket</span>}{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{fontSize:10,color:"#aaa",marginTop:2}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</div></div>)}</div>
       </div>}
 
       {/* ══ AIDE ══ */}
@@ -818,6 +1029,42 @@ export default function App(){
             </button>
           ))}
           <button onClick={()=>setStoreModal(false)} style={{...{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%"},marginTop:8}}>Fermer</button>
+        </div>
+      </div>}
+
+      {/* Achat Modal */}
+      {achatModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`2px solid ${S.gold}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🛍️ Nouvel achat</div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Ingrédient</div>
+            <select value={newAchat.ingId} onChange={e=>setNewAchat(p=>({...p,ingId:e.target.value}))} style={{...Inp(),fontSize:13}}>
+              <option value="">-- Choisir --</option>
+              {ingredients.map(i=><option key={i.id} value={i.id}>{i.emoji} {i.name} ({i.unit})</option>)}
+            </select>
+          </div>
+          <div style={{display:"flex",gap:10,marginBottom:12}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Quantité ({newAchat.ingId?ingredients.find(i=>i.id===newAchat.ingId)?.unit||"":""}) </div>
+              <input type="number" step="0.001" value={newAchat.qty} placeholder="Ex: 5" onChange={e=>setNewAchat(p=>({...p,qty:e.target.value}))} style={Inp()}/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix payé (FCFA)</div>
+              <input type="number" value={newAchat.price} placeholder="Ex: 1500" onChange={e=>setNewAchat(p=>({...p,price:e.target.value}))} style={Inp()}/>
+            </div>
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Note (optionnel)</div>
+            <input type="text" value={newAchat.note} placeholder="Ex: Marché Sandaga" onChange={e=>setNewAchat(p=>({...p,note:e.target.value}))} style={Inp()}/>
+          </div>
+          {newAchat.ingId&&newAchat.qty&&<div style={{background:"#0d1a0d",borderRadius:8,padding:10,marginBottom:12,fontSize:12,color:S.green}}>
+            ✅ Stock actuel : {fmtQ(ingStock[newAchat.ingId]?.opening||0,ingredients.find(i=>i.id===newAchat.ingId)?.unit||"kg")}
+            → Après achat : {fmtQ((ingStock[newAchat.ingId]?.opening||0)+(parseFloat(newAchat.qty)||0),ingredients.find(i=>i.id===newAchat.ingId)?.unit||"kg")}
+          </div>}
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setAchatModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={addAchat} disabled={!newAchat.ingId||!newAchat.qty||!newAchat.price} style={{...Btn(S.gold),flex:1,opacity:newAchat.ingId&&newAchat.qty&&newAchat.price?1:0.4}}>✓ Enregistrer</button>
+          </div>
         </div>
       </div>}
 
