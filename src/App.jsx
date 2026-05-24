@@ -32,18 +32,24 @@ const GUIDE_SECTIONS=[
   {id:"g6",emoji:"🚫",title:"Ce qui est interdit",color:"#FF5252",steps:[{icon:"❌",text:"Vendre sans enregistrer dans la caisse. Toutes les ventes doivent passer par l'outil."},{icon:"❌",text:"Annuler une vente sans autorisation du patron (code PIN nécessaire)."},{icon:"❌",text:"Donner des produits sans encaisser. Même les 'cadeaux' doivent être enregistrés."},{icon:"❌",text:"Laisser une session gaming tourner sans encaisser à la fin."},{icon:"✅",text:"En cas de doute, appelez le patron AVANT d'agir."}]}
 ];
 
-const ANTHROPIC_KEY=import.meta.env.VITE_ANTHROPIC_KEY||"";
+const getKey=()=>{
+  try{return import.meta.env.VITE_ANTHROPIC_KEY||"";}
+  catch(e){return "";}
+};
 async function callAI(system,user,maxTokens=800){
+  const key=getKey();
+  if(!key){console.warn("No API key");return "IA non configurée. Vérifiez la clé API dans Vercel.";}
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:maxTokens,system,messages:[{role:"user",content:user}]})
     });
+    if(!r.ok){const err=await r.text();console.error("API HTTP error:",r.status,err);return `Erreur ${r.status}. Vérifiez la clé API.`;}
     const d=await r.json();
-    if(d.error){console.error("API error:",d.error);return "";}
+    if(d.error){console.error("API error:",d.error);return `Erreur IA: ${d.error.message||"inconnue"}`;}
     return d.content?.map(c=>c.text||"").join("")||"";
-  }catch(e){console.error("callAI error:",e);return "";}
+  }catch(e){console.error("callAI error:",e);return "Erreur de connexion.";}
 }
 
 function PinPad({onConfirm,error}){
@@ -241,6 +247,10 @@ export default function App(){
   const [sales,setSales]=useState([]);
   const [sessions,setSessions]=useState({});
   const [paidSessions,setPaidSessions]=useState({});
+  const [stations,setStations]=useState(DEFAULT_STATIONS);
+  const [editStationModal,setEditStationModal]=useState(null);
+  const [newStation,setNewStation]=useState({name:"",emoji:"🎮",rate1:1000,rate2:1500});
+  const [addStationModal,setAddStationModal]=useState(false);
   const [doneSess,setDoneSess]=useState([]);
   const [photoPrice,setPhotoPrice]=useState(50);
   const [photoCount,setPhotoCount]=useState(0);
@@ -300,6 +310,7 @@ export default function App(){
     setHistory(hist);
   })();},[]);
 
+  const saveStations=async st=>{try{await window.storage.set("gg3-stations",JSON.stringify(st));}catch(e){}};
   const saveEmps=async e=>{try{await window.storage.set("gg3-emps",JSON.stringify(e));}catch(e){}};
   const saveProds=async(b,s,ing,rec,pp,g,tno)=>{try{await window.storage.set("gg3-prods",JSON.stringify({b,s,ing,rec,pp,goal:g,tno}));}catch(e){}};
   const saveDay=async upd=>{try{let c={};try{const r=await window.storage.get("gg3-day-"+todayStr());if(r)c=JSON.parse(r.value);}catch(e){}await window.storage.set("gg3-day-"+todayStr(),JSON.stringify({...c,...upd}));}catch(e){}};
@@ -446,7 +457,14 @@ export default function App(){
     const nm=[...aiMessages,{role:"user",content:msg}];setAiMessages(nm);setAiLoading(true);
     const ctx=buildCtx();
     const hist=nm.slice(-8).map(m=>({role:m.role,content:m.content}));
-    try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,system:ctx,messages:hist})});const d=await r.json();const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, je n'ai pas pu répondre. Vérifiez votre connexion.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
+    try{
+      const key=getKey();
+      if(!key){setAiMessages(prev=>[...prev,{role:"assistant",content:"⚠️ Clé API non configurée. Vérifiez Vercel → Settings → Environment Variables → VITE_ANTHROPIC_KEY"}]);setAiLoading(false);return;}
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,system:ctx,messages:hist})});
+      if(!r.ok){const err=await r.text();setAiMessages(prev=>[...prev,{role:"assistant",content:`Erreur ${r.status}: ${err.slice(0,100)}`}]);setAiLoading(false);return;}
+      const d=await r.json();
+      const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";
+      setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
     catch(e){setAiMessages(prev=>[...prev,{role:"assistant",content:"❌ Erreur de connexion."}]);}
     setAiLoading(false);
     setTimeout(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},100);
@@ -622,7 +640,7 @@ export default function App(){
       {/* ══ GAMING ══ */}
       {tab==="gaming"&&<div style={{padding:14}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {STATIONS.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
+          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
             <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
               <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
@@ -1029,6 +1047,48 @@ export default function App(){
             </button>
           ))}
           <button onClick={()=>setStoreModal(false)} style={{...{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%"},marginTop:8}}>Fermer</button>
+        </div>
+      </div>}
+
+      {/* Edit Station Modal */}
+      {editStationModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`2px solid ${S.blue}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>✏️ Modifier la console</div>
+          <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <div style={{flex:1}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Emoji</div><input value={editStationModal.emoji} onChange={e=>setEditStationModal(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:20,textAlign:"center",padding:"8px"}}/></div>
+            <div style={{flex:3}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Nom</div><input value={editStationModal.name} onChange={e=>setEditStationModal(p=>({...p,name:e.target.value}))} style={Inp()}/></div>
+          </div>
+          {[{label:"Prix 1 joueur (F/30min)",key:"rate1"},{label:"Prix 2 joueurs (F/30min)",key:"rate2"}].map(f=>(
+            <div key={f.key} style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.label}</div>
+              <input type="number" value={editStationModal[f.key]} onChange={e=>setEditStationModal(p=>({...p,[f.key]:parseInt(e.target.value)||0}))} style={Inp()}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setEditStationModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{const ns=stations.map(s=>s.id===editStationModal.id?editStationModal:s);setStations(ns);saveStations(ns);setEditStationModal(null);showToast("✓ Console mise à jour");}} style={{...Btn(S.blue),flex:1}}>✓ Sauvegarder</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Add Station Modal */}
+      {addStationModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`2px solid ${S.purple}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.purple,marginBottom:16}}>＋ Nouvelle console</div>
+          <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <div style={{flex:1}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Emoji</div><input value={newStation.emoji} onChange={e=>setNewStation(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:20,textAlign:"center",padding:"8px"}}/></div>
+            <div style={{flex:3}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Nom</div><input value={newStation.name} placeholder="Ex: PS5 N°7" onChange={e=>setNewStation(p=>({...p,name:e.target.value}))} style={Inp()}/></div>
+          </div>
+          {[{label:"Prix 1 joueur (F/30min)",key:"rate1",ph:"1000"},{label:"Prix 2 joueurs (F/30min)",key:"rate2",ph:"1500"}].map(f=>(
+            <div key={f.key} style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.label}</div>
+              <input type="number" value={newStation[f.key]} placeholder={f.ph} onChange={e=>setNewStation(p=>({...p,[f.key]:parseInt(e.target.value)||0}))} style={Inp()}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setAddStationModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{if(!newStation.name)return;const s={...newStation,id:`st${uid()}`};const ns=[...stations,s];setStations(ns);saveStations(ns);setAddStationModal(false);setNewStation({name:"",emoji:"🎮",rate1:1000,rate2:1500});showToast("✓ Console ajoutée");}} style={{...Btn(S.purple,"#fff"),flex:1}}>✓ Ajouter</button>
+          </div>
         </div>
       </div>}
 
