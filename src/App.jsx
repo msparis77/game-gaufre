@@ -242,7 +242,27 @@ export default function App(){
   const scanIA=async(file,target)=>{
     setScanLoading(true);setScanTarget(target);
     try{
-      const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(file);});
+      // Convertir en JPEG via canvas pour compatibilité maximale
+      const b64=await new Promise((res,rej)=>{
+        const img=new Image();
+        const url=URL.createObjectURL(file);
+        img.onload=()=>{
+          const canvas=document.createElement("canvas");
+          const MAX=1600;
+          let w=img.width,h=img.height;
+          if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+          if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+          canvas.width=w;canvas.height=h;
+          const ctx=canvas.getContext("2d");
+          ctx.drawImage(img,0,0,w,h);
+          const dataUrl=canvas.toDataURL("image/jpeg",0.85);
+          URL.revokeObjectURL(url);
+          res(dataUrl.split(",")[1]);
+        };
+        img.onerror=rej;
+        img.src=url;
+      });
+      const mediaType="image/jpeg";
       let prompt="";
       if(target==="stock"||target==="verif"){
         const liste=ingredients.map(i=>`${i.name} (${i.unit})`).join(", ");
@@ -252,7 +272,7 @@ export default function App(){
         const liste=snacks.map(s=>`${s.name}`).join(", ");
         prompt=`Tu es un assistant pour un café-crêperie à Dakar. Voici les produits: ${liste}. Regarde cette fiche ou photo et extrais les quantités produites ce matin. Réponds UNIQUEMENT en JSON: {"productions":[{"nom":"...","quantite":0}]}. Si tu ne vois pas un produit, ne l'inclus pas.`;
       }
-      const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:b64}},{type:"text",text:prompt}]}]})});
+      const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:b64}},{type:"text",text:prompt}]}]})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error?.message||"Erreur serveur");
       const txt=d.content?.map(c=>c.text||"").join("")||"";
@@ -581,7 +601,7 @@ export default function App(){
         </div>}
       </div>}
 
-      <input ref={scanRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
+      <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
 
       {/* ══ PLANNING ══ */}
       {tab==="planning"&&<div style={{padding:14}}>
@@ -964,4 +984,5 @@ export default function App(){
       </div>}
     </div>
   );
+}
 }
