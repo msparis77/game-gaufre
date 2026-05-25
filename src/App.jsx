@@ -170,6 +170,8 @@ export default function App(){
   const [editStation,setEditStation]=useState(null);
   const [saveOk,setSaveOk]=useState(false);
   const [scanLoading,setScanLoading]=useState(false);
+  const [gamingAlerts,setGamingAlerts]=useState({});
+  const [scanConfirm,setScanConfirm]=useState(null); // {target, items:[{nom,quantite,unite,prixUnitaire,emoji,isNew,matched_id}]}
   const [scanTarget,setScanTarget]=useState(null);
   const scanRef=useRef(null);
   const [editIng,setEditIng]=useState(null);
@@ -197,7 +199,30 @@ export default function App(){
   const [toast,setToast]=useState(null);
   const chatRef=useRef(null);
 
-  useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
+  useEffect(()=>{const iv=setInterval(()=>{
+    setTick(t=>t+1);
+    if(user&&Date.now()-lastAct>5*60*1000)setUser(null);
+    // Détecter fin de session gaming
+    setSessions(prev=>{
+      let changed=false;
+      const alerts={};
+      Object.entries(prev).forEach(([sid,ses])=>{
+        if(ses.status==="playing"&&ses.start&&ses.duree){
+          const elapsedMins=(Date.now()-ses.start)/60000;
+          if(elapsedMins>=ses.duree&&!ses.alerted){
+            alerts[sid]=true;
+            prev={...prev,[sid]:{...ses,alerted:true}};
+            changed=true;
+            // Vibration + son
+            try{if(navigator.vibrate)navigator.vibrate([500,200,500,200,500]);}catch(e){}
+            try{const ctx=new AudioContext();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);o.start();o.stop(ctx.currentTime+0.5);}catch(e){}
+          }
+        }
+      });
+      if(Object.keys(alerts).length>0) setGamingAlerts(a=>({...a,...alerts}));
+      return changed?{...prev}:prev;
+    });
+  },1000);return()=>clearInterval(iv);},[user,lastAct]);
   const touch=()=>setLastAct(Date.now());
 
   useEffect(()=>{(async()=>{
@@ -316,53 +341,22 @@ export default function App(){
       const match=txt.match(/\{[\s\S]*\}/);
       if(!match) throw new Error("L'IA n'a pas pu lire la fiche");
       const parsed=JSON.parse(match[0]);
-      if(target==="verif"&&parsed.stocks){
-        const nip={...ingPhys};
-        let newIngList=[...ingredients];
-        let nbNouveaux=0;
-        parsed.stocks.forEach(s=>{
-          let ing=newIngList.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
-          if(!ing&&s.nouveau!==false){
-            const newId="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-            ing={id:newId,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
-            newIngList=[...newIngList,ing];
-            nbNouveaux++;
-            addAudit("NOUVEL ING AUTO",`${ing.emoji} ${ing.name} (créé par scan soir)`);
-          }
-          if(ing) nip[ing.id]=s.quantite;
+      if((target==="verif"||target==="stock")&&parsed.stocks){
+        // Préparer les items avec correspondance dans la base existante
+        const items=parsed.stocks.map(s=>{
+          const ing=ingredients.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          return {
+            nom: s.nom,
+            quantite: s.quantite||0,
+            unite: s.unite||ing?.unit||"kg",
+            prixUnitaire: s.prixUnitaire||ing?.unitCost||0,
+            emoji: s.emoji||ing?.emoji||"📦",
+            isNew: !ing,
+            matched_id: ing?.id||null
+          };
         });
-        if(nbNouveaux>0){
-          setIngredients(newIngList);
-          saveProds(boissons,snacks,newIngList,recipes,stations,photoPrice,dailyGoal,ticketNo);
-        }
-        setIngPhys(nip);saveDay({ingPhys:nip});
-        addAudit("SCAN STOCK SOIR IA",`${parsed.stocks.length} ingrédients comptés${nbNouveaux>0?` (+${nbNouveaux} nouveaux)`:""}`);
-        showToast(nbNouveaux>0?`✓ Stock soir — ${nbNouveaux} nouveaux créés 🆕`:`✓ Stock soir mis à jour — ${parsed.stocks.length} ingrédients`);
-      } else if(target==="stock"&&parsed.stocks){
-        const newIS={...ingStock};
-        let newIngList=[...ingredients];
-        let nbNouveaux=0;
-        parsed.stocks.forEach(s=>{
-          // Chercher correspondance dans la liste existante
-          let ing=newIngList.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
-          // Si pas trouvé ET marqué nouveau → créer automatiquement
-          if(!ing&&s.nouveau!==false){
-            const newId="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
-            ing={id:newId,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
-            newIngList=[...newIngList,ing];
-            nbNouveaux++;
-            addAudit("NOUVEL ING AUTO",`${ing.emoji} ${ing.name} (créé par scan)`);
-          }
-          if(ing) newIS[ing.id]={...newIS[ing.id]||{},opening:s.quantite};
-        });
-        // Sauvegarder les nouveaux ingrédients
-        if(nbNouveaux>0){
-          setIngredients(newIngList);
-          saveProds(boissons,snacks,newIngList,recipes,stations,photoPrice,dailyGoal,ticketNo);
-        }
-        setIngStock(newIS);saveDay({ingStock:newIS});
-        addAudit("SCAN STOCK IA",`${parsed.stocks.length} ingrédients lus${nbNouveaux>0?` (+${nbNouveaux} nouveaux créés)`:""}`);
-        showToast(nbNouveaux>0?`✓ ${parsed.stocks.length} ingrédients — ${nbNouveaux} nouveaux créés 🆕`:`✓ ${parsed.stocks.length} ingrédients mis à jour`);
+        setScanConfirm({target, items});
+        showToast(`📋 ${items.length} produit(s) détecté(s) — Vérifiez et validez`);
       } else if(target==="prod"&&parsed.productions){
         const newIS={...ingStock};
         parsed.productions.forEach(p=>{
@@ -380,6 +374,48 @@ export default function App(){
       }
     }catch(e){showToast("❌ "+e.message,S.red);}
     setScanLoading(false);setScanTarget(null);
+  };
+
+
+  // ── Appliquer le scan après confirmation manuelle ────────────────────────
+  const applyScanConfirm=()=>{
+    if(!scanConfirm) return;
+    const {target,items}=scanConfirm;
+    let newIngList=[...ingredients];
+    let nbNouveaux=0;
+    if(target==="stock"){
+      const newIS={...ingStock};
+      items.forEach(s=>{
+        let ing=newIngList.find(i=>i.id===s.matched_id||(i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase())));
+        if(!ing&&s.isNew!==false){
+          const newId="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+          ing={id:newId,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
+          newIngList=[...newIngList,ing];
+          nbNouveaux++;
+        }
+        if(ing) newIS[ing.id]={...newIS[ing.id]||{},opening:s.quantite};
+      });
+      if(nbNouveaux>0){setIngredients(newIngList);saveProds(boissons,snacks,newIngList,recipes,stations,photoPrice,dailyGoal,ticketNo);}
+      setIngStock(newIS);saveDay({ingStock:newIS});
+      addAudit("SCAN STOCK VALIDÉ",`${items.length} ingrédients${nbNouveaux>0?` (+${nbNouveaux} nouveaux)`:""}`);
+    } else if(target==="verif"){
+      const nip={...ingPhys};
+      items.forEach(s=>{
+        let ing=newIngList.find(i=>i.id===s.matched_id||(i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase())));
+        if(!ing&&s.isNew!==false){
+          const newId="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+          ing={id:newId,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
+          newIngList=[...newIngList,ing];
+          nbNouveaux++;
+        }
+        if(ing) nip[ing.id]=s.quantite;
+      });
+      if(nbNouveaux>0){setIngredients(newIngList);saveProds(boissons,snacks,newIngList,recipes,stations,photoPrice,dailyGoal,ticketNo);}
+      setIngPhys(nip);saveDay({ingPhys:nip});
+      addAudit("SCAN SOIR VALIDÉ",`${items.length} ingrédients`);
+    }
+    setScanConfirm(null);
+    showToast(`✅ ${items.length} ingrédients enregistrés`);
   };
 
   const recordProduction=()=>{if(!prodModal||!prodQtyVal)return;const qty=parseInt(prodQtyVal)||0;const rec=recipes.find(r=>r.snackId===prodModal.id);const newIS={...ingStock};if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*qty)};});}const prod={id:uid(),snackId:prodModal.id,snackName:prodModal.name,snackEmoji:prodModal.emoji,qty,time:timeStr()};const np=[...productions,prod];setIngStock(newIS);setProductions(np);saveDay({ingStock:newIS,productions:np});addAudit("PRODUCTION",`${prodModal.emoji}${prodModal.name} × ${qty}`);setProdModal(null);setProdQtyVal("");showToast(`✓ ${qty} ${prodModal.name} produit(s)`);};
@@ -556,6 +592,13 @@ export default function App(){
 
       {/* ══ GAMING ══ */}
       {tab==="gaming"&&<div style={{padding:14}}>
+        {Object.keys(gamingAlerts).length>0&&<div style={{background:S.red,borderRadius:12,padding:12,marginBottom:12,textAlign:"center"}}>
+          <div style={{fontSize:16,fontWeight:800,color:"#fff"}}>⏰ TEMPS ÉCOULÉ !</div>
+          <div style={{fontSize:12,color:"#ffdddd",marginTop:4}}>
+            {Object.keys(gamingAlerts).map(sid=>{const st=stations.find(s=>s.id===sid);return st?`${st.emoji} ${st.name}`:sid;}).join(" • ")}
+          </div>
+          <div style={{fontSize:11,color:"#ffaaaa",marginTop:2}}>Arrêtez la/les partie(s) et encaissez</div>
+        </div>}
         {gamingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={gamingTicket.items} total={gamingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={(pm)=>confirmGaming(true,pm)} onCancel={()=>setGamingTicket(null)} onSkip={()=>confirmGaming(false,payMode)} selectedPayMode={payMode} onPayModeChange={setPayMode}/></div>}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
           {stations.map(st=>{const ses=sessions[st.id];const status=ses?.status||"libre";
@@ -570,12 +613,21 @@ export default function App(){
               </div>
               <div style={{fontSize:11,fontWeight:700,color:status==="playing"?S.green:status==="paid"?S.gold:S.text,marginBottom:2}}>{st.name}</div>
               <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
-              {status==="playing"&&<>
-                <div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div>
-                <div style={{fontSize:11,color:S.muted,margin:"2px 0 8px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div>
-                <button onClick={()=>stopSess(st.id,true)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"8px"}}>⏹ Stop & Ticket</button>
-                <button onClick={()=>stopSess(st.id,false)} style={{width:"100%",background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"6px",cursor:"pointer",fontSize:11,marginTop:4}}>⚠️ Stop sans ticket</button>
-              </>}
+              {status==="playing"&&(()=>{
+                const elapsedMins=ses.start?(Date.now()-ses.start)/60000:0;
+                const isOver=ses.duree&&elapsedMins>=ses.duree;
+                const timeColor=isOver?S.red:elapsedMins>=(ses.duree*0.9)?S.orange:S.green;
+                return(<>
+                  {isOver&&<div style={{background:S.red,color:"#fff",borderRadius:8,padding:"6px 10px",marginBottom:6,fontWeight:800,fontSize:12,textAlign:"center"}}>
+                    ⏰ TEMPS ÉCOULÉ — Arrêtez la partie !
+                  </div>}
+                  <div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:timeColor}}>{elapsed(ses.start)}</div>
+                  {ses.duree&&<div style={{fontSize:10,color:S.muted,marginBottom:2}}>Limite: {ses.duree} min</div>}
+                  <div style={{fontSize:11,color:S.muted,margin:"2px 0 8px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div>
+                  <button onClick={()=>{setGamingAlerts(a=>{const n={...a};delete n[st.id];return n;});stopSess(st.id,true);}} style={{...Btn(isOver?S.red:S.orange),width:"100%",fontSize:12,padding:"8px"}}>⏹ Stop & Ticket</button>
+                  <button onClick={()=>{setGamingAlerts(a=>{const n={...a};delete n[st.id];return n;});stopSess(st.id,false);}} style={{width:"100%",background:"transparent",border:`1px solid ${S.muted}`,color:S.muted,borderRadius:8,padding:"6px",cursor:"pointer",fontSize:11,marginTop:4}}>⚠️ Stop sans ticket</button>
+                </>);
+              })()}
               {status==="paid"&&<>
                 <div style={{fontSize:11,color:S.gold,marginBottom:8,fontWeight:700}}>✅ Payé — {ses.players}J<br/>En attente...</div>
                 <button onClick={()=>startGaming(st.id)} style={{...Btn(S.green),width:"100%",fontSize:12,padding:"10px"}}>▶ Démarrer la partie</button>
@@ -601,6 +653,34 @@ export default function App(){
           <button style={Sub(stSub==="verif")} onClick={()=>setStSub("verif")}>🔍 Vérif</button>
         </div>
         {stSub==="ing"&&<div>
+          {(()=>{
+            const totalVal=ingredients.reduce((sum,ing)=>{
+              const qty=ingRem(ing.id);
+              return sum+(qty*(ing.unitCost||0));
+            },0);
+            const details=ingredients.filter(ing=>ingRem(ing.id)>0).map(ing=>({
+              ...ing, qty:ingRem(ing.id), val:ingRem(ing.id)*(ing.unitCost||0)
+            })).sort((a,b)=>b.val-a.val);
+            return(<div style={{background:"#0a1a0a",border:`2px solid ${S.gold}`,borderRadius:12,padding:12,marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontWeight:800,color:S.gold,fontSize:13}}>💰 VALEUR TOTALE DU STOCK</span>
+                <span style={{fontWeight:800,color:S.gold,fontSize:18}}>{fmt(totalVal)}</span>
+              </div>
+              {details.map(ing=>(
+                <div key={ing.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:`1px solid ${S.border}`}}>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:16}}>{ing.emoji}</span>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:600,color:S.text}}>{ing.name}</div>
+                      <div style={{fontSize:10,color:S.muted}}>{fmtQ(ing.qty,ing.unit)} × {fmt(ing.unitCost||0)}/{ing.unit}</div>
+                    </div>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:700,color:ing.val>5000?S.green:S.muted}}>{fmt(ing.val)}</span>
+                </div>
+              ))}
+              {details.length===0&&<div style={{fontSize:11,color:S.muted,textAlign:"center"}}>Aucun stock saisi ce matin</div>}
+            </div>);
+          })()}
           <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12}}>
             <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🌾 Stock matin en KG. Saisie manuelle ou scan de fiche 📸</div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -665,6 +745,45 @@ export default function App(){
           </div>);})}
           {ingAlerts.length>0&&<div style={{background:"#1a0000",border:`1px solid ${S.red}`,borderRadius:12,padding:12,marginTop:8}}><div style={{fontWeight:700,color:S.red,marginBottom:6,fontSize:12}}>🚨 {ingAlerts.length} ÉCART(S)</div>{ingAlerts.map(i=>{const a=ingAlert(i.id);return<div key={i.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:3}}>{i.emoji} {i.name} → Manque {fmtQ(a.diff,i.unit)} — {fmt(a.diff*i.unitCost)}</div>;})} <div style={{marginTop:6,fontSize:12,fontWeight:700,color:S.red,borderTop:`1px solid ${S.red}`,paddingTop:6}}>Perte totale: {fmt(ingAlerts.reduce((s,i)=>{const a=ingAlert(i.id);return s+a.diff*i.unitCost;},0))}</div></div>}
         </div>}
+      </div>}
+
+      {/* ══ MODAL CONFIRMATION SCAN ══ */}
+      {scanConfirm&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:300,padding:12,overflowY:"auto"}}>
+        <div style={{background:S.card,borderRadius:16,padding:16,width:"100%",maxWidth:420,marginTop:20,border:`2px solid ${S.gold}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:4}}>📋 Vérification avant enregistrement</div>
+          <div style={{fontSize:11,color:S.muted,marginBottom:12}}>Corrigez si besoin, supprimez les erreurs, puis validez.</div>
+          {scanConfirm.items.map((item,idx)=>(
+            <div key={idx} style={{background:item.isNew?"#1a1a00":S.card2,border:`1px solid ${item.isNew?S.gold:S.border}`,borderRadius:10,padding:10,marginBottom:8}}>
+              {item.isNew&&<div style={{fontSize:9,color:S.gold,fontWeight:700,marginBottom:4}}>🆕 NOUVEAU PRODUIT</div>}
+              <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+                <input value={item.emoji} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],emoji:e.target.value};setScanConfirm(p=>({...p,items:ni}));}} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:18,width:44,textAlign:"center",outline:"none"}}/>
+                <input value={item.nom} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],nom:e.target.value};setScanConfirm(p=>({...p,items:ni}));}} style={{flex:2,background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px 8px",fontSize:12,outline:"none"}}/>
+                <button onClick={()=>setScanConfirm(p=>({...p,items:p.items.filter((_,i)=>i!==idx)}))} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✕</button>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:S.muted,marginBottom:2}}>Quantité</div>
+                  <input type="number" step="0.01" value={item.quantite} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],quantite:parseFloat(e.target.value)||0};setScanConfirm(p=>({...p,items:ni}));}} style={{width:"100%",background:S.card3,border:`1px solid ${S.border}`,color:S.gold,borderRadius:6,padding:"6px",fontSize:13,fontWeight:700,outline:"none",boxSizing:"border-box"}}/>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:S.muted,marginBottom:2}}>Unité</div>
+                  <select value={item.unite} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],unite:e.target.value};setScanConfirm(p=>({...p,items:ni}));}} style={{width:"100%",background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:12,outline:"none"}}>
+                    {["kg","g","L","ml","pcs","boîte","sachet"].map(u=><option key={u}>{u}</option>)}
+                  </select>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:S.muted,marginBottom:2}}>Prix/unité (F)</div>
+                  <input type="number" value={item.prixUnitaire} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],prixUnitaire:parseInt(e.target.value)||0};setScanConfirm(p=>({...p,items:ni}));}} style={{width:"100%",background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:12,outline:"none",boxSizing:"border-box"}}/>
+                </div>
+              </div>
+            </div>
+          ))}
+          <button onClick={()=>setScanConfirm(p=>({...p,items:[...p.items,{nom:"",quantite:0,unite:"kg",prixUnitaire:0,emoji:"📦",isNew:true,matched_id:null}]}))} style={{width:"100%",background:"transparent",border:`1px dashed ${S.blue}`,color:S.blue,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,marginBottom:10}}>＋ Ajouter un produit manquant</button>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setScanConfirm(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
+            <button onClick={applyScanConfirm} style={{background:S.green,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:800,flex:2}}>✅ Valider ({scanConfirm.items.length} produits)</button>
+          </div>
+        </div>
       </div>}
 
       <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
