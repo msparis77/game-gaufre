@@ -1,5 +1,33 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
+
+// ════════════════════════════════════════════════════
+// FIREBASE REST API — données cloud permanentes
+// ════════════════════════════════════════════════════
+const FB_KEY = 'AIzaSyDQOPBJOCa0aXmoEraHIYy-xrxFxCLO_IM'
+const FB_URL = 'https://firestore.googleapis.com/v1/projects/game-gaufre-dakar/databases/(default)/documents/gg'
+
+const fbSave = async (key, data) => {
+  try {
+    const k = key.replace(/[^a-zA-Z0-9]/g, '_')
+    await fetch(`${FB_URL}/${k}?key=${FB_KEY}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({fields:{v:{stringValue:JSON.stringify(data)},t:{integerValue:String(Date.now())}}})
+    })
+  } catch(e) {}
+}
+
+const fbGet = async (key) => {
+  try {
+    const k = key.replace(/[^a-zA-Z0-9]/g, '_')
+    const r = await fetch(`${FB_URL}/${k}?key=${FB_KEY}`)
+    if (!r.ok) return null
+    const d = await r.json()
+    return d.fields?.v?.stringValue ? JSON.parse(d.fields.v.stringValue) : null
+  } catch(e) { return null }
+}
+
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
 const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<0.001)return"0 "+unit;if(qty<1)return(qty*1000).toFixed(0)+" "+(unit==="kg"?"g":"ml");return qty.toFixed(3).replace(/\.?0+$/,"")+" "+unit;}return qty%1===0?qty+" "+unit:qty.toFixed(1)+" "+unit;};
@@ -177,18 +205,24 @@ export default function App(){
   useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
   const touch=()=>setLastAct(Date.now());
 
-  useEffect(()=>{
-    const load=key=>{try{const s=localStorage.getItem(key);return s?JSON.parse(s):null;}catch(e){return null;}};
-    try{const d=load("gg3-emps");if(d){setEmps(d);empRef.current=d;}}catch(e){}
-    try{const d=load("gg3-prods");if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
-    try{const d=load("gg3-day-"+todayStr());if(d){if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
-    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const d=load("gg3-day-"+ds);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
+  useEffect(()=>{(async()=>{
+    // Charger depuis Firebase (cloud) en priorité, localStorage en fallback rapide
+    const load=async(key)=>{
+      let local=null;
+      try{const s=localStorage.getItem(key);if(s)local=JSON.parse(s);}catch(e){}
+      const cloud=await fbGet(key);
+      return cloud||local; // Cloud prioritaire
+    };
+    try{const d=await load('gg3-emps');if(d){setEmps(d);empRef.current=d;}}catch(e){}
+    try{const d=await load('gg3-prods');if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
+    try{const d=await load('gg3-day-'+todayStr());if(d){if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
+    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split('T')[0];try{const d=await load('gg3-day-'+ds);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
-  },[]);
+  })();},[]);
 
-  const saveEmps=e=>{try{localStorage.setItem("gg3-emps",JSON.stringify(e));setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);}catch(e){}};
-  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{try{localStorage.setItem("gg3-prods",JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno,ts:Date.now()}));setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);}catch(e){}};
-  const saveDay=upd=>{try{let c={};try{const s=localStorage.getItem("gg3-day-"+todayStr());if(s)c=JSON.parse(s);}catch(e){}localStorage.setItem("gg3-day-"+todayStr(),JSON.stringify({...c,...upd,ts:Date.now()}));setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);}catch(e){}};
+  const saveEmps=e=>{try{localStorage.setItem('gg3-emps',JSON.stringify(e));}catch(e){}fbSave('gg3-emps',e);};
+  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{const d={b,s,ing,rec,sta,pp,goal:g,tno};try{localStorage.setItem('gg3-prods',JSON.stringify(d));}catch(e){}fbSave('gg3-prods',d).then(()=>{setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);});};
+  const saveDay=upd=>{let nd={};try{const s=localStorage.getItem('gg3-day-'+todayStr());if(s)nd=JSON.parse(s);}catch(e){}nd={...nd,...upd};try{localStorage.setItem('gg3-day-'+todayStr(),JSON.stringify(nd));}catch(e){}fbSave('gg3-day-'+todayStr(),nd).then(()=>{setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);});};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
 
