@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+iimport React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
@@ -177,16 +177,29 @@ export default function App(){
   const touch=()=>setLastAct(Date.now());
 
   useEffect(()=>{(async()=>{
-    try{const r=await window.storage.get("gg3-emps");if(r){const e=JSON.parse(r.value);setEmps(e);empRef.current=e;}}catch(e){}
-    try{const r=await window.storage.get("gg3-prods");if(r){const d=JSON.parse(r.value);if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
-    try{const r=await window.storage.get("gg3-day-"+todayStr());if(r){const d=JSON.parse(r.value);if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
-    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const r=await window.storage.get("gg3-day-"+ds);if(r){const d=JSON.parse(r.value);hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}}catch(e){}}
+    try{
+      let s=localStorage.getItem("gg3-emps");
+      if(!s){const fb=await fbLoad("gg3-emps");if(fb)s=JSON.stringify(fb);}
+      if(s){const e=JSON.parse(s);setEmps(e);empRef.current=e;}
+    }catch(e){}
+    try{
+      let s=localStorage.getItem("gg3-prods");
+      // Si localStorage vide, essayer Firebase (ex: nouvel appareil)
+      if(!s){const fb=await fbLoad("gg3-prods");if(fb)s=JSON.stringify(fb);}
+      if(s){const d=JSON.parse(s);if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}
+    }catch(e){}
+    try{
+      let s=localStorage.getItem("gg3-day-"+todayStr());
+      if(!s){const fb=await fbLoad("gg3-day-"+todayStr());if(fb)s=JSON.stringify(fb);}
+      if(s){const d=JSON.parse(s);if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}
+    }catch(e){}
+    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const s=localStorage.getItem("gg3-day-"+ds);if(s){const d=JSON.parse(s);hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}}catch(e){}}
     setHistory(hist);
   })();},[]);
 
-  const saveEmps=async e=>{try{await window.storage.set("gg3-emps",JSON.stringify(e));}catch(e){}};
-  const saveProds=async(b,s,ing,rec,sta,pp,g,tno)=>{try{await window.storage.set("gg3-prods",JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno}));}catch(e){}};
-  const saveDay=async upd=>{try{let c={};try{const r=await window.storage.get("gg3-day-"+todayStr());if(r)c=JSON.parse(r.value);}catch(e){}await window.storage.set("gg3-day-"+todayStr(),JSON.stringify({...c,...upd}));}catch(e){}};
+  const saveEmps=e=>{try{localStorage.setItem("gg3-emps",JSON.stringify(e));}catch(e){}fbSave("gg3-emps",e);};
+  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{const d={b,s,ing,rec,sta,pp,goal:g,tno};try{localStorage.setItem("gg3-prods",JSON.stringify(d));}catch(e){}fbSave("gg3-prods",d);};
+  const saveDay=upd=>{try{let c={};try{const s=localStorage.getItem("gg3-day-"+todayStr());if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem("gg3-day-"+todayStr(),JSON.stringify(nd));fbSave("gg3-day-"+todayStr(),nd);}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
 
@@ -989,7 +1002,7 @@ export default function App(){
       {empModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:16,overflowY:"auto"}}>
         <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid ${S.gold}`,marginTop:20}}>
           <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>👥 ÉQUIPE</div>
-          {editEmp?<div><div style={{fontSize:12,color:S.muted,marginBottom:12}}>Modifier {editEmp.name}</div>{[{l:"Nom",k:"name",t:"text"},{l:"PIN (4 chiffres)",k:"pin",t:"number"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={editEmp[f.k]} onChange={e=>setEditEmp(p=>({...p,[f.k]:f.k==="pin"?e.target.value.slice(0,4):e.target.value}))} style={Inp()}/></div>)}<div style={{display:"flex",gap:10}}><button onClick={()=>setEditEmp(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={async()=>{if(editEmp.pin.length===4&&editEmp.name){const ne=emps.map(e=>e.id===editEmp.id?editEmp:e);setEmps(ne);empRef.current=ne;await saveEmps(ne);setEditEmp(null);showToast("✓ Mis à jour");}}} disabled={editEmp.pin.length!==4} style={{...Btn(S.gold),flex:1,opacity:editEmp.pin.length===4?1:0.4}}>✓ Sauvegarder</button></div></div>
+          {editEmp?<div><div style={{fontSize:12,color:S.muted,marginBottom:12}}>Modifier {editEmp.name}</div>{[{l:"Nom",k:"name",t:"text"},{l:"PIN (4 chiffres)",k:"pin",t:"number"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={editEmp[f.k]} onChange={e=>setEditEmp(p=>({...p,[f.k]:f.k==="pin"?e.target.value.slice(0,4):e.target.value}))} style={Inp()}/></div>)}<div style={{display:"flex",gap:10}}><button onClick={()=>setEditEmp(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={async()=>{if(editEmp.pin.length===4&&editEmp.name){const ne=emps.map(e=>e.id===editEmp.id?editEmp:e);setEmps(ne);empRef.current=ne;saveEmps(ne);setEditEmp(null);showToast("✓ Mis à jour");}}} disabled={editEmp.pin.length!==4} style={{...Btn(S.gold),flex:1,opacity:editEmp.pin.length===4?1:0.4}}>✓ Sauvegarder</button></div></div>
           :<div>{emps.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${S.border}`}}><div style={{fontSize:22}}>{e.role==="patron"?"👑":"👤"}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:e.role==="patron"?S.gold:S.text}}>{e.name}</div><div style={{fontSize:10,color:S.muted}}>PIN: {"•".repeat(4)} • {e.role}</div></div><button onClick={()=>setEditEmp({...e})} style={{background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}}>✏️</button></div>)}<button onClick={()=>setEmpModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%",marginTop:12}}>Fermer</button></div>}
         </div>
       </div>}
