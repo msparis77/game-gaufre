@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 // FIREBASE REST API — données cloud permanentes
 // ════════════════════════════════════════════════════
 const FB_KEY = 'AIzaSyDQOPBJOCa0aXmoEraHIYy-xrxFxCLO_IM'
-const FB_URL = 'https://firestore.googleapis.com/v1/projects/game-gaufre-dakar/databases/(default)/documents/gg'
+const FB_URL = 'https://firestore.googleapis.com/v1/projects/game-gaufre-dakar/databases/(default)/documents/game-gaufre-dakar'
 
 const fbSave = async (key, data) => {
   try {
@@ -206,6 +206,12 @@ export default function App(){
   const touch=()=>setLastAct(Date.now());
 
   useEffect(()=>{(async()=>{
+    // Test de connexion Firebase au démarrage
+    try{
+      await fbSave('_test',{ok:true,ts:Date.now()});
+      const t=await fbGet('_test');
+      setSaveOk(t?.ok===true);
+    }catch(e){}
     // Charger depuis Firebase (cloud) en priorité, localStorage en fallback rapide
     const load=async(key)=>{
       let local=null;
@@ -473,7 +479,7 @@ export default function App(){
             <div style={{fontSize:14,fontWeight:800,color:S.gold}}>🎮 G&G</div>
             <button onClick={()=>setStoreModal(true)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10}}>{currentStore.emoji} {currentStore.name.split("—")[1]?.trim()||currentStore.name} ▾</button>
           </div>
-          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}{saveOk&&<span style={{color:S.green,marginLeft:6,fontWeight:700}}>💾✓</span>}</div>
+          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}{saveOk&&<span style={{color:S.green,marginLeft:6,fontWeight:700}}>☁️✓</span>}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <div style={{textAlign:"right"}}>
