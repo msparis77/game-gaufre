@@ -4,27 +4,22 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 // ════════════════════════════════════════════════════
 // FIREBASE REST API — données cloud permanentes
 // ════════════════════════════════════════════════════
-const FB_KEY = 'AIzaSyDQOPBJOCa0aXmoEraHIYy-xrxFxCLO_IM'
-const FB_URL = 'https://firestore.googleapis.com/v1/projects/game-gaufre-dakar/databases/(default)/documents/game-gaufre-dakar'
-
+// Stockage via proxy Vercel → Firebase (même principe que l'IA)
 const fbSave = async (key, data) => {
   try {
-    const k = key.replace(/[^a-zA-Z0-9]/g, '_')
-    await fetch(`${FB_URL}/${k}?key=${FB_KEY}`, {
-      method: 'PATCH',
+    await fetch('/api/store', {
+      method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({fields:{v:{stringValue:JSON.stringify(data)},t:{integerValue:String(Date.now())}}})
+      body: JSON.stringify({key, data})
     })
   } catch(e) {}
 }
 
 const fbGet = async (key) => {
   try {
-    const k = key.replace(/[^a-zA-Z0-9]/g, '_')
-    const r = await fetch(`${FB_URL}/${k}?key=${FB_KEY}`)
+    const r = await fetch(`/api/store?key=${encodeURIComponent(key)}`)
     if (!r.ok) return null
-    const d = await r.json()
-    return d.fields?.v?.stringValue ? JSON.parse(d.fields.v.stringValue) : null
+    return await r.json()
   } catch(e) { return null }
 }
 
