@@ -1,4 +1,3 @@
-import { fbSave, fbLoad } from './firebase.js'
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
@@ -146,6 +145,7 @@ export default function App(){
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
   const [editStation,setEditStation]=useState(null);
+  const [saveOk,setSaveOk]=useState(false);
   const [scanLoading,setScanLoading]=useState(false);
   const [scanTarget,setScanTarget]=useState(null);
   const scanRef=useRef(null);
@@ -177,71 +177,18 @@ export default function App(){
   useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
   const touch=()=>setLastAct(Date.now());
 
-  useEffect(()=>{(async()=>{
-    // Fonction helper : charge depuis localStorage ET Firebase, prend le plus récent
-    const load=async(key)=>{
-      let local=null,fb=null;
-      try{const s=localStorage.getItem(key);if(s)local=JSON.parse(s);}catch(e){}
-      try{fb=await fbLoad(key);}catch(e){}
-      // Firebase prioritaire si plus récent ou si localStorage vide
-      if(fb&&fb.ts&&(!local?.ts||fb.ts>=local.ts)) return fb;
-      return local;
-    };
-
-    // Charger employés
-    try{
-      const d=await load("gg3-emps");
-      if(d){setEmps(d);empRef.current=d;}
-    }catch(e){}
-
-    // Charger produits/config
-    try{
-      const d=await load("gg3-prods");
-      if(d){
-        if(d.b)setBoissons(d.b);
-        if(d.s)setSnacks(d.s);
-        if(d.ing)setIngredients(d.ing);
-        if(d.rec)setRecipes(d.rec);
-        if(d.sta)setStations(d.sta);
-        if(d.pp)setPhotoPrice(d.pp);
-        if(d.goal)setDailyGoal(d.goal);
-        if(d.tno)setTicketNo(d.tno);
-      }
-    }catch(e){}
-
-    // Charger données du jour
-    try{
-      const d=await load("gg3-day-"+todayStr());
-      if(d){
-        if(d.sales)setSales(d.sales);
-        if(d.done)setDoneSess(d.done);
-        if(d.pc!=null)setPhotoCount(d.pc);
-        if(d.audit)setAudit(d.audit);
-        if(d.checklist)setChecklist(d.checklist);
-        if(d.expenses)setExpenses(d.expenses);
-        if(d.ingStock)setIngStock(d.ingStock);
-        if(d.ingPhys)setIngPhys(d.ingPhys);
-        if(d.productions)setProductions(d.productions);
-        if(d.finPhys)setFinPhys(d.finPhys);
-      }
-    }catch(e){}
-
-    // Historique 7 jours
-    const hist={};
-    for(let i=1;i<=7;i++){
-      const dt=new Date();dt.setDate(dt.getDate()-i);
-      const ds=dt.toISOString().split("T")[0];
-      try{
-        const d=await load("gg3-day-"+ds);
-        if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};
-      }catch(e){}
-    }
+  useEffect(()=>{
+    const load=key=>{try{const s=localStorage.getItem(key);return s?JSON.parse(s):null;}catch(e){return null;}};
+    try{const d=load("gg3-emps");if(d){setEmps(d);empRef.current=d;}}catch(e){}
+    try{const d=load("gg3-prods");if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
+    try{const d=load("gg3-day-"+todayStr());if(d){if(d.sales)setSales(d.sales);if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
+    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const d=load("gg3-day-"+ds);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
-  })();},[]);
+  },[]);
 
-  const saveEmps=e=>{try{localStorage.setItem("gg3-emps",JSON.stringify(e));}catch(e){}fbSave("gg3-emps",e);};
-  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{const d={b,s,ing,rec,sta,pp,goal:g,tno,ts:Date.now()};try{localStorage.setItem("gg3-prods",JSON.stringify(d));}catch(e){}fbSave("gg3-prods",d);};
-  const saveDay=upd=>{try{let c={};try{const s=localStorage.getItem("gg3-day-"+todayStr());if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd,ts:Date.now()};localStorage.setItem("gg3-day-"+todayStr(),JSON.stringify(nd));fbSave("gg3-day-"+todayStr(),nd);}catch(e){}};
+  const saveEmps=e=>{try{localStorage.setItem("gg3-emps",JSON.stringify(e));setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);}catch(e){}};
+  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{try{localStorage.setItem("gg3-prods",JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno,ts:Date.now()}));setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);}catch(e){}};
+  const saveDay=upd=>{try{let c={};try{const s=localStorage.getItem("gg3-day-"+todayStr());if(s)c=JSON.parse(s);}catch(e){}localStorage.setItem("gg3-day-"+todayStr(),JSON.stringify({...c,...upd,ts:Date.now()}));setSaveOk(true);setTimeout(()=>setSaveOk(false),2000);}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
 
@@ -492,7 +439,7 @@ export default function App(){
             <div style={{fontSize:14,fontWeight:800,color:S.gold}}>🎮 G&G</div>
             <button onClick={()=>setStoreModal(true)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10}}>{currentStore.emoji} {currentStore.name.split("—")[1]?.trim()||currentStore.name} ▾</button>
           </div>
-          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}</div>
+          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}{saveOk&&<span style={{color:S.green,marginLeft:6,fontWeight:700}}>💾✓</span>}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <div style={{textAlign:"right"}}>
