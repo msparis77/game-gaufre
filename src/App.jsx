@@ -35,10 +35,119 @@ const CHECKLIST=["Stock ingrédients saisi","Production planifiée","Caisse vér
 const STORES=[{id:"s1",name:"Game & Gaufre — Limamoulaye",emoji:"🏪"},{id:"s2",name:"Game & Gaufre — Guédiawaye 2",emoji:"🏬"},{id:"s3",name:"Game & Gaufre — Pikine",emoji:"🏢"}];
 
 const INIT_EMPS=[{id:"patron",name:"Patron",pin:"1234",role:"patron"},{id:"e1",name:"Employé 1",pin:"0001",role:"employe"},{id:"e2",name:"Employé 2",pin:"0002",role:"employe"},{id:"e3",name:"Employé 3",pin:"0003",role:"employe"},{id:"e4",name:"Employé 4",pin:"0004",role:"employe"},{id:"e5",name:"Employé 5",pin:"0005",role:"employe"}];
-const INIT_B=[{id:"b1",name:"Café",price:200,emoji:"☕"},{id:"b2",name:"Café Lait",price:250,emoji:"☕"},{id:"b3",name:"Chocolat",price:300,emoji:"🍫"},{id:"b4",name:"Thé",price:200,emoji:"🍵"},{id:"b5",name:"Café Touba",price:150,emoji:"☕"},{id:"b6",name:"Canette",price:500,emoji:"🥤"},{id:"b7",name:"Autre Jus",price:300,emoji:"🧃"}];
-const INIT_S=[{id:"s1",name:"Crêpe Sucre",price:500,emoji:"🥞"},{id:"s2",name:"Crêpe Confiture",price:600,emoji:"🥞"},{id:"s3",name:"Crêpe Nutella",price:1500,emoji:"🥞"},{id:"s4",name:"Gaufre Sucre",price:500,emoji:"🧇"},{id:"s5",name:"Gaufre Nutella",price:1200,emoji:"🧇"},{id:"s6",name:"Poulet-Fromage",price:1500,emoji:"🍗"},{id:"s7",name:"Bœuf-Fromage",price:2000,emoji:"🥩"},{id:"s8",name:"Sandwich",price:1000,emoji:"🥪"}];
-const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62},{id:"i6",name:"Confiture",unit:"kg",emoji:"🍓",unitCost:5000},{id:"i7",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000},{id:"i8",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200},{id:"i9",name:"Fromage",unit:"kg",emoji:"🧀",unitCost:6000},{id:"i10",name:"Thon",unit:"kg",emoji:"🐟",unitCost:3000},{id:"i11",name:"Pain",unit:"pcs",emoji:"🍞",unitCost:50},{id:"i12",name:"Levure",unit:"kg",emoji:"🧪",unitCost:5000}];
-const INIT_REC=[{id:"r1",emoji:"🥞",name:"Crêpe Sucre",category:"Crêpes",snackId:"s1",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i4",qty:0.005},{id:"i5",qty:0.5}]},{id:"r2",emoji:"🥞",name:"Crêpe Confiture",category:"Crêpes",snackId:"s2",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i6",qty:0.030},{id:"i5",qty:0.5}]},{id:"r3",emoji:"🥞",name:"Crêpe Nutella",category:"Crêpes",snackId:"s3",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i7",qty:0.040},{id:"i5",qty:0.5}]},{id:"r4",emoji:"🧇",name:"Gaufre Sucre",category:"Gaufres",snackId:"s4",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i4",qty:0.008},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r5",emoji:"🧇",name:"Gaufre Nutella",category:"Gaufres",snackId:"s5",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i7",qty:0.040},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r6",emoji:"🍗",name:"Poulet-Fromage",category:"Salées",snackId:"s6",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r7",emoji:"🥩",name:"Bœuf-Fromage",category:"Salées",snackId:"s7",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r8",emoji:"🥪",name:"Sandwich Thon",category:"Sandwichs",snackId:"s8",ingredients:[{id:"i10",qty:0.060},{id:"i9",qty:0.030},{id:"i11",qty:2}]}];
+const INIT_B=[
+  {id:"b1",name:"Café",emoji:"☕",price:150,cat:"Chaud"},{id:"b2",name:"Café lait",emoji:"☕",price:200,cat:"Chaud"},{id:"b3",name:"Café Touba",emoji:"☕",price:150,cat:"Chaud"},
+  {id:"b4",name:"Thé ataya",emoji:"🍵",price:150,cat:"Chaud"},{id:"b5",name:"Chocolat chaud",emoji:"🍫",price:250,cat:"Chaud"},{id:"b6",name:"Lait chaud",emoji:"🥛",price:200,cat:"Chaud"},
+  {id:"b7",name:"Bissap",emoji:"🔴",price:300,cat:"Jus maison"},{id:"b8",name:"Gingembre",emoji:"🟡",price:300,cat:"Jus maison"},{id:"b9",name:"Bouye",emoji:"🤍",price:300,cat:"Jus maison"},
+  {id:"b10",name:"Ditax",emoji:"🟣",price:300,cat:"Jus maison"},{id:"b11",name:"Tamarin",emoji:"🟤",price:300,cat:"Jus maison"},
+  {id:"b13",name:"Coca-Cola",emoji:"🥤",price:500,cat:"Sodas"},{id:"b14",name:"Fanta Orange",emoji:"🍊",price:500,cat:"Sodas"},{id:"b15",name:"Fanta Citron",emoji:"🍋",price:500,cat:"Sodas"},
+  {id:"b16",name:"Sprite",emoji:"💚",price:500,cat:"Sodas"},{id:"b17",name:"Gazelle",emoji:"🍺",price:500,cat:"Sodas"},{id:"b18",name:"Youki",emoji:"🥤",price:400,cat:"Sodas"},
+  {id:"b19",name:"Malta",emoji:"🟫",price:500,cat:"Sodas"},{id:"b20",name:"Pamplemousse",emoji:"🍈",price:500,cat:"Sodas"},
+  {id:"b21",name:"Eau minérale",emoji:"💧",price:200,cat:"Eau"},{id:"b22",name:"Eau fraîche",emoji:"🧊",price:100,cat:"Eau"},
+];
+const INIT_S=[
+  {id:"s1",name:"Crêpe Sucre beurre",emoji:"🥞",price:500,cat:"Crêpes sucrées"},{id:"s2",name:"Crêpe Confiture",emoji:"🥞",price:600,cat:"Crêpes sucrées"},
+  {id:"s3",name:"Crêpe Nutella",emoji:"🥞",price:800,cat:"Crêpes sucrées"},{id:"s4",name:"Crêpe Miel",emoji:"🍯",price:700,cat:"Crêpes sucrées"},
+  {id:"s5",name:"Crêpe Chocolat",emoji:"🍫",price:800,cat:"Crêpes sucrées"},{id:"s6",name:"Crêpe Banane Nutella",emoji:"🍌",price:1000,cat:"Crêpes sucrées"},
+  {id:"s7",name:"Crêpe Poulet Fromage",emoji:"🍗",price:1500,cat:"Crêpes salées"},{id:"s8",name:"Crêpe Thon Fromage",emoji:"🐟",price:1500,cat:"Crêpes salées"},
+  {id:"s9",name:"Crêpe Bœuf Fromage",emoji:"🥩",price:2000,cat:"Crêpes salées"},{id:"s10",name:"Crêpe Œuf Fromage",emoji:"🥚",price:1200,cat:"Crêpes salées"},
+  {id:"s11",name:"Gaufre Sucre glace",emoji:"🧇",price:500,cat:"Gaufres"},{id:"s12",name:"Gaufre Nutella",emoji:"🧇",price:1000,cat:"Gaufres"},
+  {id:"s13",name:"Gaufre Confiture",emoji:"🧇",price:700,cat:"Gaufres"},{id:"s14",name:"Gaufre Miel",emoji:"🍯",price:800,cat:"Gaufres"},
+  {id:"s15",name:"Sandwich Poulet Mayo",emoji:"🥪",price:1000,cat:"Sandwichs"},{id:"s16",name:"Sandwich Thon Mayo",emoji:"🥪",price:1000,cat:"Sandwichs"},
+  {id:"s17",name:"Sandwich Œuf Mayo",emoji:"🥚",price:800,cat:"Sandwichs"},{id:"s18",name:"Sandwich Poulet Ketchup",emoji:"🍗",price:1000,cat:"Sandwichs"},
+  {id:"s19",name:"Sandwich Bœuf",emoji:"🥩",price:1500,cat:"Sandwichs"},{id:"s20",name:"Sandwich Frites Poulet",emoji:"🍟",price:1500,cat:"Sandwichs"},
+  {id:"s21",name:"Formule Gaufre + Café",emoji:"⭐",price:1000,cat:"Formules"},{id:"s22",name:"Formule Crêpe + Café",emoji:"⭐",price:1000,cat:"Formules"},
+  {id:"s23",name:"Formule Sandwich + Jus",emoji:"⭐",price:1500,cat:"Formules"},{id:"s24",name:"Formule Gamer PS5 + Thé",emoji:"🎮",price:1500,cat:"Formules"},
+];
+const INIT_ING=[
+  {id:"i1",name:"Farine",emoji:"🌾",unit:"kg",unitCost:300},{id:"i2",name:"Maïzena",emoji:"🌽",unit:"kg",unitCost:1000},
+  {id:"i3",name:"Lait en poudre",emoji:"🥛",unit:"kg",unitCost:6000},{id:"i4",name:"Beurre",emoji:"🧈",unit:"kg",unitCost:7000},
+  {id:"i5",name:"Oeufs",emoji:"🥚",unit:"pcs",unitCost:62},{id:"i6",name:"Sucre",emoji:"🍬",unit:"kg",unitCost:470},
+  {id:"i7",name:"Sucre glace",emoji:"🍬",unit:"kg",unitCost:600},{id:"i8",name:"Levure chimique",emoji:"🫙",unit:"kg",unitCost:2000},
+  {id:"i9",name:"Sel",emoji:"🧂",unit:"kg",unitCost:200},{id:"i10",name:"Huile",emoji:"🫙",unit:"L",unitCost:1500},
+  {id:"i11",name:"Vanille",emoji:"🌿",unit:"pcs",unitCost:50},{id:"i12",name:"Nutella",emoji:"🍫",unit:"kg",unitCost:10000},
+  {id:"i13",name:"Confiture fraise",emoji:"🍓",unit:"kg",unitCost:5000},{id:"i14",name:"Confiture abricot",emoji:"🍑",unit:"kg",unitCost:5000},
+  {id:"i15",name:"Miel",emoji:"🍯",unit:"kg",unitCost:8000},{id:"i16",name:"Banane",emoji:"🍌",unit:"pcs",unitCost:100},
+  {id:"i17",name:"Chocolat poudre",emoji:"🍫",unit:"kg",unitCost:4000},{id:"i18",name:"Poulet",emoji:"🍗",unit:"kg",unitCost:2200},
+  {id:"i19",name:"Bœuf haché",emoji:"🥩",unit:"kg",unitCost:4500},{id:"i20",name:"Thon boîte",emoji:"🐟",unit:"pcs",unitCost:500},
+  {id:"i21",name:"Jambon",emoji:"🍖",unit:"kg",unitCost:8000},{id:"i22",name:"Mortadelle",emoji:"🍖",unit:"kg",unitCost:3000},
+  {id:"i23",name:"Fromage râpé",emoji:"🧀",unit:"kg",unitCost:6000},{id:"i24",name:"Fromage fondu",emoji:"🧀",unit:"pcs",unitCost:200},
+  {id:"i25",name:"Crème fraîche",emoji:"🥛",unit:"kg",unitCost:4000},{id:"i26",name:"Pain baguette",emoji:"🥖",unit:"pcs",unitCost:200},
+  {id:"i27",name:"Pain sandwich",emoji:"🍞",unit:"pcs",unitCost:150},{id:"i28",name:"Mayonnaise",emoji:"🫙",unit:"kg",unitCost:3000},
+  {id:"i29",name:"Ketchup",emoji:"🍅",unit:"kg",unitCost:2500},{id:"i30",name:"Moutarde",emoji:"💛",unit:"kg",unitCost:2500},
+  {id:"i31",name:"Sauce piquante",emoji:"🌶",unit:"kg",unitCost:3000},{id:"i32",name:"Oignon",emoji:"🧅",unit:"kg",unitCost:300},
+  {id:"i33",name:"Tomate",emoji:"🍅",unit:"kg",unitCost:500},{id:"i34",name:"Salade verte",emoji:"🥬",unit:"kg",unitCost:1000},
+  {id:"i35",name:"Fleurs bissap",emoji:"🌺",unit:"kg",unitCost:3000},{id:"i36",name:"Gingembre",emoji:"🫚",unit:"kg",unitCost:1500},
+  {id:"i37",name:"Poudre baobab",emoji:"🌳",unit:"kg",unitCost:5000},{id:"i38",name:"Café Touba moulu",emoji:"☕",unit:"kg",unitCost:4500},
+  {id:"i39",name:"Thé Gunpowder",emoji:"🍵",unit:"kg",unitCost:5000},{id:"i40",name:"Citron",emoji:"🍋",unit:"pcs",unitCost:100},
+  {id:"i41",name:"Menthe",emoji:"🌿",unit:"kg",unitCost:1000},{id:"i42",name:"Gobelets jetables",emoji:"🥤",unit:"pcs",unitCost:15},
+  {id:"i43",name:"Serviettes",emoji:"🧻",unit:"pcs",unitCost:5},{id:"i44",name:"Sachets",emoji:"🛍️",unit:"pcs",unitCost:10},
+];
+const INIT_REC=[
+  // ══ CRÊPES SUCRÉES ══
+  {id:"r1",name:"Crêpe Sucre beurre",emoji:"🥞",category:"Crêpes sucrées",snackId:"s1",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i4",qty:0.5},
+    {id:"i6",qty:0.015},{id:"i9",qty:0.002},{id:"i4",qty:0.5},{id:"i10",qty:0.005}]},
+  {id:"r2",name:"Crêpe Confiture",emoji:"🥞",category:"Crêpes sucrées",snackId:"s2",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i6",qty:0.010},{id:"i13",qty:0.040}]},
+  {id:"r3",name:"Crêpe Nutella",emoji:"🥞",category:"Crêpes sucrées",snackId:"s3",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i6",qty:0.010},{id:"i12",qty:0.035}]},
+  {id:"r4",name:"Crêpe Miel",emoji:"🍯",category:"Crêpes sucrées",snackId:"s4",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i15",qty:0.030}]},
+  {id:"r5",name:"Crêpe Chocolat",emoji:"🍫",category:"Crêpes sucrées",snackId:"s5",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i17",qty:0.020},{id:"i6",qty:0.015}]},
+  {id:"r6",name:"Crêpe Banane Nutella",emoji:"🍌",category:"Crêpes sucrées",snackId:"s6",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i12",qty:0.030},{id:"i16",qty:0.5}]},
+  // ══ CRÊPES SALÉES ══
+  {id:"r7",name:"Crêpe Poulet Fromage",emoji:"🍗",category:"Crêpes salées",snackId:"s7",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i9",qty:0.003},{id:"i18",qty:0.080},{id:"i23",qty:0.040},{id:"i32",qty:0.020}]},
+  {id:"r8",name:"Crêpe Thon Fromage",emoji:"🐟",category:"Crêpes salées",snackId:"s8",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i9",qty:0.003},{id:"i20",qty:1},{id:"i23",qty:0.040}]},
+  {id:"r9",name:"Crêpe Bœuf Fromage",emoji:"🥩",category:"Crêpes salées",snackId:"s9",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:0.5},{id:"i9",qty:0.003},{id:"i19",qty:0.080},{id:"i23",qty:0.040},{id:"i32",qty:0.020}]},
+  {id:"r10",name:"Crêpe Œuf Fromage",emoji:"🥚",category:"Crêpes salées",snackId:"s10",ingredients:[
+    {id:"i1",qty:0.060},{id:"i3",qty:0.015},{id:"i4",qty:1},{id:"i9",qty:0.003},{id:"i23",qty:0.040}]},
+  // ══ GAUFRES ══
+  {id:"r11",name:"Gaufre Sucre glace",emoji:"🧇",category:"Gaufres",snackId:"s11",ingredients:[
+    {id:"i1",qty:0.050},{id:"i2",qty:0.010},{id:"i3",qty:0.015},{id:"i4",qty:0.5},
+    {id:"i6",qty:0.015},{id:"i8",qty:0.003},{id:"i9",qty:0.002},{id:"i7",qty:0.005}]},
+  {id:"r12",name:"Gaufre Nutella",emoji:"🧇",category:"Gaufres",snackId:"s12",ingredients:[
+    {id:"i1",qty:0.050},{id:"i2",qty:0.010},{id:"i3",qty:0.015},{id:"i4",qty:0.5},
+    {id:"i6",qty:0.015},{id:"i8",qty:0.003},{id:"i12",qty:0.040}]},
+  {id:"r13",name:"Gaufre Confiture",emoji:"🧇",category:"Gaufres",snackId:"s13",ingredients:[
+    {id:"i1",qty:0.050},{id:"i2",qty:0.010},{id:"i3",qty:0.015},{id:"i4",qty:0.5},
+    {id:"i6",qty:0.015},{id:"i8",qty:0.003},{id:"i13",qty:0.040}]},
+  {id:"r14",name:"Gaufre Miel",emoji:"🍯",category:"Gaufres",snackId:"s14",ingredients:[
+    {id:"i1",qty:0.050},{id:"i2",qty:0.010},{id:"i3",qty:0.015},{id:"i4",qty:0.5},
+    {id:"i6",qty:0.015},{id:"i8",qty:0.003},{id:"i15",qty:0.030}]},
+  // ══ SANDWICHS ══
+  {id:"r15",name:"Sandwich Poulet Mayo",emoji:"🥪",category:"Sandwichs",snackId:"s15",ingredients:[
+    {id:"i27",qty:1},{id:"i18",qty:0.080},{id:"i28",qty:0.020},{id:"i33",qty:0.030},{id:"i34",qty:0.030},{id:"i35",qty:0.020}]},
+  {id:"r16",name:"Sandwich Thon Mayo",emoji:"🥪",category:"Sandwichs",snackId:"s16",ingredients:[
+    {id:"i27",qty:1},{id:"i20",qty:1},{id:"i28",qty:0.020},{id:"i32",qty:0.020},{id:"i33",qty:0.030}]},
+  {id:"r17",name:"Sandwich Œuf Mayo",emoji:"🥚",category:"Sandwichs",snackId:"s17",ingredients:[
+    {id:"i27",qty:1},{id:"i4",qty:1},{id:"i28",qty:0.020},{id:"i33",qty:0.030},{id:"i34",qty:0.030}]},
+  {id:"r18",name:"Sandwich Poulet Ketchup",emoji:"🍗",category:"Sandwichs",snackId:"s18",ingredients:[
+    {id:"i27",qty:1},{id:"i18",qty:0.080},{id:"i29",qty:0.020},{id:"i33",qty:0.030},{id:"i35",qty:0.020}]},
+  {id:"r19",name:"Sandwich Bœuf",emoji:"🥩",category:"Sandwichs",snackId:"s19",ingredients:[
+    {id:"i27",qty:1},{id:"i19",qty:0.080},{id:"i28",qty:0.015},{id:"i30",qty:0.015},{id:"i32",qty:0.020},{id:"i33",qty:0.030}]},
+  {id:"r20",name:"Sandwich Frites Poulet",emoji:"🍟",category:"Sandwichs",snackId:"s20",ingredients:[
+    {id:"i27",qty:1},{id:"i18",qty:0.080},{id:"i28",qty:0.020},{id:"i29",qty:0.020}]},
+  // ══ JUS MAISON ══
+  {id:"r21",name:"Bissap",emoji:"🔴",category:"Jus maison",snackId:"b7",ingredients:[
+    {id:"i35",qty:0.030},{id:"i6",qty:0.050},{id:"i41",qty:0.5}]},
+  {id:"r22",name:"Gingembre",emoji:"🟡",category:"Jus maison",snackId:"b8",ingredients:[
+    {id:"i36",qty:0.050},{id:"i6",qty:0.040},{id:"i41",qty:1}]},
+  {id:"r23",name:"Bouye (Baobab)",emoji:"🤍",category:"Jus maison",snackId:"b9",ingredients:[
+    {id:"i37",qty:0.040},{id:"i6",qty:0.040},{id:"i3",qty:0.020}]},
+  // ══ BOISSONS CHAUDES ══
+  {id:"r24",name:"Café Touba",emoji:"☕",category:"Boissons chaudes",snackId:"b3",ingredients:[
+    {id:"i38",qty:0.008},{id:"i6",qty:0.015},{id:"i42",qty:1}]},
+  {id:"r25",name:"Thé ataya",emoji:"🍵",category:"Boissons chaudes",snackId:"b4",ingredients:[
+    {id:"i39",qty:0.008},{id:"i6",qty:0.025},{id:"i40",qty:1}]},
+  {id:"r26",name:"Café lait",emoji:"☕",category:"Boissons chaudes",snackId:"b2",ingredients:[
+    {id:"i38",qty:0.006},{id:"i3",qty:0.015},{id:"i6",qty:0.010},{id:"i42",qty:1}]},
+];
 const INIT_STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
 
 // GUIDE CONTENT
@@ -74,6 +183,7 @@ function PinPad({onConfirm,error}){
 }
 
 // TICKET COMPONENT
+const PATRON_NUM="33668708877";
 const PAY_MODES=[{id:"especes",label:"💵 Espèces",color:"#4caf50"},{id:"wave",label:"📱 Wave",color:"#1565c0"},{id:"orange",label:"🟠 Orange Money",color:"#e65100"},{id:"free",label:"📲 Free Money",color:"#6a1b9a"}];
 function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkip,selectedPayMode,onPayModeChange}){
   const printTicket=(pm)=>{
@@ -128,7 +238,12 @@ export default function App(){
   const [pinModal,setPinModal]=useState(null);
   const [pinMErr,setPinMErr]=useState(false);
   const [currentStore,setCurrentStore]=useState(STORES[0]);
-  const [tab,setTab]=useState("home");
+  const [tab,setTabRaw]=useState("home");
+  const [tabHistory,setTabHistory]=useState(["home"]);
+  const [tabPos,setTabPos]=useState(0);
+  const setTab=(t)=>{touch();setTabRaw(t);setTabHistory(prev=>{const h=[...prev.slice(0,tabPos+1),t];setTabPos(h.length-1);return h;});};
+  const goBack=()=>{if(tabPos>0){const p=tabPos-1;setTabPos(p);setTabRaw(tabHistory[p]);}};
+  const goFwd=()=>{if(tabPos<tabHistory.length-1){const p=tabPos+1;setTabPos(p);setTabRaw(tabHistory[p]);}};
   const [stSub,setStSub]=useState("ing");
   const [cTab,setCTab]=useState("boissons");
   const [guideSection,setGuideSection]=useState(null);
@@ -177,6 +292,7 @@ export default function App(){
   const [editIng,setEditIng]=useState(null);
   const [editRec,setEditRec]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
+  const [addProdModal2,setAddProdModal2]=useState(false);
   const [newIng,setNewIng]=useState({name:"",unit:"kg",emoji:"🥄",unitCost:""});
   const [prodModal,setProdModal]=useState(null);
   const [prodQtyVal,setProdQtyVal]=useState("");
@@ -510,7 +626,7 @@ export default function App(){
             <div style={{fontSize:14,fontWeight:800,color:S.gold}}>🎮 G&G</div>
             <button onClick={()=>setStoreModal(true)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10}}>{currentStore.emoji} {currentStore.name.split("—")[1]?.trim()||currentStore.name} ▾</button>
           </div>
-          <div style={{fontSize:10,color:S.muted,marginTop:1}}>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}{saveOk&&<span style={{color:S.green,marginLeft:6,fontWeight:700}}>☁️✓</span>}</div>
+          <div style={{fontSize:10,color:S.muted,marginTop:1}}><button onClick={goBack} disabled={tabPos<=0} style={{background:"transparent",border:"none",color:tabPos>0?S.text:S.muted,cursor:tabPos>0?"pointer":"default",fontSize:18,padding:"0 4px"}}>‹</button><button onClick={goFwd} disabled={tabPos>=tabHistory.length-1} style={{background:"transparent",border:"none",color:tabPos<tabHistory.length-1?S.text:S.muted,cursor:tabPos<tabHistory.length-1?"pointer":"default",fontSize:18,padding:"0 4px"}}>›</button>{user.role==="patron"?"👑":"👤"} {user.name}{Object.keys(sessions).length>0&&<span style={{color:S.green,marginLeft:6}}>🎮{Object.keys(sessions).length}</span>}{(lossAlerts.length>0||ingAlerts.length>0)&&<span style={{color:S.red,marginLeft:6}}>⚠️</span>}{saveOk&&<span style={{color:S.green,marginLeft:6,fontWeight:700}}>☁️✓</span>}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <div style={{textAlign:"right"}}>
@@ -562,23 +678,38 @@ export default function App(){
       {/* ══ CAISSE ══ */}
       {tab==="caisse"&&<div style={{padding:14}}>
         <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button></div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
-          {(cTab==="boissons"?boissons:snacks).map(p=>(
-            <div key={p.id} style={{position:"relative"}}>
-              <button onClick={()=>addToCart(p,cTab)} style={{background:S.card2,border:`1px solid ${S.border}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",transition:"transform .1s",width:"100%"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.95)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
-                <div style={{fontSize:24}}>{p.emoji}</div>
-                <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
-                <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
-                {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
-              </button>
-              {user.role==="patron"&&<div style={{display:"flex",gap:2,marginTop:2}}>
-                <button onClick={()=>{setEditProd({...p,cat:cTab});}} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>✏️</button>
-                <button onClick={()=>{if(!window.confirm("Supprimer "+p.name+"?"))return;if(cTab==="boissons"){const nb=boissons.filter(x=>x.id!==p.id);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.filter(x=>x.id!==p.id);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("SUPPR",p.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>
-              </div>}
-            </div>
-          ))}
-        </div>
-        {user.role==="patron"&&<button onClick={()=>{setAddProdModal(cTab);setNewProd({name:"",price:"",emoji:"🍽️"});}} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"10px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter un produit ({cTab==="boissons"?"boisson":"snack"})</button>}
+        {(()=>{
+          const prods=cTab==="boissons"?boissons:snacks;
+          const cats=[...new Set(prods.map(function(p){return p.cat||"Autres";}))];
+          return cats.map(function(cat){
+            const items=prods.filter(function(p){return (p.cat||"Autres")===cat;});
+            return React.createElement("div",{key:cat,style:{marginBottom:12}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:700,color:S.gold,letterSpacing:1,marginBottom:6,paddingLeft:2,textTransform:"uppercase"}},cat),
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}},
+                items.map(function(p){
+                  return React.createElement("div",{key:p.id,style:{position:"relative"}},
+                    React.createElement("button",{onClick:function(){addToCart(p,cTab);},style:{background:S.card2,border:"1px solid "+S.border,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",width:"100%"}},
+                      React.createElement("div",{style:{fontSize:24}},p.emoji),
+                      React.createElement("div",{style:{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}},p.name),
+                      React.createElement("div",{style:{fontSize:13,fontWeight:800,color:S.gold}},fmt(p.price)),
+                      cTab==="snacks"&&prodQtyFn(p.id)>0?React.createElement("div",{style:{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}},remQty(p.id)>0?"Dispo: "+remQty(p.id):"Épuisé"):null
+                    ),
+                    user.role==="patron"?React.createElement("div",{style:{display:"flex",gap:2,marginTop:2}},
+                      React.createElement("button",{onClick:function(){setEditProd({...p,cat:cTab});},style:{flex:1,background:S.card3,border:"1px solid "+S.blue,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}},"✏"),
+                      React.createElement("button",{onClick:function(){
+                        if(!window.confirm("Supprimer "+p.name+"?"))return;
+                        if(cTab==="boissons"){const nb=boissons.filter(function(x){return x.id!==p.id;});setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}
+                        else{const ns=snacks.filter(function(x){return x.id!==p.id;});setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}
+                        addAudit("SUPPR",p.name);showToast("Supprime",S.red);
+                      },style:{flex:1,background:S.card3,border:"1px solid "+S.red,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}},"X")
+                    ):null
+                  );
+                })
+              )
+            );
+          });
+        })()}
+        {user.role==="patron"&&<button onClick={()=>{setAddProdModal(cTab);setNewProd({name:"",price:"",emoji:"🍽️"});}} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"10px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter un produit</button>}
         {cart.length>0?<div style={Card()}>
           <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
           {cart.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:15}}>{item.emoji}</span><div style={{flex:1,fontSize:12}}>{item.name}</div><button onClick={()=>updQty(item.id,-1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>−</button><span style={{fontSize:14,fontWeight:700,minWidth:20,textAlign:"center"}}>{item.qty}</span><button onClick={()=>updQty(item.id,+1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>+</button><div style={{minWidth:68,textAlign:"right",fontSize:12,fontWeight:700}}>{fmt(item.price*item.qty)}</div><button onClick={()=>updQty(item.id,-99)} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:16}}>✕</button></div>)}
@@ -637,7 +768,7 @@ export default function App(){
                 <button onClick={()=>requestGaming(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>💰 2J</button>
               </div>}
               {user.role==="patron"&&status==="libre"&&<div style={{display:"flex",gap:4,marginTop:6}}>
-                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>✏️</button>
+                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>✏</button>
                 <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR STATION",st.name);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>
               </div>}
             </div>);})}
@@ -646,527 +777,296 @@ export default function App(){
       </div>}
 
       {tab==="stocks"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
-          <button style={Sub(stSub==="ing")} onClick={()=>setStSub("ing")}>🌾 Ingrédients</button>
-          <button style={Sub(stSub==="prod")} onClick={()=>setStSub("prod")}>🍳 Production</button>
-          <button style={Sub(stSub==="finis")} onClick={()=>setStSub("finis")}>📊 Produits Finis</button>
-          <button style={Sub(stSub==="verif")} onClick={()=>setStSub("verif")}>🔍 Vérif</button>
+
+        {/* ── BOUTON SCAN EN HAUT ── */}
+        <div style={{display:"flex",gap:8,marginBottom:12}}>
+          <button onClick={()=>{if(scanRef.current){scanRef.current.dataset.target="stock";scanRef.current.click();}}} disabled={scanLoading&&scanTarget==="stock"} style={{flex:1,background:S.purple,color:"#fff",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontSize:12,fontWeight:700}}>
+            {scanLoading&&scanTarget==="stock"?"⏳ Lecture...":"📸 Scanner stock matin"}
+          </button>
+          <button onClick={()=>{if(scanRef.current){scanRef.current.dataset.target="verif";scanRef.current.click();}}} disabled={scanLoading&&scanTarget==="verif"} style={{flex:1,background:S.orange,color:S.bg,border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontSize:12,fontWeight:700}}>
+            {scanLoading&&scanTarget==="verif"?"⏳ Lecture...":"📸 Scanner stock soir"}
+          </button>
         </div>
-        {stSub==="ing"&&<div>
-          {(()=>{
-            const totalVal=ingredients.reduce((sum,ing)=>{
-              const qty=ingRem(ing.id);
-              return sum+(qty*(ing.unitCost||0));
-            },0);
-            const details=ingredients.filter(ing=>ingRem(ing.id)>0).map(ing=>({
-              ...ing, qty:ingRem(ing.id), val:ingRem(ing.id)*(ing.unitCost||0)
-            })).sort((a,b)=>b.val-a.val);
-            return(<div style={{background:"#0a1a0a",border:`2px solid ${S.gold}`,borderRadius:12,padding:12,marginBottom:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <span style={{fontWeight:800,color:S.gold,fontSize:13}}>💰 VALEUR TOTALE DU STOCK</span>
-                <span style={{fontWeight:800,color:S.gold,fontSize:18}}>{fmt(totalVal)}</span>
-              </div>
-              {details.map(ing=>(
-                <div key={ing.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:`1px solid ${S.border}`}}>
-                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                    <span style={{fontSize:16}}>{ing.emoji}</span>
+
+        {/* ── VALEUR TOTALE DU STOCK ── */}
+        {(()=>{
+          const totalVal=ingredients.reduce(function(sum,ing){return sum+(ingRem(ing.id)*(ing.unitCost||0));},0);
+          if(totalVal===0) return null;
+          return React.createElement("div",{style:{background:"#0a1a0a",border:"2px solid "+S.gold,borderRadius:12,padding:12,marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            React.createElement("span",{style:{fontWeight:700,color:S.gold,fontSize:13}},"💰 Valeur totale du stock"),
+            React.createElement("span",{style:{fontWeight:800,color:S.gold,fontSize:18}},fmt(totalVal))
+          );
+        })()}
+
+        {/* ── LISTE INGRÉDIENTS — stock + valeur + saisie ── */}
+        <div style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontWeight:700,color:S.text,fontSize:13}}>🌾 Ingrédients</div>
+            {user.role==="patron"&&<button onClick={()=>setAddIngModal(true)} style={{background:S.teal,color:S.bg,border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:700}}>＋ Ajouter</button>}
+          </div>
+          {ingredients.map(function(ing){
+            const s=ingStock[ing.id]||{};
+            const phys=ingPhys[ing.id];
+            const rem=ingRem(ing.id);
+            const al=ingAlert(ing.id);
+            const val=rem*(ing.unitCost||0);
+            return React.createElement("div",{key:ing.id,style:{background:al?"#1a0000":S.card,border:"1px solid "+(al?S.red:S.border),borderRadius:10,padding:"10px 12px",marginBottom:6}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                React.createElement("span",{style:{fontSize:20}},ing.emoji),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                    React.createElement("span",{style:{fontWeight:700,fontSize:12}},ing.name),
+                    React.createElement("span",{style:{fontSize:11,fontWeight:700,color:val>0?S.green:S.muted}},val>0?fmt(val):"—")
+                  ),
+                  React.createElement("div",{style:{display:"flex",gap:12,marginTop:4,alignItems:"center"}},
+                    React.createElement("div",{style:{flex:1}},
+                      React.createElement("div",{style:{fontSize:9,color:S.muted,marginBottom:2}},"Matin"),
+                      React.createElement("input",{type:"number",step:"0.01",value:s.opening!=null?s.opening:"",placeholder:"0",onChange:function(e){const v=parseFloat(e.target.value)||0;const ni={...ingStock,[ing.id]:{...s,opening:v}};setIngStock(ni);saveDay({ingStock:ni});},style:{width:"100%",background:S.card2,border:"1px solid "+S.border,color:S.gold,borderRadius:6,padding:"4px 6px",fontSize:12,fontWeight:700,outline:"none",boxSizing:"border-box"}})
+                    ),
+                    React.createElement("div",{style:{flex:1}},
+                      React.createElement("div",{style:{fontSize:9,color:S.muted,marginBottom:2}},"Soir"),
+                      React.createElement("input",{type:"number",step:"0.01",value:phys!=null?phys:"",placeholder:"0",onChange:function(e){const v=parseFloat(e.target.value)||0;const ni={...ingPhys,[ing.id]:v};setIngPhys(ni);saveDay({ingPhys:ni});},style:{width:"100%",background:S.card2,border:"1px solid "+(phys!=null&&phys<rem-0.05?S.red:S.border),color:phys!=null&&phys<rem-0.05?S.red:S.text,borderRadius:6,padding:"4px 6px",fontSize:12,outline:"none",boxSizing:"border-box"}})
+                    ),
+                    React.createElement("div",{style:{flex:1,textAlign:"center"}},
+                      React.createElement("div",{style:{fontSize:9,color:S.muted,marginBottom:2}},"Restant"),
+                      React.createElement("div",{style:{fontSize:12,fontWeight:700,color:al?S.red:S.green}},fmtQ(rem,ing.unit))
+                    ),
+                    React.createElement("div",{style:{fontSize:9,color:S.muted,minWidth:30,textAlign:"center"}},
+                      phys!=null&&phys<rem-0.05?React.createElement("span",{style:{color:S.red,fontSize:16,display:"block"}},"⚠️"):null,
+                      React.createElement("span",null,ing.unit),
+                      React.createElement("br",null),
+                      React.createElement("span",null,fmt(ing.unitCost||0))
+                    )
+                  )
+                ),
+                user.role==="patron"?React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:3,marginLeft:4}},
+                  React.createElement("button",{onClick:function(){setEditIng({...ing});},style:{background:S.card3,border:"1px solid "+S.blue,color:S.blue,borderRadius:4,padding:"2px 5px",cursor:"pointer",fontSize:9}},"✏"),
+                  React.createElement("button",{onClick:function(){
+                    if(!window.confirm("Supprimer "+ing.name+"?"))return;
+                    const ni=ingredients.filter(function(x){return x.id!==ing.id;});
+                    setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);
+                    addAudit("SUPPR ING",ing.name);
+                  },style:{background:S.card3,border:"1px solid "+S.red,color:S.red,borderRadius:4,padding:"2px 5px",cursor:"pointer",fontSize:9}},"X")
+                ):null
+              )
+            );
+          })}
+        </div>
+
+        {/* ── PRODUCTION DU JOUR ── */}
+        <div style={{background:S.card,border:"1px solid "+S.border,borderRadius:12,padding:12,marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontWeight:700,fontSize:13}}>🍳 Production du jour</div>
+            <button onClick={()=>setAddProdModal2(true)} style={{background:S.green,color:S.bg,border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:11,fontWeight:700}}>＋ Produire</button>
+          </div>
+          {productions.length===0&&React.createElement("div",{style:{color:S.muted,fontSize:11,textAlign:"center",padding:8}},"Aucune production enregistrée")}
+          {productions.map(function(p,i){
+            return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid "+S.border}},
+              React.createElement("span",{style:{fontSize:13}},p.snackEmoji||"🍳"," ",p.snackName),
+              React.createElement("span",{style:{fontWeight:700,color:S.green}},"×",p.qty),
+              React.createElement("span",{style:{fontSize:10,color:S.muted}},p.time),
+              React.createElement("button",{onClick:function(){const np=productions.filter(function(_,j){return j!==i;});setProductions(np);saveDay({productions:np});},style:{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:12}},"✕")
+            );
+          })}
+        </div>
+
+        {/* ── ALERTES PERTES/VOLS ── */}
+        {lossAlerts.length>0&&React.createElement("div",{style:{background:"#1a0000",border:"2px solid "+S.red,borderRadius:12,padding:12,marginBottom:12}},
+          React.createElement("div",{style:{fontWeight:800,color:S.red,marginBottom:8,fontSize:13}},"🚨 Alertes pertes / vols"),
+          lossAlerts.map(function(a,i){
+            return React.createElement("div",{key:i,style:{fontSize:11,color:"#ffaaaa",padding:"3px 0"}},
+              "⚠️ ",a.name," — manque ",fmtQ(a.diff,a.unit)," (",fmt(a.val),")"
+            );
+          })
+        )}
+
+      </div>}}
+
+      {tab==="recettes"&&<div style={{padding:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{fontWeight:800,fontSize:14}}>📖 Recettes</div>
+          {user.role==="patron"&&<button onClick={()=>setEditRec({id:"",emoji:"🍽️",name:"",category:"",ingredients:[]})} style={{background:S.teal,color:S.bg,border:"none",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>＋ Nouvelle</button>}
+        </div>
+        {[...new Set(recipes.map(r=>r.category||"Autres"))].map(cat=>(
+          <div key={cat} style={{marginBottom:14}}>
+            <div style={{fontSize:10,fontWeight:700,color:S.gold,letterSpacing:1,marginBottom:6}}>{cat.toUpperCase()}</div>
+            {recipes.filter(r=>(r.category||"Autres")===cat).map(rec=>(
+              <div key={rec.id} style={{...Card(),marginBottom:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <span style={{fontSize:20}}>{rec.emoji}</span>
                     <div>
-                      <div style={{fontSize:12,fontWeight:600,color:S.text}}>{ing.name}</div>
-                      <div style={{fontSize:10,color:S.muted}}>{fmtQ(ing.qty,ing.unit)} × {fmt(ing.unitCost||0)}/{ing.unit}</div>
+                      <div style={{fontWeight:700,fontSize:12}}>{rec.name}</div>
+                      <div style={{fontSize:10,color:S.muted}}>
+                        {(rec.ingredients||[]).map(ri=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?`${ing.name} ${fmtQ(ri.qty,ing.unit)}`:null;}).filter(Boolean).join(" • ")}
+                      </div>
                     </div>
                   </div>
-                  <span style={{fontSize:12,fontWeight:700,color:ing.val>5000?S.green:S.muted}}>{fmt(ing.val)}</span>
+                  {user.role==="patron"&&<div style={{display:"flex",gap:4}}>
+                    <button onClick={()=>setEditRec({...rec})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11}}>✏</button>
+                    <button onClick={()=>{if(!window.confirm("Supprimer "+rec.name+"?"))return;const nr=recipes.filter(x=>x.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR REC",rec.name);showToast("Supprimé",S.red);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11}}>🗑</button>
+                  </div>}
                 </div>
-              ))}
-              {details.length===0&&<div style={{fontSize:11,color:S.muted,textAlign:"center"}}>Aucun stock saisi ce matin</div>}
-            </div>);
-          })()}
-          <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12}}>
-            <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🌾 Stock matin en KG. Saisie manuelle ou scan de fiche 📸</div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>{scanRef.current&&(scanRef.current.dataset.target="stock")&&scanRef.current.click();}} disabled={scanLoading&&scanTarget==="stock"} style={{background:S.purple,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,flex:1,opacity:scanLoading&&scanTarget==="stock"?0.5:1}}>
-                {scanLoading&&scanTarget==="stock"?"⏳ Lecture...":"📸 Scanner une fiche stock"}
-              </button>
-              <div style={{fontSize:10,color:"#aaa",flex:1}}>Prends en photo la fiche du matin → l'IA remplit tout automatiquement</div>
-            </div>
-          </div>
-          {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><div style={{display:"flex",gap:4,alignItems:"center"}}><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span>{user.role==="patron"&&<><button onClick={()=>setEditIng({...ing})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:4,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button><button onClick={()=>{if(!window.confirm("Supprimer "+ing.name+"?"))return;const ni=ingredients.filter(x=>x.id!==ing.id);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR ING",ing.name);showToast("✓ Supprimé",S.red);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"2px 6px",cursor:"pointer",fontSize:10}}>🗑</button></>}</div></div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
-              <div style={{flex:1,minWidth:90}}><div style={{fontSize:10,color:S.muted,marginBottom:3}}>Stock matin ({ing.unit})</div><input type="number" step="0.001" value={s.opening??""} placeholder="0" onChange={e=>setIngField(ing.id,"opening",e.target.value)} style={{...Inp("100%"),padding:"7px 8px",fontSize:13}}/></div>
-              <div style={{display:"flex",gap:6}}>
-                <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Utilisé</div><div style={{fontSize:14,fontWeight:800,color:S.orange,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(used,ing.unit)}</div></div>
-                <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Restant</div><div style={{fontSize:14,fontWeight:800,color:rem>0?S.green:S.muted,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(rem,ing.unit)}</div></div>
-              </div>
-            </div>
-            {al&&<div style={{marginTop:6,background:S.red,borderRadius:6,padding:"4px 8px",fontSize:11,color:"#fff",fontWeight:700}}>⚠️ {al.diff>0?`MANQUE ${fmtQ(al.diff,ing.unit)}`:`SURPLUS`}</div>}
-          </div>);})}
-          {user.role==="patron"&&<button onClick={()=>setAddIngModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.blue}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.blue,fontWeight:700,fontSize:13,marginTop:4}}>＋ Ajouter ingrédient</button>}
-        </div>}
-        {stSub==="prod"&&<div>
-          <div style={{background:"#0d1a0d",border:`1px solid ${S.green}`,borderRadius:10,padding:10,marginBottom:12}}>
-            <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🍳 Saisie manuelle ou scan de fiche de production 📸</div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>{scanRef.current&&(scanRef.current.dataset.target="prod")&&scanRef.current.click();}} disabled={scanLoading&&scanTarget==="prod"} style={{background:S.green,color:S.bg,border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,flex:1,opacity:scanLoading&&scanTarget==="prod"?0.5:1}}>
-                {scanLoading&&scanTarget==="prod"?"⏳ Lecture...":"📸 Scanner une fiche production"}
-              </button>
-              <div style={{fontSize:10,color:"#aaa",flex:1}}>Photo de la fiche → l'IA enregistre toutes les productions</div>
-            </div>
-          </div>
-          {snacks.map(p=>{const rec=recipes.find(r=>r.snackId===p.id);return(<div key={p.id} style={Card()}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:24}}>{p.emoji}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{p.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec?rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • "):"Pas de recette"}</div><div style={{fontSize:11,color:S.green,marginTop:2}}>Fab: <strong>{prodQtyFn(p.id)}</strong> | Vendu: <strong>{soldQty(p.id)}</strong> | Rest: <strong>{remQty(p.id)}</strong></div></div><button onClick={()=>{setProdModal(p);setProdQtyVal("");}} style={{...Btn(S.green),fontSize:12,padding:"8px 12px"}}>🍳</button></div></div>);})}
-          {productions.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>PRODUCTIONS DU JOUR</div>{[...productions].reverse().map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{p.time} </span>{p.snackEmoji}{p.snackName}</div><div style={{color:S.green,fontWeight:700}}>× {p.qty}</div></div>)}</div>}
-        </div>}
-        {stSub==="finis"&&<div>
-          <div style={{background:"#0d0a1a",border:`1px solid ${S.purple}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>📊 Fabriqué − Vendu = Restant. Comptez pour détecter pertes/vols.</div>
-          {snacks.map(p=>{const prod=prodQtyFn(p.id);const sold=soldQty(p.id);const rem=remQty(p.id);const loss=lossQty(p.id);return(<div key={p.id} style={{background:loss!==null&&loss>0?"#1a0000":S.card,border:`1px solid ${loss!==null&&loss>0?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:13,fontWeight:700}}>{p.emoji} {p.name}</span>{loss!==null&&loss>0&&<span style={{background:S.red,color:"#fff",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>🚨 -{loss}</span>}{loss===0&&finPhys[p.id]!=null&&<span style={{background:S.green,color:S.bg,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>✓ OK</span>}</div>
-            <div style={{display:"flex",gap:8,marginBottom:8}}>{[{l:"Fabriqués",v:prod,c:S.blue},{l:"Vendus",v:sold,c:S.orange},{l:"Restant",v:rem,c:S.green}].map(x=><div key={x.l} style={{flex:1,textAlign:"center",background:S.card2,borderRadius:8,padding:"6px 4px"}}><div style={{fontSize:9,color:S.muted}}>{x.l}</div><div style={{fontSize:16,fontWeight:800,color:x.c}}>{x.v}</div></div>)}</div>
-            <input type="number" value={finPhys[p.id]??""} placeholder={`Compter les ${p.name}s restants...`} onChange={e=>{const nf={...finPhys,[p.id]:Number(e.target.value)||0};setFinPhys(nf);saveDay({finPhys:nf});}} style={{...Inp(),padding:"7px 10px",fontSize:13}}/>
-            {loss!==null&&loss>0&&<div style={{marginTop:6,fontSize:12,color:S.red,fontWeight:700}}>⚠️ {loss} manquant(s) — {fmt(loss*p.price)}</div>}
-          </div>);})}
-        </div>}
-        {stSub==="verif"&&<div>
-          <div style={{background:"#1a0d00",border:`1px solid ${S.orange}`,borderRadius:10,padding:10,marginBottom:12}}>
-            <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🌙 Comptage soir. Saisie manuelle ou scan de fiche 📸</div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>{if(scanRef.current){scanRef.current.dataset.target="verif";scanRef.current.click();}}} disabled={scanLoading&&scanTarget==="verif"} style={{background:S.orange,color:S.bg,border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,flex:1,opacity:scanLoading&&scanTarget==="verif"?0.5:1}}>
-                {scanLoading&&scanTarget==="verif"?"⏳ Lecture...":"📸 Scanner fiche stock soir"}
-              </button>
-              <div style={{fontSize:10,color:"#aaa",flex:1}}>Photo de la fiche de comptage soir → l'IA détecte les écarts automatiquement</div>
-            </div>
-          </div>
-          {ingredients.map(ing=>{const th=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:10,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,fontWeight:600}}>{ing.emoji} {ing.name}</span><span style={{fontSize:11,color:S.blue}}>Théo: <strong>{fmtQ(th,ing.unit)}</strong></span></div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <input type="number" step="0.001" value={ingPhys[ing.id]??""} placeholder={`Peser (${ing.unit})...`} onChange={e=>setIngPhysVal(ing.id,e.target.value)} style={{...Inp("130px"),padding:"7px 10px",fontSize:13}}/>
-              {al&&<div style={{flex:1,background:S.red,color:"#fff",borderRadius:8,padding:"6px 8px",fontSize:11,fontWeight:700}}>{al.diff>0?`⚠️ MANQUE ${fmtQ(al.diff,ing.unit)}`:`➕ SURPLUS`}</div>}
-              {!al&&ingPhys[ing.id]!=null&&<div style={{flex:1,background:"#0d1a0d",color:S.green,borderRadius:8,padding:"6px 8px",fontSize:11,fontWeight:700}}>✓ OK</div>}
-            </div>
-          </div>);})}
-          {ingAlerts.length>0&&<div style={{background:"#1a0000",border:`1px solid ${S.red}`,borderRadius:12,padding:12,marginTop:8}}><div style={{fontWeight:700,color:S.red,marginBottom:6,fontSize:12}}>🚨 {ingAlerts.length} ÉCART(S)</div>{ingAlerts.map(i=>{const a=ingAlert(i.id);return<div key={i.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:3}}>{i.emoji} {i.name} → Manque {fmtQ(a.diff,i.unit)} — {fmt(a.diff*i.unitCost)}</div>;})} <div style={{marginTop:6,fontSize:12,fontWeight:700,color:S.red,borderTop:`1px solid ${S.red}`,paddingTop:6}}>Perte totale: {fmt(ingAlerts.reduce((s,i)=>{const a=ingAlert(i.id);return s+a.diff*i.unitCost;},0))}</div></div>}
-        </div>}
-      </div>}
-
-      {/* ══ MODAL CONFIRMATION SCAN ══ */}
-      {scanConfirm&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:300,padding:12,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:16,width:"100%",maxWidth:420,marginTop:20,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:4}}>📋 Vérification avant enregistrement</div>
-          <div style={{fontSize:11,color:S.muted,marginBottom:12}}>Corrigez si besoin, supprimez les erreurs, puis validez.</div>
-          {scanConfirm.items.map((item,idx)=>(
-            <div key={idx} style={{background:item.isNew?"#1a1a00":S.card2,border:`1px solid ${item.isNew?S.gold:S.border}`,borderRadius:10,padding:10,marginBottom:8}}>
-              {item.isNew&&<div style={{fontSize:9,color:S.gold,fontWeight:700,marginBottom:4}}>🆕 NOUVEAU PRODUIT</div>}
-              <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
-                <input value={item.emoji} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],emoji:e.target.value};setScanConfirm(p=>({...p,items:ni}));}} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:18,width:44,textAlign:"center",outline:"none"}}/>
-                <input value={item.nom} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],nom:e.target.value};setScanConfirm(p=>({...p,items:ni}));}} style={{flex:2,background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px 8px",fontSize:12,outline:"none"}}/>
-                <button onClick={()=>setScanConfirm(p=>({...p,items:p.items.filter((_,i)=>i!==idx)}))} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✕</button>
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:9,color:S.muted,marginBottom:2}}>Quantité</div>
-                  <input type="number" step="0.01" value={item.quantite} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],quantite:parseFloat(e.target.value)||0};setScanConfirm(p=>({...p,items:ni}));}} style={{width:"100%",background:S.card3,border:`1px solid ${S.border}`,color:S.gold,borderRadius:6,padding:"6px",fontSize:13,fontWeight:700,outline:"none",boxSizing:"border-box"}}/>
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:9,color:S.muted,marginBottom:2}}>Unité</div>
-                  <select value={item.unite} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],unite:e.target.value};setScanConfirm(p=>({...p,items:ni}));}} style={{width:"100%",background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:12,outline:"none"}}>
-                    {["kg","g","L","ml","pcs","boîte","sachet"].map(u=><option key={u}>{u}</option>)}
-                  </select>
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:9,color:S.muted,marginBottom:2}}>Prix/unité (F)</div>
-                  <input type="number" value={item.prixUnitaire} onChange={e=>{const ni=[...scanConfirm.items];ni[idx]={...ni[idx],prixUnitaire:parseInt(e.target.value)||0};setScanConfirm(p=>({...p,items:ni}));}} style={{width:"100%",background:S.card3,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:12,outline:"none",boxSizing:"border-box"}}/>
-                </div>
-              </div>
-            </div>
-          ))}
-          <button onClick={()=>setScanConfirm(p=>({...p,items:[...p.items,{nom:"",quantite:0,unite:"kg",prixUnitaire:0,emoji:"📦",isNew:true,matched_id:null}]}))} style={{width:"100%",background:"transparent",border:`1px dashed ${S.blue}`,color:S.blue,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,marginBottom:10}}>＋ Ajouter un produit manquant</button>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setScanConfirm(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
-            <button onClick={applyScanConfirm} style={{background:S.green,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:800,flex:2}}>✅ Valider ({scanConfirm.items.length} produits)</button>
-          </div>
-        </div>
-      </div>}
-
-      <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
-
-      {/* ══ PLANNING ══ */}
-      {tab==="planning"&&<div style={{padding:14}}>
-        <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:12,marginBottom:14,fontSize:12,color:"#aaa",lineHeight:1.6}}>🧮 Entrez les quantités à produire. L'outil calcule les ingrédients en KG et votre liste de courses exacte.</div>
-        {[...new Set(recipes.map(r=>r.category))].map(cat=>(
-          <div key={cat} style={Card()}>
-            <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
-            {recipes.filter(r=>r.category===cat).map(rec=>(
-              <div key={rec.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${S.border}`}}>
-                <div style={{fontSize:22,minWidth:28}}>{rec.emoji}</div>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{rec.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • ")}</div></div>
-                <input type="number" min="0" placeholder="0" value={planQty[rec.id]||""} onChange={e=>setPlanQty(p=>({...p,[rec.id]:parseInt(e.target.value)||0}))} style={{...Inp("65px"),padding:"7px 8px",fontSize:14,textAlign:"center",fontWeight:700}}/>
-                <span style={{fontSize:10,color:S.muted,minWidth:20}}>pcs</span>
               </div>
             ))}
           </div>
         ))}
-        {totalPlanUnits>0&&<>
-          <div style={Card(S.gold)}>
-            <div style={{fontSize:11,fontWeight:700,color:S.gold,letterSpacing:1,marginBottom:10}}>🛒 INGRÉDIENTS NÉCESSAIRES</div>
-            {shopping.map((ing,i)=>(
-              <div key={i} style={{marginBottom:8,paddingBottom:8,borderBottom:`1px solid ${S.border}`}}>
-                <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:700}}>{ing.name}</span><span style={{fontSize:14,fontWeight:800,color:S.gold}}>{fmtQ(ing.needed,ing.unit)}</span></div>
-                <div style={{display:"flex",gap:8,marginTop:4}}>
-                  <div style={{flex:1,background:S.card2,borderRadius:6,padding:"3px 8px",textAlign:"center"}}><div style={{fontSize:9,color:S.muted}}>En stock</div><input type="number" step="0.001" value={planStock[ing.id]||""} placeholder="0" onChange={e=>setPlanStock(p=>({...p,[ing.id]:parseFloat(e.target.value)||0}))} style={{width:"100%",background:"transparent",border:"none",color:S.blue,fontSize:12,fontWeight:700,textAlign:"center",outline:"none"}}/></div>
-                  <div style={{flex:1,background:ing.toBuy>0?"#1a0000":"#0d1a0d",borderRadius:6,padding:"4px 8px",textAlign:"center",border:`1px solid ${ing.toBuy>0?S.red:S.green}`}}><div style={{fontSize:9,color:S.muted}}>À acheter</div><div style={{fontSize:13,fontWeight:800,color:ing.toBuy>0?S.red:S.green}}>{ing.toBuy>0?fmtQ(ing.toBuy,ing.unit):"✓ OK"}</div></div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {shopping.some(s=>s.toBuy>0)&&<div style={Card(S.red)}><div style={{fontSize:11,fontWeight:700,color:S.red,letterSpacing:1,marginBottom:8}}>🛒 LISTE DE COURSES</div>{shopping.filter(s=>s.toBuy>0).map((ing,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${S.border}`,fontSize:13}}><span>□ {ing.name}</span><span style={{fontWeight:800,color:S.red}}>{fmtQ(ing.toBuy,ing.unit)}</span></div>)}<button onClick={()=>{const txt=`🛒 COURSES ${currentStore.name}\nPour ${totalPlanUnits} pièces\n\n${shopping.filter(s=>s.toBuy>0).map(s=>`□ ${s.name} : ${fmtQ(s.toBuy,s.unit)}`).join("\n")}\n\n${timeStr()}`;try{navigator.clipboard.writeText(txt);}catch(e){}showToast("✓ Copié","#25D366");}} style={{...Btn("#25D366"),width:"100%",marginTop:12,fontSize:12}}>📱 Copier pour WhatsApp</button></div>}
-        </>}
-        <button onClick={()=>setPlanQty({})} style={{width:"100%",background:"transparent",border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:10,cursor:"pointer",fontSize:12,marginTop:8}}>🔄 Remettre à zéro</button>
       </div>}
 
-      {/* ══ RECETTES ══ */}
-      {tab==="recettes"&&<div style={{padding:14}}>
-        {user.role==="patron"&&<button onClick={()=>setEditRec({id:"",emoji:"🍽️",name:"",category:"Crêpes",snackId:"",ingredients:[]})} style={{width:"100%",background:"transparent",border:`2px dashed ${S.orange}`,borderRadius:10,padding:"10px",cursor:"pointer",color:S.orange,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Nouvelle recette</button>}
-        {[...new Set(recipes.map(r=>r.category))].map(cat=>(
-          <div key={cat} style={Card()}>
-            <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
-            {recipes.filter(r=>r.category===cat).map(rec=>(
-              <div key={rec.id} style={{background:S.card2,borderRadius:10,padding:12,marginBottom:8}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>
-                  {user.role==="patron"&&<div style={{display:"flex",gap:4}}><button onClick={()=>setEditRec({...rec})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button><button onClick={()=>{if(!window.confirm("Supprimer "+rec.name+"?"))return;const nr=recipes.filter(x=>x.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR RECETTE",rec.name);showToast("✓ Recette supprimée",S.red);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>🗑</button></div>}
-                </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
-              </div>
-            ))}
-          </div>
-        ))}
-        <div style={{background:"#0d0a1a",border:`1px solid ${S.purple}`,borderRadius:12,padding:14}}>
-          <div style={{fontWeight:700,color:S.purple,marginBottom:10,fontSize:13}}>🤖 Créer une recette avec l'IA</div>
-          <textarea value={aiRecInput} onChange={e=>setAiRecInput(e.target.value)} placeholder={"Décrivez votre plat...\nEx: Poulet yassa mariné oignon citron moutarde"} style={{...Inp(),height:70,resize:"none",fontSize:12,padding:"10px"}}/>
-          <button onClick={async()=>{if(!aiRecInput.trim())return;setAiRecLoading(true);const txt=await callAI('Réponds UNIQUEMENT en JSON valide: {"name":"...","emoji":"...","category":"...","snackId":"","ingredients":[{"id":"i1","qty":0.000}]}. Utilise les IDs: i1=Farine,i2=Lait,i3=Beurre,i4=Sucre,i5=Oeufs,i6=Confiture,i7=Nutella,i8=Poulet,i9=Fromage,i10=Thon,i11=Pain,i12=Levure. Quantités en kg par unité.',`Recette pour: "${aiRecInput}"`);try{const p=JSON.parse(txt.replace(/```json|```/g,"").trim());if(p.name){const nr=[...recipes,{...p,id:`r${uid()}`}];setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);setAiRecInput("");showToast("✓ Recette IA ajoutée !");}}catch(e){showToast("IA: réessayez avec plus de détails",S.orange);}setAiRecLoading(false);}} disabled={aiRecLoading||!aiRecInput.trim()} style={{...Btn(S.purple,"#fff"),width:"100%",marginTop:10,fontSize:12,opacity:aiRecLoading||!aiRecInput.trim()?0.5:1}}>{aiRecLoading?"⏳ Génération...":"🤖 Générer"}</button>
-        </div>
-      </div>}
-
-      {/* ══ IA ══ */}
-      {tab==="ia"&&<div style={{padding:14,display:"flex",flexDirection:"column",minHeight:"calc(100vh - 160px)"}}>
-        <div style={{display:"flex",gap:8,marginBottom:12}}>
-          <button onClick={generateSuggestions} disabled={suggestLoading} style={{...Btn(S.purple,"#fff"),flex:1,fontSize:12,opacity:suggestLoading?0.5:1}}>{suggestLoading?"⏳ Analyse...":"💡 Suggestions Hebdo"}</button>
-          <button onClick={generateInsight} disabled={insightLoading} style={{...Btn(S.card2,S.gold),flex:1,fontSize:12,border:`1px solid ${S.gold}`,opacity:insightLoading?0.5:1}}>{insightLoading?"⏳":"📊 Insight"}</button>
-        </div>
-        {aiSuggestions.length>0&&<div style={{marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:700,color:S.purple,marginBottom:8,letterSpacing:1}}>💡 SUGGESTIONS D'AMÉLIORATION</div>
-          {aiSuggestions.map(s=>(
-            <div key={s.id} style={{...Card(s.impact==="high"?S.red:s.impact==="medium"?S.gold:S.border),marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <span style={{fontSize:14}}>{s.emoji}</span>
-                <span style={{fontSize:9,background:s.impact==="high"?S.red:s.impact==="medium"?S.gold:S.border,color:s.impact==="high"?"#fff":S.bg,padding:"2px 6px",borderRadius:10,fontWeight:700}}>{s.impact==="high"?"URGENT":s.impact==="medium"?"IMPORTANT":"INFO"}</span>
-              </div>
-              <div style={{fontSize:12,fontWeight:700,marginBottom:4}}>{s.title}</div>
-              <div style={{fontSize:11,color:"#ccc",lineHeight:1.5}}>{s.description}</div>
-            </div>
-          ))}
-        </div>}
-        <div ref={chatRef} style={{flex:1,overflowY:"auto",marginBottom:12,display:"flex",flexDirection:"column",gap:10,minHeight:200}}>
-          {aiMessages.map((m,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-              <div style={{maxWidth:"88%",background:m.role==="user"?S.gold:S.card2,color:m.role==="user"?S.bg:S.text,borderRadius:12,padding:"10px 14px",fontSize:12,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{m.content}</div>
-            </div>
-          ))}
-          {aiLoading&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{background:S.card2,borderRadius:12,padding:"10px 14px",fontSize:12,color:S.muted}}>⏳ Analyse...</div></div>}
-        </div>
-        <div style={{display:"flex",gap:8}}><input value={aiInput} onChange={e=>setAiInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendAiMessage()} placeholder="Posez votre question..." style={{...Inp(),fontSize:13}}/><button onClick={sendAiMessage} disabled={aiLoading||!aiInput.trim()} style={{...Btn(S.purple,"#fff"),padding:"10px 14px",fontSize:18,opacity:aiLoading||!aiInput.trim()?0.5:1}}>▶</button></div>
-        <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
-          {["🔍 Analyse les pertes","🛒 Courses pour 100 crêpes","💡 Comment augmenter le CA","📈 Meilleur produit à pousser"].map(q=><button key={q} onClick={()=>setAiInput(q)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:20,padding:"5px 10px",cursor:"pointer",fontSize:10}}>{q}</button>)}
-        </div>
-      </div>}
-
-      {/* ══ BILAN ══ */}
       {tab==="bilan"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-          <button onClick={()=>setCashModal(true)} style={{...Btn(S.orange),flex:1,fontSize:12}}>💵 Clôturer</button>
-          <button onClick={()=>setWhatsModal(true)} style={{...Btn("#25D366"),flex:1,fontSize:12}}>📱 WhatsApp</button>
-          {user.role==="patron"&&<button onClick={()=>setEmpModal(true)} style={{...Btn(S.card2,S.gold),border:`1px solid ${S.gold}`,flex:1,fontSize:12}}>👥 Équipe</button>}
-          <button onClick={()=>setExpModal(true)} style={{...Btn(S.orange,"#fff"),flex:1,fontSize:12}}>💸 Dépense</button>
+        <div style={{...Card(),marginBottom:10}}>
+          <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>📊 BILAN DU JOUR</div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12}}>🛒 Ventes food</span><span style={{color:S.green,fontWeight:700}}>{fmt(totalFood)}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12}}>🎮 Gaming</span><span style={{color:S.green,fontWeight:700}}>{fmt(totalGaming)}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12}}>📸 Photocopies</span><span style={{color:S.green,fontWeight:700}}>{fmt(photoCount*photoPrice)}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12}}>💸 Dépenses</span><span style={{color:S.red,fontWeight:700}}>-{fmt(totalExpenses)}</span></div>
+          <div style={{borderTop:`1px solid ${S.border}`,paddingTop:8,display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontWeight:800,fontSize:14}}>CA NET</span>
+            <span style={{fontWeight:800,fontSize:16,color:netProfit>=0?S.green:S.red}}>{fmt(netProfit)}</span>
+          </div>
         </div>
-        {expenses.length>0&&<div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontWeight:700,color:S.orange,fontSize:12}}>💸 DÉPENSES</div></div>{expenses.map(e=><div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><div>{e.emoji} {e.label}</div><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:S.red,fontWeight:700}}>{fmt(e.amount)}</span>{user.role==="patron"&&<button onClick={()=>{const ne=expenses.filter(x=>x.id!==e.id);setExpenses(ne);saveDay({expenses:ne});}} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div>)}<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}><span>Total</span><span style={{color:S.red}}>{fmt(totalExpenses)}</span></div></div>}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {[{l:"CA TOTAL",v:totalCA,c:S.green},{l:"DÉPENSES",v:totalExpenses,c:S.red},{l:"BÉNÉFICE NET",v:netProfit,c:netProfit>=0?S.green:S.red},{l:"GAMING",v:totalGaming,c:S.blue},{l:"VENTES",v:sales.length,c:S.orange,n:true},{l:"TICKETS",v:ticketNo-1001,c:S.teal,n:true}].map(c=><div key={c.l} style={{...Card(),textAlign:"center"}}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:c.n?28:16,fontWeight:800,color:c.c}}>{c.n?c.v:fmt(c.v)}</div></div>)}
+
+        {/* Récap modes de paiement */}
+        {(()=>{
+          const byMode={especes:0,wave:0,orange:0,free:0};
+          sales.forEach(s=>{const m=s.payMode||"especes";byMode[m]=(byMode[m]||0)+s.total;});
+          const active=Object.entries(byMode).filter(([,v])=>v>0);
+          if(!active.length) return null;
+          return(<div style={{...Card(),marginBottom:10}}>
+            <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>💳 PAR MODE DE PAIEMENT</div>
+            {active.map(([k,v])=>{const cfg={especes:{l:"💵 Espèces",c:S.green},wave:{l:"📱 Wave",c:S.blue},orange:{l:"🟠 Orange Money",c:S.orange},free:{l:"📲 Free Money",c:S.purple}};const {l,c}=cfg[k]||{l:k,c:S.text};return(<div key={k} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:`1px solid ${S.border}`}}><span style={{color:c,fontSize:12}}>{l}</span><span style={{fontWeight:700,color:c}}>{fmt(v)}</span></div>);})}
+            <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0 0",fontSize:11,color:S.muted}}><span>💵 En caisse physique</span><span style={{fontWeight:700,color:S.green}}>{fmt(byMode.especes||0)}</span></div>
+          </div>);
+        })()}
+
+        {/* Clôture caisse */}
+        <div style={{...Card(),marginBottom:10}}>
+          <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>💵 CLÔTURE CAISSE</div>
+          {BILLETS.map(b=>(
+            <div key={b} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{fontSize:11,color:S.muted,minWidth:60}}>{fmt(b)}</span>
+              <input type="number" min={0} value={cashCount[b]||""} onChange={e=>setCashCount(p=>({...p,[b]:parseInt(e.target.value)||0}))} placeholder="0" style={{flex:1,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:13,outline:"none"}}/>
+              <span style={{fontSize:11,color:S.muted,minWidth:60,textAlign:"right"}}>{fmt((cashCount[b]||0)*b)}</span>
+            </div>
+          ))}
+          <div style={{borderTop:`1px solid ${S.border}`,paddingTop:8,display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:13,fontWeight:700}}>Total compté</span>
+            <span style={{fontWeight:800,fontSize:15,color:cashDiff===0?S.green:cashDiff>0?S.blue:S.red}}>{fmt(cashTotal)}</span>
+          </div>
+          {cashDiff!==0&&<div style={{marginTop:6,padding:"6px 10px",borderRadius:8,background:cashDiff>0?"#001a0d":"#1a0000",fontSize:11,fontWeight:700,color:cashDiff>0?S.green:S.red,textAlign:"center"}}>
+            {cashDiff>0?"✅ Surplus":"⚠️ Manque"} : {fmt(Math.abs(cashDiff))}
+          </div>}
         </div>
-        <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>📅 7 JOURS</div>{last7.map(d=><div key={d.ds} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><span style={{color:S.muted,minWidth:36}}>{d.label}</span><div style={{display:"flex",gap:16}}><span style={{color:d.ca>0?S.green:S.muted,fontWeight:700}}>{fmt(d.ca)}</span><span style={{color:d.net>=0?S.green:S.red,fontSize:11}}>net {fmt(d.net)}</span></div></div>)}</div>
-        <div style={Card()}>
-  <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>💳 MODES DE PAIEMENT</div>
-  {(()=>{
-    const byMode={especes:0,wave:0,orange:0,free:0};
-    sales.forEach(s=>{const m=s.payMode||"especes";byMode[m]=(byMode[m]||0)+s.total;});
-    const cfg=[{id:"especes",label:"💵 Espèces",color:S.green},{id:"wave",label:"📱 Wave",color:S.blue},{id:"orange",label:"🟠 Orange Money",color:S.orange},{id:"free",label:"📲 Free Money",color:S.purple}];
-    return cfg.filter(c=>byMode[c.id]>0).map(c=>(
-      <div key={c.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
-        <span style={{color:c.color,fontWeight:600}}>{c.label}</span>
-        <span style={{fontWeight:800,color:c.color}}>{fmt(byMode[c.id])}</span>
-      </div>
-    ));
-  })()}
-  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0 0",fontSize:11,color:S.muted,marginTop:4}}>
-    <span>💵 En caisse physique</span>
-    <span style={{fontWeight:700,color:S.green}}>{fmt(sales.filter(s=>!s.payMode||s.payMode==="especes").reduce((a,s)=>a+s.total,0))}</span>
-  </div>
-</div>
-<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2,flexWrap:"wrap"}}><span style={{fontSize:10,color:"#aaa"}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</span>{sale.payMode&&sale.payMode!=="especes"&&<span style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:10,background:sale.payMode==="wave"?"#1565c0":sale.payMode==="orange"?"#e65100":"#6a1b9a",color:"#fff"}}>{sale.payMode==="wave"?"Wave":sale.payMode==="orange"?"Orange":"Free"}</span>}</div></div>)}</div>
+
+        {/* Rapport WhatsApp — lien direct */}
+        <div style={{...Card()}}>
+          <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>📱 ENVOYER AU PATRON</div>
+          <button onClick={()=>{
+            const byMode={especes:0,wave:0,orange:0,free:0};
+            sales.forEach(s=>{const m=s.payMode||"especes";byMode[m]=(byMode[m]||0)+s.total;});
+            const top3=top5.slice(0,3).map(p=>`${p.emoji}${p.name} ×${p.sold}`).join(", ");
+            const alertLine=lossAlerts.length>0?"⚠️ ALERTES: "+lossAlerts.map(a=>`${a.name} manque ${lossQty(a.id)}`).join(", "):"✅ Pas d'anomalie stock";
+            const msg=`🎮 GAME & GAUFRE — ${currentStore.name}%0A📅 ${new Date().toLocaleDateString("fr-FR")} à ${timeStr()}%0A%0A💰 CA TOTAL: ${fmt(totalCA)}%0A🛒 Food: ${fmt(totalFood)} | 🎮 Gaming: ${fmt(totalGaming)}%0A📈 Net: ${fmt(netProfit)}%0A%0A💳 Espèces: ${fmt(byMode.especes)} | Wave: ${fmt(byMode.wave)} | Orange: ${fmt(byMode.orange)}%0A%0A🏆 Top ventes: ${top3||"—"}%0A%0A${alertLine}%0A%0A🎫 Tickets: ${sales.length} | Sessions: ${doneSess.length}`;
+            window.open(`https://wa.me/${PATRON_NUM}?text=${msg}`,"_blank");
+            addAudit("RAPPORT ENVOYÉ",currentStore.name);
+          }} style={{width:"100%",background:"#25D366",color:"#fff",border:"none",borderRadius:10,padding:"12px",cursor:"pointer",fontSize:14,fontWeight:800}}>
+            📲 Envoyer sur WhatsApp du patron
+          </button>
+          <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:6}}>Ouvre WhatsApp directement avec le rapport</div>
+        </div>
       </div>}
 
-      {/* ══ AIDE ══ */}
-      {tab==="aide"&&<div style={{padding:14}}>
-        {guideSection===null?<>
-          <div style={{textAlign:"center",marginBottom:20}}>
-            <div style={{fontSize:40,marginBottom:8}}>❓</div>
-            <div style={{fontSize:18,fontWeight:800,color:S.gold}}>GUIDE EMPLOYÉ</div>
-            <div style={{fontSize:12,color:S.muted,marginTop:4}}>Appuyez sur une section pour apprendre</div>
-          </div>
-          {/* Progress indicator */}
-          <div style={Card()}>
-            <div style={{fontSize:11,fontWeight:700,color:S.muted,marginBottom:10,letterSpacing:1}}>📊 VOTRE PROGRESSION</div>
-            <div style={{display:"flex",gap:8}}>
-              {GUIDE_SECTIONS.map((gs,i)=>(
-                <div key={gs.id} style={{flex:1,textAlign:"center"}}>
-                  <div style={{fontSize:18}}>{gs.emoji}</div>
-                  <div style={{width:"100%",height:4,background:S.card2,borderRadius:2,marginTop:4}}><div style={{width:"0%",height:"100%",background:gs.color,borderRadius:2}}/></div>
+      {tab==="ia"&&<div style={{padding:14}}>
+        <div style={{...Card(),marginBottom:10}}>
+          <div style={{fontWeight:700,color:S.purple,fontSize:13,marginBottom:8}}>🤖 Assistant IA Game & Gaufre</div>
+          <div style={{background:"#0a0a1a",borderRadius:8,padding:8,minHeight:160,maxHeight:260,overflowY:"auto",marginBottom:8}}>
+            {aiMessages.length===0&&<div style={{color:S.muted,fontSize:11,textAlign:"center",paddingTop:60}}>Posez-moi une question sur votre business...</div>}
+            {aiMessages.map((m,i)=>(
+              <div key={i} style={{marginBottom:8,textAlign:m.role==="user"?"right":"left"}}>
+                <div style={{display:"inline-block",background:m.role==="user"?S.blue:S.card2,color:S.text,borderRadius:10,padding:"6px 10px",maxWidth:"85%",fontSize:11}}>
+                  {m.content}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {GUIDE_SECTIONS.map(gs=>(
-              <button key={gs.id} onClick={()=>setGuideSection(gs.id)} style={{background:S.card,border:`2px solid ${gs.color}`,borderRadius:12,padding:"16px 12px",cursor:"pointer",textAlign:"center",transition:"transform .15s"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.97)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
-                <div style={{fontSize:32,marginBottom:6}}>{gs.emoji}</div>
-                <div style={{fontSize:12,fontWeight:700,color:gs.color}}>{gs.title}</div>
-                <div style={{fontSize:10,color:S.muted,marginTop:4}}>{gs.steps.length} étapes</div>
-              </button>
-            ))}
-          </div>
-          <div style={{...Card(S.teal),marginTop:4}}>
-            <div style={{fontWeight:700,color:S.teal,fontSize:13,marginBottom:10}}>📱 VIDÉOS DE FORMATION</div>
-            <div style={{fontSize:11,color:"#aaa",lineHeight:1.7}}>
-              Des vidéos de formation sont disponibles sur WhatsApp.<br/>
-              Demandez le lien à votre patron.
-            </div>
-            <div style={{marginTop:12,display:"flex",flexDirection:"column",gap:6}}>
-              {["📹 Vidéo 1 : Prendre une commande","📹 Vidéo 2 : Gérer le gaming","📹 Vidéo 3 : Saisir les stocks","📹 Vidéo 4 : Rapport du soir"].map(v=>(
-                <div key={v} style={{background:S.card2,borderRadius:8,padding:"8px 12px",fontSize:12,color:S.muted}}>{v}</div>
-              ))}
-            </div>
-          </div>
-          <div style={{...Card(S.gold),marginTop:4}}>
-            <div style={{fontWeight:700,color:S.gold,fontSize:13,marginBottom:8}}>🚀 À RETENIR ABSOLUMENT</div>
-            {["Toujours imprimer le ticket avant d'encaisser","Jamais vendre sans enregistrer dans l'outil","Compter le stock physiquement chaque soir","En cas de doute → appeler le patron"].map((r,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:S.gold,color:S.bg,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:11,flexShrink:0}}>{i+1}</div>
-                <span>{r}</span>
               </div>
             ))}
+            {aiLoading&&<div style={{color:S.muted,fontSize:11}}>⏳ Réflexion...</div>}
           </div>
-        </>:
-        <div>
-          {(() => {
-            const gs=GUIDE_SECTIONS.find(x=>x.id===guideSection);
-            if(!gs) return null;
-            return(<>
-              <button onClick={()=>setGuideSection(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,marginBottom:16}}>← Retour au guide</button>
-              <div style={{textAlign:"center",marginBottom:20}}>
-                <div style={{fontSize:52,marginBottom:8}}>{gs.emoji}</div>
-                <div style={{fontSize:20,fontWeight:800,color:gs.color}}>{gs.title}</div>
-              </div>
-              {gs.steps.map((step,i)=>(
-                <div key={i} style={{display:"flex",gap:14,marginBottom:16,padding:14,background:S.card,borderRadius:12,border:`1px solid ${S.border}`,borderLeft:`4px solid ${gs.color}`}}>
-                  <div style={{fontSize:24,flexShrink:0,marginTop:2}}>{step.icon}</div>
-                  <div style={{fontSize:13,color:"#ddd",lineHeight:1.7}}>{step.text}</div>
-                </div>
-              ))}
-              <div style={{background:`${gs.color}15`,border:`1px solid ${gs.color}`,borderRadius:12,padding:16,textAlign:"center"}}>
-                <div style={{fontSize:14,fontWeight:700,color:gs.color}}>✅ Compris !</div>
-                <div style={{fontSize:11,color:S.muted,marginTop:4}}>Si vous avez des questions, demandez à votre responsable.</div>
-              </div>
-            </>);
-          })()}
-        </div>}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
+            {["Analyse mes ventes","Optimise mes stocks","Conseils du jour","Compare cette semaine"].map(q=>(
+              <button key={q} onClick={()=>sendAiMsg(q)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.muted,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:10}}>{q}</button>
+            ))}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <input value={aiInput} onChange={e=>setAiInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendAiMsg(aiInput)} placeholder="Posez une question..." style={{flex:1,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 10px",fontSize:12,outline:"none"}}/>
+            <button onClick={()=>sendAiMsg(aiInput)} style={{...Btn(S.purple),padding:"8px 12px"}}>▶</button>
+          </div>
+        </div>
       </div>}
 
-      {/* ══ AUDIT ══ */}
       {tab==="audit"&&<div style={{padding:14}}>
-        {audit.map(e=><div key={e.id} style={{background:S.card,borderRadius:8,padding:"8px 12px",marginBottom:6,borderLeft:`3px solid ${e.action.includes("SUPPR")?S.red:e.action.includes("VENTE")||e.action.includes("SESSION")?S.green:e.action.includes("DÉP")?S.orange:S.border}`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:11,fontWeight:700,color:e.action.includes("SUPPR")?S.red:S.text}}>{e.action}</span><span style={{fontSize:10,color:S.muted}}>{e.time}</span></div><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:10,color:"#aaa"}}>{e.details}</span><span style={{fontSize:10,color:e.role==="patron"?S.gold:S.blue}}>{e.who}</span></div></div>)}
-        {audit.length===0&&<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:20}}>Aucune action</div>}
-      </div>}
-
-      {/* ══ MODALS ══ */}
-
-      {/* Store selector */}
-      {storeModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🏪 SÉLECTIONNER LA BOUTIQUE</div>
-          {STORES.map(store=>(
-            <button key={store.id} onClick={()=>{setCurrentStore(store);setStoreModal(false);showToast(`✓ ${store.name}`);}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",background:store.id===currentStore.id?S.card2:S.card,border:`2px solid ${store.id===currentStore.id?S.gold:S.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",color:S.text,marginBottom:8,textAlign:"left"}}>
-              <span style={{fontSize:28}}>{store.emoji}</span>
-              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:store.id===currentStore.id?S.gold:S.text}}>{store.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>Appuyez pour sélectionner</div></div>
-              {store.id===currentStore.id&&<span style={{color:S.gold,fontSize:18}}>✓</span>}
-            </button>
-          ))}
-          <button onClick={()=>setStoreModal(false)} style={{...{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%"},marginTop:8}}>Fermer</button>
-        </div>
-      </div>}
-
-      {/* Production modal */}
-      {prodModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.green}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.green,marginBottom:4}}>🍳 Production</div>
-          <div style={{fontSize:13,color:S.muted,marginBottom:12}}>{prodModal.emoji} {prodModal.name}</div>
-          {(() => {const rec=recipes.find(r=>r.snackId===prodModal.id);return rec?<div style={{background:S.card2,borderRadius:8,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?<div key={ri.id}>{ing.emoji} {fmtQ(ri.qty,ing.unit)} {ing.name} (dispo: {fmtQ(ingRem(ing.id),ing.unit)})</div>:null;})}</div>:null;})()}
-          <input type="number" value={prodQtyVal} placeholder="Quantité à fabriquer" autoFocus onChange={e=>setProdQtyVal(e.target.value)} style={Inp()}/>
-          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setProdModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={recordProduction} style={{...Btn(S.green),flex:1}}>✓ Confirmer</button></div>
-        </div>
-      </div>}
-
-      {/* Add ingredient */}
-      {addIngModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>＋ Nouvel ingrédient</div>
-          {[{l:"Emoji",k:"emoji",t:"text",ph:"🥄"},{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg, L, pcs)",k:"unit",t:"text",ph:"kg"},{l:"Coût/unité (F)",k:"unitCost",t:"number",ph:"300"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newIng[f.k]} placeholder={f.ph} onChange={e=>setNewIng(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setAddIngModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newIng.name)return;const i={id:`i${uid()}`,name:newIng.name,unit:newIng.unit||"kg",emoji:newIng.emoji||"🥄",unitCost:parseFloat(newIng.unitCost)||0};const ni=[...ingredients,i];setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);addAudit("AJOUT ING",`${i.emoji}${i.name}`);setAddIngModal(false);setNewIng({name:"",unit:"kg",emoji:"🥄",unitCost:""});showToast("✓ Ingrédient ajouté");}} style={{...Btn(S.blue),flex:1}}>✓ Ajouter</button></div>
-        </div>
-      </div>}
-
-      {/* Add/Edit product with AI emoji */}
-      {(addProdModal||editProd)&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${addProdModal?S.gold:S.blue}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:addProdModal?S.gold:S.blue,marginBottom:16}}>{addProdModal?"＋ Nouveau produit":"✏️ Modifier"}</div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:4}}>Nom du produit</div>
-            <div style={{display:"flex",gap:8}}>
-              <input type="text" value={editProd?editProd.name:newProd.name} onChange={e=>{const v=e.target.value;editProd?setEditProd(p=>({...p,name:v})):setNewProd(p=>({...p,name:v}));}} style={{...Inp(),flex:1}} placeholder="Ex: Crêpe Banane"/>
-            </div>
-          </div>
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:11,color:S.muted,marginBottom:4,display:"flex",justifyContent:"space-between"}}>
-              <span>Emoji</span>
-              <button onClick={async()=>{const name=editProd?.name||newProd.name;await suggestEmoji(name);}} disabled={emojiSuggesting||!(editProd?.name||newProd.name)} style={{background:S.purple,color:"#fff",border:"none",borderRadius:6,padding:"2px 8px",cursor:"pointer",fontSize:10,opacity:emojiSuggesting?0.5:1}}>{emojiSuggesting?"⏳ IA...":"🤖 Suggérer"}</button>
-            </div>
-            <input type="text" value={editProd?editProd.emoji:newProd.emoji} onChange={e=>editProd?setEditProd(p=>({...p,emoji:e.target.value})):setNewProd(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:24,textAlign:"center",padding:"8px"}} maxLength={4}/>
-          </div>
-          <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix (FCFA)</div><input type="number" value={editProd?editProd.price:newProd.price} onChange={e=>editProd?setEditProd(p=>({...p,price:e.target.value})):setNewProd(p=>({...p,price:e.target.value}))} style={Inp()}/></div>
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>{setAddProdModal(null);setEditProd(null);}} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(editProd){const up={...editProd,price:parseInt(editProd.price)||0};if(editProd.cat==="boissons"){const nb=boissons.map(p=>p.id===up.id?up:p);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.map(p=>p.id===up.id?up:p);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("MODIF",`${up.name}`);setEditProd(null);showToast("✓ Mis à jour");}else{if(!newProd.name||!newProd.price)return;const p={id:`c${uid()}`,name:newProd.name,price:parseInt(newProd.price)||0,emoji:newProd.emoji||"🍽️"};if(addProdModal==="boissons"){const nb=[...boissons,p];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=[...snacks,p];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("AJOUT",`${p.emoji}${p.name}`);setAddProdModal(null);setNewProd({name:"",price:"",emoji:"🍽️"});showToast("✓ Produit ajouté");}}} style={{...Btn(editProd?S.blue:S.gold),flex:1}}>✓ {editProd?"Modifier":"Ajouter"}</button>
-          </div>
-        </div>
-      </div>}
-
-      {/* Edit/Add Station modal */}
-      {editStation!==null&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>{editStation.id?"✏️ Modifier":"＋ Nouvelle station"}</div>
-          {[{l:"Emoji",k:"emoji",t:"text",ph:"🎮"},{l:"Nom",k:"name",t:"text",ph:"PS5 N°1"},{l:"Prix 1 joueur (F/30min)",k:"rate1",t:"number",ph:"1000"},{l:"Prix 2 joueurs (F/30min)",k:"rate2",t:"number",ph:"1500"}].map(f=>(
-            <div key={f.k} style={{marginBottom:12}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div>
-              <input type={f.t} value={editStation[f.k]||""} placeholder={f.ph} onChange={e=>setEditStation(p=>({...p,[f.k]:f.t==="number"?Number(e.target.value)||0:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"9px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+        <div style={{...Card()}}>
+          <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:12,letterSpacing:1}}>🔍 JOURNAL D'AUDIT</div>
+          {[...audit].reverse().slice(0,50).map((a,i)=>(
+            <div key={i} style={{display:"flex",gap:6,padding:"4px 0",borderBottom:`1px solid ${S.border}`,fontSize:10}}>
+              <span style={{color:S.muted,minWidth:40}}>{a.time}</span>
+              <span style={{color:S.blue,minWidth:60}}>{a.by}</span>
+              <span style={{color:S.text,flex:1}}>{a.msg}</span>
             </div>
           ))}
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>setEditStation(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(!editStation.name)return;let ns;if(editStation.id){ns=stations.map(x=>x.id===editStation.id?editStation:x);}else{ns=[...stations,{...editStation,id:"st"+Date.now()}];}setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit(editStation.id?"MODIF STATION":"AJOUT STATION",editStation.name);setEditStation(null);showToast("✓ Station mise à jour");}} style={{background:S.gold,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
-          </div>
+          {audit.length===0&&<div style={{color:S.muted,fontSize:11,textAlign:"center",padding:20}}>Aucune action enregistrée</div>}
         </div>
       </div>}
 
-      {/* Edit Ingredient modal */}
-      {editIng&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>✏️ Modifier ingrédient</div>
-          {[{l:"Emoji",k:"emoji",t:"text"},{l:"Nom",k:"name",t:"text"},{l:"Unité (kg, L, pcs…)",k:"unit",t:"text"},{l:"Coût / unité (FCFA)",k:"unitCost",t:"number"}].map(f=>(
-            <div key={f.k} style={{marginBottom:12}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div>
-              <input type={f.t} value={editIng[f.k]||""} onChange={e=>setEditIng(p=>({...p,[f.k]:f.t==="number"?parseFloat(e.target.value)||0:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"9px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+      {tab==="aide"&&<div style={{padding:14}}>
+        {GUIDE.map(g=>(
+          <div key={g.id} style={{...Card(),marginBottom:8,border:`1px solid ${g.color}33`}}>
+            <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+              <span style={{fontSize:26}}>{g.emoji}</span>
+              <div>
+                <div style={{fontWeight:700,fontSize:13,color:g.color,marginBottom:6}}>{g.title}</div>
+                {g.steps.map((s,i)=>(
+                  <div key={i} style={{display:"flex",gap:6,marginBottom:4}}>
+                    <span style={{fontSize:12}}>{s.icon}</span>
+                    <span style={{fontSize:11,color:S.muted,lineHeight:1.4}}>{s.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>}
+
+      {tab==="planning"&&<div style={{padding:14}}>
+        <div style={{...Card(),marginBottom:10}}>
+          <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:12}}>🧮 PLANNING COURSES</div>
+          <div style={{fontSize:11,color:S.muted,marginBottom:10}}>Entrez les quantités à produire aujourd'hui</div>
+          {recipes.map(rec=>(
+            <div key={rec.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{fontSize:16}}>{rec.emoji}</span>
+              <span style={{flex:1,fontSize:11}}>{rec.name}</span>
+              <input type="number" min={0} value={planQty[rec.id]||""} onChange={e=>setPlanQty(p=>({...p,[rec.id]:parseInt(e.target.value)||0}))} placeholder="0" style={{width:60,background:S.card2,border:`1px solid ${S.border}`,color:S.gold,borderRadius:6,padding:"5px",fontSize:12,fontWeight:700,outline:"none",textAlign:"center"}}/>
             </div>
           ))}
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>setEditIng(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(!editIng.name)return;const ni=ingredients.map(x=>x.id===editIng.id?editIng:x);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);addAudit("MODIF ING",editIng.name);setEditIng(null);showToast("✓ Ingrédient mis à jour");}} style={{background:S.blue,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
-          </div>
         </div>
+        {Object.values(planQty).some(v=>v>0)&&(()=>{
+          const shopping=computeShopping();
+          const toBuy=shopping.filter(x=>x.toBuy>0);
+          return(<div style={{...Card()}}>
+            <div style={{fontWeight:700,color:S.teal,marginBottom:8,fontSize:12}}>🛒 LISTE DE COURSES</div>
+            {toBuy.length===0?<div style={{color:S.green,fontSize:11}}>✅ Stock suffisant pour la production prévue</div>:
+            toBuy.map(x=><div key={x.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:`1px solid ${S.border}`}}>
+              <span style={{fontSize:11}}>{x.emoji} {x.name}</span>
+              <span style={{fontSize:11,fontWeight:700,color:S.orange}}>Acheter {fmtQ(x.toBuy,x.unit)}</span>
+            </div>)}
+            <button onClick={()=>{
+              const msg=toBuy.map(x=>`• ${x.name}: ${fmtQ(x.toBuy,x.unit)}`).join("%0A");
+              window.open(`https://wa.me/?text=🛒 Liste courses Game & Gaufre:%0A${msg}`,"_blank");
+            }} style={{...Btn(S.teal),width:"100%",marginTop:8,padding:"10px",fontSize:12}}>📲 Envoyer liste sur WhatsApp</button>
+          </div>);
+        })()}
       </div>}
 
-      {/* Edit Recipe modal */}
-      {editRec&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:16,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:380,border:`2px solid ${S.orange}`,marginTop:20}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.orange,marginBottom:16}}>{editRec.id?"✏️ Modifier":"＋ Nouvelle"} recette</div>
-          {[{l:"Emoji",k:"emoji",t:"text"},{l:"Nom",k:"name",t:"text"},{l:"Catégorie",k:"category",t:"text"}].map(f=>(
-            <div key={f.k} style={{marginBottom:10}}>
-              <div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div>
-              <input type={f.t} value={editRec[f.k]||""} onChange={e=>setEditRec(p=>({...p,[f.k]:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 10px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
-            </div>
-          ))}
-          <div style={{fontSize:11,color:S.muted,marginBottom:6,marginTop:4}}>Ingrédients (quantité en kg/pcs)</div>
-          {(editRec.ingredients||[]).map((ri,idx)=>{const ing=ingredients.find(x=>x.id===ri.id);return(
-            <div key={idx} style={{display:"flex",gap:6,alignItems:"center",marginBottom:6}}>
-              <select value={ri.id} onChange={e=>{const ni=[...editRec.ingredients];ni[idx]={...ni[idx],id:e.target.value};setEditRec(p=>({...p,ingredients:ni}));}} style={{flex:2,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:12,outline:"none"}}>
-                {ingredients.map(x=><option key={x.id} value={x.id}>{x.emoji} {x.name}</option>)}
-              </select>
-              <input type="number" step="0.001" value={ri.qty||""} placeholder="qté" onChange={e=>{const ni=[...editRec.ingredients];ni[idx]={...ni[idx],qty:parseFloat(e.target.value)||0};setEditRec(p=>({...p,ingredients:ni}));}} style={{flex:1,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"6px",fontSize:12,outline:"none"}}/>
-              <span style={{fontSize:9,color:S.muted,minWidth:20}}>{ing?.unit||"kg"}</span>
-              <button onClick={()=>{const ni=editRec.ingredients.filter((_,i)=>i!==idx);setEditRec(p=>({...p,ingredients:ni}));}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"4px 6px",cursor:"pointer",fontSize:11}}>✕</button>
-            </div>
-          );})}
-          <button onClick={()=>setEditRec(p=>({...p,ingredients:[...(p.ingredients||[]),{id:ingredients[0]?.id||"",qty:0}]}))} style={{width:"100%",background:"transparent",border:`1px dashed ${S.blue}`,color:S.blue,borderRadius:6,padding:"7px",cursor:"pointer",fontSize:12,marginBottom:12}}>＋ Ajouter ingrédient</button>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setEditRec(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(!editRec.name)return;let nr;if(editRec.id){nr=recipes.map(x=>x.id===editRec.id?editRec:x);}else{nr=[...recipes,{...editRec,id:"r"+Date.now()}];}setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,stations,photoPrice,dailyGoal,ticketNo);addAudit(editRec.id?"MODIF RECETTE":"AJOUT RECETTE",editRec.name);setEditRec(null);showToast("✓ Recette sauvegardée");}} style={{background:S.orange,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
-          </div>
-        </div>
-      </div>}
 
-      {/* Cash modal */}
-      {cashModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:16,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:380,border:`2px solid ${S.orange}`,marginTop:20}}>
-          <div style={{fontWeight:800,fontSize:16,color:S.orange,marginBottom:16}}>💵 CLÔTURE DE CAISSE</div>
-          {BILLETS.map(b=><div key={b} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}><div style={{width:80,fontSize:13,fontWeight:700,color:S.gold}}>{b.toLocaleString()} F</div><input type="number" value={cashCount[b]??""} placeholder="0" onChange={e=>setCashCount(p=>({...p,[b]:Number(e.target.value)||0}))} style={{...Inp("80px"),padding:"7px 10px",fontSize:13,textAlign:"center"}}/><div style={{fontSize:12,color:"#aaa",flex:1,textAlign:"right"}}>{fmt((cashCount[b]||0)*b)}</div></div>)}
-          <div style={{borderTop:`2px solid ${S.border}`,marginTop:14,paddingTop:14}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span>Caisse comptée</span><span style={{fontSize:16,fontWeight:800,color:S.gold}}>{fmt(cashTotal)}</span></div><div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span>CA système</span><span style={{fontSize:16,fontWeight:800,color:S.blue}}>{fmt(totalCA)}</span></div><div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderTop:`1px solid ${S.border}`}}><span style={{fontWeight:700}}>Écart</span><span style={{fontSize:18,fontWeight:800,color:cashDiff>=0?S.green:S.red}}>{cashDiff>=0?"+":""}{fmt(cashDiff)}</span></div>{cashDiff<0&&<div style={{background:"#1a0000",borderRadius:8,padding:"8px",fontSize:12,color:S.red,fontWeight:700,marginBottom:10}}>⚠️ MANQUE {fmt(Math.abs(cashDiff))} — Audit enregistré</div>}</div>
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setCashModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{addAudit("CLOTURE CAISSE",`Comptée:${fmt(cashTotal)} Écart:${fmt(cashDiff)}`);setCashModal(false);showToast(cashDiff>=0?"✓ Caisse OK":"⚠️ Écart noté",cashDiff>=0?S.green:S.red);}} style={{...Btn(cashDiff>=0?S.green:S.orange),flex:1}}>✓ Valider</button></div>
-        </div>
-      </div>}
-
-      {/* WhatsApp */}
-      {whatsModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid #25D366`}}>
-          <div style={{fontWeight:800,fontSize:15,color:"#25D366",marginBottom:12}}>📱 RAPPORT WHATSAPP</div>
-          <div style={{background:S.card2,borderRadius:10,padding:14,fontSize:11,color:"#ccc",lineHeight:1.8,maxHeight:280,overflowY:"auto",whiteSpace:"pre-wrap",fontFamily:"monospace"}}>
-            {`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 Objectif: ${goalPct}%\n\n🥞 Food: ${fmt(totalFood)} (${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes)\n🎮 Gaming: ${fmt(totalGaming)} (${doneSess.length} sessions)\n🎫 Tickets émis: ${ticketNo-1001}\n💵 Espèces: ${fmt(sales.filter(s=>(!s.payMode||s.payMode==="especes")).reduce((a,s)=>a+s.total,0))}\n📱 Wave: ${fmt(sales.filter(s=>s.payMode==="wave").reduce((a,s)=>a+s.total,0))}\n🟠 Orange: ${fmt(sales.filter(s=>s.payMode==="orange").reduce((a,s)=>a+s.total,0))}\n💸 Dépenses: ${fmt(totalExpenses)}\n\n${top5.length?`⭐ Top:\n${top5.map(p=>`• ${p.emoji}${p.name}: ${p.sold}×`).join("\n")}\n\n`:""}${lossAlerts.length?`🚨 PERTES:\n${lossAlerts.map(p=>`• ${p.emoji}${p.name}: ${lossQty(p.id)} manquant(s) = ${fmt(lossQty(p.id)*p.price)}`).join("\n")}\n\n`:"✅ Stock OK\n\n"}🔒 ${timeStr()} — ${user.name}`}
-          </div>
-          <div style={{display:"flex",gap:10,marginTop:14}}><button onClick={()=>setWhatsModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Fermer</button><button onClick={()=>{try{navigator.clipboard.writeText(`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 ${goalPct}%\n\nFood: ${fmt(totalFood)} | Gaming: ${fmt(totalGaming)}\n🎫 ${ticketNo-1001} tickets\nDépenses: ${fmt(totalExpenses)}\n\n${lossAlerts.length?`🚨 PERTES: ${lossAlerts.map(p=>`${p.name}: ${lossQty(p.id)} manquant(s)`).join(", ")}\n`:"✅ Stock OK\n"}\n🔒 ${timeStr()} — ${user.name}`);}catch(e){}showToast("✓ Copié","#25D366");}} style={{...Btn("#25D366"),flex:1}}>📋 Copier</button></div>
-        </div>
-      </div>}
-
-      {/* Employees */}
-      {empModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:16,overflowY:"auto"}}>
-        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid ${S.gold}`,marginTop:20}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>👥 ÉQUIPE</div>
-          {editEmp?<div><div style={{fontSize:12,color:S.muted,marginBottom:12}}>Modifier {editEmp.name}</div>{[{l:"Nom",k:"name",t:"text"},{l:"PIN (4 chiffres)",k:"pin",t:"number"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={editEmp[f.k]} onChange={e=>setEditEmp(p=>({...p,[f.k]:f.k==="pin"?e.target.value.slice(0,4):e.target.value}))} style={Inp()}/></div>)}<div style={{display:"flex",gap:10}}><button onClick={()=>setEditEmp(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={async()=>{if(editEmp.pin.length===4&&editEmp.name){const ne=emps.map(e=>e.id===editEmp.id?editEmp:e);setEmps(ne);empRef.current=ne;saveEmps(ne);setEditEmp(null);showToast("✓ Mis à jour");}}} disabled={editEmp.pin.length!==4} style={{...Btn(S.gold),flex:1,opacity:editEmp.pin.length===4?1:0.4}}>✓ Sauvegarder</button></div></div>
-          :<div>{emps.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${S.border}`}}><div style={{fontSize:22}}>{e.role==="patron"?"👑":"👤"}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:e.role==="patron"?S.gold:S.text}}>{e.name}</div><div style={{fontSize:10,color:S.muted}}>PIN: {"•".repeat(4)} • {e.role}</div></div><button onClick={()=>setEditEmp({...e})} style={{background:S.card2,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}}>✏️</button></div>)}<button onClick={()=>setEmpModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%",marginTop:12}}>Fermer</button></div>}
-        </div>
-      </div>}
-
-      {/* Expense */}
-      {expModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.orange}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.orange,marginBottom:16}}>💸 Nouvelle dépense</div>
-          {[{l:"Emoji",k:"emoji",t:"text",ph:"🛒"},{l:"Description",k:"label",t:"text",ph:"Achat farine..."},{l:"Montant (FCFA)",k:"amount",t:"number",ph:"5000"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newExp[f.k]} placeholder={f.ph} onChange={e=>setNewExp(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
-          <div style={{display:"flex",gap:10,marginTop:8}}><button onClick={()=>setExpModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{if(!newExp.label||!newExp.amount)return;const e={id:uid(),label:newExp.label,amount:parseInt(newExp.amount)||0,emoji:newExp.emoji||"🛒",time:timeStr()};const ne=[...expenses,e];setExpenses(ne);saveDay({expenses:ne});addAudit("DÉPENSE",`${e.emoji}${e.label} ${fmt(e.amount)}`);setExpModal(false);setNewExp({label:"",amount:"",emoji:"🛒"});showToast("Dépense enregistrée",S.orange);}} style={{...Btn(S.orange),flex:1}}>✓ Enregistrer</button></div>
-        </div>
-      </div>}
-
-      {/* Goal modal */}
-      {goalModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
-        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.gold}`}}>
-          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>🎯 Objectif journalier</div>
-          <input type="number" value={newGoal} placeholder="150000" onChange={e=>setNewGoal(e.target.value)} style={Inp()}/>
-          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setGoalModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{const g=parseInt(newGoal)||DEFAULT_GOAL;setDailyGoal(g);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,g,ticketNo);setGoalModal(false);showToast("✓ Objectif mis à jour");}} style={{...Btn(S.gold),flex:1}}>✓ OK</button></div>
-        </div>
-      </div>}
+      {/* Fin des onglets */}
     </div>
   );
 }
