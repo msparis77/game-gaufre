@@ -267,7 +267,7 @@ export default function App(){
       if(target==="stock"||target==="verif"){
         const liste=ingredients.map(i=>`${i.name} (${i.unit})`).join(", ");
         const moment=target==="verif"?"du soir (comptage physique)":"du matin (ouverture)";
-        prompt=`Tu es un assistant pour un café-crêperie à Dakar. Voici la liste des ingrédients: ${liste}. Regarde cette fiche ou photo et extrais les quantités de stock ${moment}. Réponds UNIQUEMENT en JSON: {"stocks":[{"nom":"...","quantite":0}]}. Si tu ne vois pas un ingrédient, ne l'inclus pas.`;
+        prompt=`Tu es un assistant pour un café-crêperie à Dakar. Voici mes ingrédients existants: ${liste}. Regarde cette fiche ou photo. Pour chaque produit que tu vois: si le nom correspond à un ingrédient existant (même approximativement), utilise son nom exact. Si c'est un NOUVEAU produit non présent dans la liste, indique nouveau:true et devine l'unité (kg, L, pcs). Réponds UNIQUEMENT en JSON: {"stocks":[{"nom":"...","quantite":0,"unite":"kg","prixUnitaire":0,"nouveau":false,"emoji":"🌾"}]}. Inclus TOUS les produits visibles sur la fiche.`;
       } else {
         const liste=snacks.map(s=>`${s.name}`).join(", ");
         prompt=`Tu es un assistant pour un café-crêperie à Dakar. Voici les produits: ${liste}. Regarde cette fiche ou photo et extrais les quantités produites ce matin. Réponds UNIQUEMENT en JSON: {"productions":[{"nom":"...","quantite":0}]}. Si tu ne vois pas un produit, ne l'inclus pas.`;
@@ -281,22 +281,51 @@ export default function App(){
       const parsed=JSON.parse(match[0]);
       if(target==="verif"&&parsed.stocks){
         const nip={...ingPhys};
+        let newIngList=[...ingredients];
+        let nbNouveaux=0;
         parsed.stocks.forEach(s=>{
-          const ing=ingredients.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          let ing=newIngList.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          if(!ing&&s.nouveau!==false){
+            const newId="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+            ing={id:newId,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
+            newIngList=[...newIngList,ing];
+            nbNouveaux++;
+            addAudit("NOUVEL ING AUTO",`${ing.emoji} ${ing.name} (créé par scan soir)`);
+          }
           if(ing) nip[ing.id]=s.quantite;
         });
+        if(nbNouveaux>0){
+          setIngredients(newIngList);
+          saveProds(boissons,snacks,newIngList,recipes,stations,photoPrice,dailyGoal,ticketNo);
+        }
         setIngPhys(nip);saveDay({ingPhys:nip});
-        addAudit("SCAN STOCK SOIR IA",`${parsed.stocks.length} ingrédients comptés`);
-        showToast(`✓ Stock soir mis à jour — ${parsed.stocks.length} ingrédients`);
+        addAudit("SCAN STOCK SOIR IA",`${parsed.stocks.length} ingrédients comptés${nbNouveaux>0?` (+${nbNouveaux} nouveaux)`:""}`);
+        showToast(nbNouveaux>0?`✓ Stock soir — ${nbNouveaux} nouveaux créés 🆕`:`✓ Stock soir mis à jour — ${parsed.stocks.length} ingrédients`);
       } else if(target==="stock"&&parsed.stocks){
         const newIS={...ingStock};
+        let newIngList=[...ingredients];
+        let nbNouveaux=0;
         parsed.stocks.forEach(s=>{
-          const ing=ingredients.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          // Chercher correspondance dans la liste existante
+          let ing=newIngList.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          // Si pas trouvé ET marqué nouveau → créer automatiquement
+          if(!ing&&s.nouveau!==false){
+            const newId="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+            ing={id:newId,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
+            newIngList=[...newIngList,ing];
+            nbNouveaux++;
+            addAudit("NOUVEL ING AUTO",`${ing.emoji} ${ing.name} (créé par scan)`);
+          }
           if(ing) newIS[ing.id]={...newIS[ing.id]||{},opening:s.quantite};
         });
+        // Sauvegarder les nouveaux ingrédients
+        if(nbNouveaux>0){
+          setIngredients(newIngList);
+          saveProds(boissons,snacks,newIngList,recipes,stations,photoPrice,dailyGoal,ticketNo);
+        }
         setIngStock(newIS);saveDay({ingStock:newIS});
-        addAudit("SCAN STOCK IA",`${parsed.stocks.length} ingrédients lus`);
-        showToast(`✓ ${parsed.stocks.length} ingrédients mis à jour`);
+        addAudit("SCAN STOCK IA",`${parsed.stocks.length} ingrédients lus${nbNouveaux>0?` (+${nbNouveaux} nouveaux créés)`:""}`);
+        showToast(nbNouveaux>0?`✓ ${parsed.stocks.length} ingrédients — ${nbNouveaux} nouveaux créés 🆕`:`✓ ${parsed.stocks.length} ingrédients mis à jour`);
       } else if(target==="prod"&&parsed.productions){
         const newIS={...ingStock};
         parsed.productions.forEach(p=>{
