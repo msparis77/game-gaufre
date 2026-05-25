@@ -1,3 +1,4 @@
+import { fbSave, fbLoad } from './firebase.js'
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
