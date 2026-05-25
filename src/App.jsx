@@ -51,8 +51,9 @@ function PinPad({onConfirm,error}){
 }
 
 // TICKET COMPONENT
-function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkip}){
-  const printTicket=()=>{
+const PAY_MODES=[{id:"especes",label:"💵 Espèces",color:"#4caf50"},{id:"wave",label:"📱 Wave",color:"#1565c0"},{id:"orange",label:"🟠 Orange Money",color:"#e65100"},{id:"free",label:"📲 Free Money",color:"#6a1b9a"}];
+function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkip,selectedPayMode,onPayModeChange}){
+  const printTicket=(pm)=>{
     const w=window.open("","_blank","width=300,height=600");
     w.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:12px;width:250px;margin:0;padding:8px;}h2{text-align:center;font-size:14px;margin:4px 0;}hr{border-top:1px dashed #000;}td{padding:2px 0;}.r{text-align:right;}.total{font-weight:bold;font-size:14px;}</style></head><body>
     <h2>🎮 GAME & GAUFRE</h2><p style="text-align:center;font-size:10px;margin:2px;">${storeName}</p><hr/>
@@ -78,11 +79,19 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,on
         {items.map((i,idx)=><div key={idx} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",borderBottom:`1px dashed ${S.border}`}}><span>{i.emoji}{i.name} ×{i.qty}</span><span style={{fontWeight:700}}>{Number(i.price*i.qty).toLocaleString("fr-FR")} F</span></div>)}
         <div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`2px dashed ${S.border}`}}><span style={{fontWeight:800,fontSize:14}}>TOTAL</span><span style={{fontWeight:800,fontSize:16,color:S.green}}>{Number(total).toLocaleString("fr-FR")} F</span></div>
       </div>
+      <div style={{marginBottom:12}}>
+        <div style={{fontSize:11,color:S.muted,marginBottom:6,fontWeight:700}}>MODE DE PAIEMENT</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+          {PAY_MODES.map(pm=>(
+            <button key={pm.id} onClick={()=>onPayModeChange&&onPayModeChange(pm.id)} style={{background:selectedPayMode===pm.id?pm.color:"transparent",color:selectedPayMode===pm.id?"#fff":S.muted,border:`2px solid ${selectedPayMode===pm.id?pm.color:S.border}`,borderRadius:8,padding:"8px 6px",cursor:"pointer",fontSize:12,fontWeight:selectedPayMode===pm.id?700:400,transition:"all .15s"}}>{pm.label}</button>
+          ))}
+        </div>
+      </div>
       <div style={{display:"flex",gap:10}}>
         <button onClick={onCancel} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
-        <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
+        <button onClick={()=>printTicket(selectedPayMode)} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Valider</button>
       </div>
-      <button onClick={onSkip} style={{width:"100%",marginTop:8,background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12}}>⚠️ Valider sans imprimante (urgence)</button>
+      <button onClick={onSkip} style={{width:"100%",marginTop:8,background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12}}>⚠️ Valider sans imprimante</button>
       <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:4}}>Sans ticket = enregistré dans l'audit</div>
     </div>
   );
@@ -136,6 +145,9 @@ export default function App(){
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
   const [editStation,setEditStation]=useState(null);
+  const [scanLoading,setScanLoading]=useState(false);
+  const [scanTarget,setScanTarget]=useState(null);
+  const scanRef=useRef(null);
   const [editIng,setEditIng]=useState(null);
   const [editRec,setEditRec]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
@@ -208,10 +220,11 @@ export default function App(){
   const addToCart=(p,cat)=>{touch();setCart(prev=>{const ex=prev.find(i=>i.id===p.id);return ex?prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i):[...prev,{...p,qty:1,cat}];});};
   const updQty=(id,d)=>{touch();setCart(prev=>prev.map(i=>i.id===id?{...i,qty:Math.max(0,i.qty+d)}:i).filter(i=>i.qty>0));};
   const cartTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const [payMode,setPayMode]=useState("especes");
   const requestTicket=()=>{if(!cart.length)return;setPendingTicket({items:[...cart],total:cartTotal});};
   const confirmSaleAfterPrint=async(noTicket=false)=>{
     if(!pendingTicket)return;
-    const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};
+    const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,payMode:pendingTicket.payMode||payMode,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};
     setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
     const newTno=ticketNo+1;setTicketNo(newTno);
     saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);
@@ -224,6 +237,65 @@ export default function App(){
   // STOCK
   const setIngField=(id,field,val)=>{setIngStock(prev=>{const ns={...prev,[id]:{...prev[id]||{},[field]:Number(val)||0}};if(field==="opening")ns[id].current=Number(val)||0;saveDay({ingStock:ns});return ns;});};
   const setIngPhysVal=(id,val)=>{setIngPhys(prev=>{const np={...prev,[id]:Number(val)||0};saveDay({ingPhys:np});return np;});};
+
+  // ── SCAN IA ────────────────────────────────────────────────
+  const scanIA=async(file,target)=>{
+    setScanLoading(true);setScanTarget(target);
+    try{
+      const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(file);});
+      let prompt="";
+      if(target==="stock"||target==="verif"){
+        const liste=ingredients.map(i=>`${i.name} (${i.unit})`).join(", ");
+        const moment=target==="verif"?"du soir (comptage physique)":"du matin (ouverture)";
+        prompt=`Tu es un assistant pour un café-crêperie à Dakar. Voici la liste des ingrédients: ${liste}. Regarde cette fiche ou photo et extrais les quantités de stock ${moment}. Réponds UNIQUEMENT en JSON: {"stocks":[{"nom":"...","quantite":0}]}. Si tu ne vois pas un ingrédient, ne l'inclus pas.`;
+      } else {
+        const liste=snacks.map(s=>`${s.name}`).join(", ");
+        prompt=`Tu es un assistant pour un café-crêperie à Dakar. Voici les produits: ${liste}. Regarde cette fiche ou photo et extrais les quantités produites ce matin. Réponds UNIQUEMENT en JSON: {"productions":[{"nom":"...","quantite":0}]}. Si tu ne vois pas un produit, ne l'inclus pas.`;
+      }
+      const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:b64}},{type:"text",text:prompt}]}]})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error?.message||"Erreur serveur");
+      const txt=d.content?.map(c=>c.text||"").join("")||"";
+      const match=txt.match(/\{[\s\S]*\}/);
+      if(!match) throw new Error("L'IA n'a pas pu lire la fiche");
+      const parsed=JSON.parse(match[0]);
+      if(target==="verif"&&parsed.stocks){
+        const nip={...ingPhys};
+        parsed.stocks.forEach(s=>{
+          const ing=ingredients.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          if(ing) nip[ing.id]=s.quantite;
+        });
+        setIngPhys(nip);saveDay({ingPhys:nip});
+        addAudit("SCAN STOCK SOIR IA",`${parsed.stocks.length} ingrédients comptés`);
+        showToast(`✓ Stock soir mis à jour — ${parsed.stocks.length} ingrédients`);
+      } else if(target==="stock"&&parsed.stocks){
+        const newIS={...ingStock};
+        parsed.stocks.forEach(s=>{
+          const ing=ingredients.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          if(ing) newIS[ing.id]={...newIS[ing.id]||{},opening:s.quantite};
+        });
+        setIngStock(newIS);saveDay({ingStock:newIS});
+        addAudit("SCAN STOCK IA",`${parsed.stocks.length} ingrédients lus`);
+        showToast(`✓ ${parsed.stocks.length} ingrédients mis à jour`);
+      } else if(target==="prod"&&parsed.productions){
+        const newIS={...ingStock};
+        parsed.productions.forEach(p=>{
+          const snk=snacks.find(s=>s.name.toLowerCase().includes(p.nom.toLowerCase())||p.nom.toLowerCase().includes(s.name.toLowerCase()));
+          if(snk&&p.quantite>0){
+            const rec=recipes.find(r=>r.snackId===snk.id);
+            if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*p.quantite)};});}
+            const prod={id:uid(),snackId:snk.id,snackName:snk.name,snackEmoji:snk.emoji,qty:p.quantite,time:timeStr()};
+            setProductions(prev=>{const np=[...prev,prod];saveDay({productions:np});return np;});
+          }
+        });
+        setIngStock(newIS);saveDay({ingStock:newIS});
+        addAudit("SCAN PROD IA",`${parsed.productions.length} productions lues`);
+        showToast(`✓ ${parsed.productions.length} productions enregistrées`);
+      }
+    }catch(e){showToast("❌ "+e.message,S.red);}
+    setScanLoading(false);setScanTarget(null);
+  };
+
   const recordProduction=()=>{if(!prodModal||!prodQtyVal)return;const qty=parseInt(prodQtyVal)||0;const rec=recipes.find(r=>r.snackId===prodModal.id);const newIS={...ingStock};if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*qty)};});}const prod={id:uid(),snackId:prodModal.id,snackName:prodModal.name,snackEmoji:prodModal.emoji,qty,time:timeStr()};const np=[...productions,prod];setIngStock(newIS);setProductions(np);saveDay({ingStock:newIS,productions:np});addAudit("PRODUCTION",`${prodModal.emoji}${prodModal.name} × ${qty}`);setProdModal(null);setProdQtyVal("");showToast(`✓ ${qty} ${prodModal.name} produit(s)`);};
 
   // GAMING
@@ -232,7 +304,7 @@ export default function App(){
   const [gamingTicket,setGamingTicket]=useState(null);
 
   const requestGaming=(sid,players)=>{touch();const st=stations.find(s=>s.id===sid);if(!st)return;setGamingTicket({sid,players,st,items:[{emoji:st.emoji,name:`${st.name} — ${players} joueur(s)`,qty:1,price:st.rate1,note:"Paiement avant démarrage"}],total:st.rate1});};
-  const confirmGaming=(withPrint)=>{if(!gamingTicket)return;const {sid,players,st}=gamingTicket;const newTno=ticketNo+1;setTicketNo(newTno);setSessions(prev=>({...prev,[sid]:{status:"paid",players,st,paidAt:Date.now()}}));addAudit("GAMING PAYÉ",`${st.name} ${players}J — ${withPrint?"ticket":"sans ticket"} #${newTno}`);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);setGamingTicket(null);showToast(`✓ Payé — appuie Démarrer quand la partie commence`);};
+  const confirmGaming=(withPrint,gPayMode="especes")=>{if(!gamingTicket)return;const {sid,players,st}=gamingTicket;const newTno=ticketNo+1;setTicketNo(newTno);setSessions(prev=>({...prev,[sid]:{status:"paid",players,st,payMode:gPayMode,paidAt:Date.now()}}));const gsale={id:uid(),items:[{name:`${st.name} ${players}J`,emoji:st.emoji,qty:1,price:st.rate1,cat:"gaming"}],total:st.rate1,payMode:gPayMode,time:timeStr(),date:todayStr(),by:user?.name,ticketNo:newTno};setSales(prev=>{const ns=[...prev,gsale];saveDay({sales:ns});return ns;});addAudit("GAMING PAYÉ",`${st.name} ${players}J — ${withPrint?"ticket":"sans ticket"} #${newTno} [${gPayMode}]`);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);setGamingTicket(null);showToast(`✓ Payé — appuie Démarrer quand la partie commence`);};
   const startGaming=(sid)=>{touch();setSessions(prev=>({...prev,[sid]:{...prev[sid],status:"playing",start:Date.now()}}));addAudit("GAMING START",sid);};
   const stopSess=sid=>{touch();const ses=sessions[sid];if(!ses)return;const st=stations.find(s=>s.id===sid);const mins=(Date.now()-ses.start)/60000;const slots=Math.ceil(mins/30)||1;const total=slots*(ses.players===2?st.rate2:st.rate1);const sale={id:uid(),items:[{id:sid,name:`${st.emoji}${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};const newTno=ticketNo+1;setSessions(prev=>{const n={...prev};delete n[sid];return n;});setDoneSess(prev=>[...prev,{id:uid(),sid,name:st.name,emoji:st.emoji,mins:Math.round(mins),players:ses.players,total,time:timeStr()}]);setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});setTicketNo(newTno);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)}`);showToast(`${st.name} — ${fmt(total)}`);};
   const addPhoto=n=>{touch();setPhotoCount(prev=>{const np=Math.max(0,prev+n);saveDay({pc:np});return np;});if(n>0){addAudit("PHOTOCOPIE",`${n}p`);showToast(`📄 ${n}p — ${fmt(n*photoPrice)}`);}};
@@ -307,7 +379,7 @@ export default function App(){
       {pinModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:400,gap:20}}><div style={{color:S.gold,fontWeight:800,fontSize:16}}>🔒 CODE PATRON REQUIS</div><PinPad onConfirm={tryPatronModal} error={pinMErr}/><button onClick={()=>setPinModal(null)} style={{...Btn(S.card2,S.muted),border:`1px solid ${S.border}`}}>Annuler</button></div>}
 
       {/* TICKET MODAL */}
-      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)} onSkip={()=>{confirmSaleAfterPrint(true);setPendingTicket(null);}}/></div>}
+      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={(pm)=>{const pt={...pendingTicket,payMode:pm};setPendingTicket(pt);confirmSaleAfterPrint(false);}} onCancel={()=>setPendingTicket(null)} onSkip={()=>{confirmSaleAfterPrint(true);}} selectedPayMode={payMode} onPayModeChange={setPayMode}/></div>}
 
       {/* HEADER */}
       <div style={{background:S.card,padding:"11px 16px",borderBottom:`3px solid ${S.gold}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
@@ -398,7 +470,7 @@ export default function App(){
 
       {/* ══ GAMING ══ */}
       {tab==="gaming"&&<div style={{padding:14}}>
-        {gamingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={gamingTicket.items} total={gamingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={()=>confirmGaming(true)} onCancel={()=>setGamingTicket(null)} onSkip={()=>confirmGaming(false)}/></div>}
+        {gamingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={gamingTicket.items} total={gamingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={(pm)=>confirmGaming(true,pm)} onCancel={()=>setGamingTicket(null)} onSkip={()=>confirmGaming(false,payMode)} selectedPayMode={payMode} onPayModeChange={setPayMode}/></div>}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
           {stations.map(st=>{const ses=sessions[st.id];const status=ses?.status||"libre";
             const bgColor=status==="playing"?"#051505":status==="paid"?"#050a15":S.card;
@@ -443,7 +515,15 @@ export default function App(){
           <button style={Sub(stSub==="verif")} onClick={()=>setStSub("verif")}>🔍 Vérif</button>
         </div>
         {stSub==="ing"&&<div>
-          <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
+          <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12}}>
+            <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🌾 Stock matin en KG. Saisie manuelle ou scan de fiche 📸</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <button onClick={()=>{scanRef.current&&(scanRef.current.dataset.target="stock")&&scanRef.current.click();}} disabled={scanLoading&&scanTarget==="stock"} style={{background:S.purple,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,flex:1,opacity:scanLoading&&scanTarget==="stock"?0.5:1}}>
+                {scanLoading&&scanTarget==="stock"?"⏳ Lecture...":"📸 Scanner une fiche stock"}
+              </button>
+              <div style={{fontSize:10,color:"#aaa",flex:1}}>Prends en photo la fiche du matin → l'IA remplit tout automatiquement</div>
+            </div>
+          </div>
           {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><div style={{display:"flex",gap:4,alignItems:"center"}}><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span>{user.role==="patron"&&<><button onClick={()=>setEditIng({...ing})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:4,padding:"2px 6px",cursor:"pointer",fontSize:10}}>✏️</button><button onClick={()=>{if(!window.confirm("Supprimer "+ing.name+"?"))return;const ni=ingredients.filter(x=>x.id!==ing.id);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR ING",ing.name);showToast("✓ Supprimé",S.red);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"2px 6px",cursor:"pointer",fontSize:10}}>🗑</button></>}</div></div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
@@ -458,7 +538,15 @@ export default function App(){
           {user.role==="patron"&&<button onClick={()=>setAddIngModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.blue}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.blue,fontWeight:700,fontSize:13,marginTop:4}}>＋ Ajouter ingrédient</button>}
         </div>}
         {stSub==="prod"&&<div>
-          <div style={{background:"#0d1a0d",border:`1px solid ${S.green}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🍳 Enregistrez chaque fabrication. Ingrédients déduits automatiquement.</div>
+          <div style={{background:"#0d1a0d",border:`1px solid ${S.green}`,borderRadius:10,padding:10,marginBottom:12}}>
+            <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🍳 Saisie manuelle ou scan de fiche de production 📸</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <button onClick={()=>{scanRef.current&&(scanRef.current.dataset.target="prod")&&scanRef.current.click();}} disabled={scanLoading&&scanTarget==="prod"} style={{background:S.green,color:S.bg,border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,flex:1,opacity:scanLoading&&scanTarget==="prod"?0.5:1}}>
+                {scanLoading&&scanTarget==="prod"?"⏳ Lecture...":"📸 Scanner une fiche production"}
+              </button>
+              <div style={{fontSize:10,color:"#aaa",flex:1}}>Photo de la fiche → l'IA enregistre toutes les productions</div>
+            </div>
+          </div>
           {snacks.map(p=>{const rec=recipes.find(r=>r.snackId===p.id);return(<div key={p.id} style={Card()}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:24}}>{p.emoji}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{p.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec?rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • "):"Pas de recette"}</div><div style={{fontSize:11,color:S.green,marginTop:2}}>Fab: <strong>{prodQtyFn(p.id)}</strong> | Vendu: <strong>{soldQty(p.id)}</strong> | Rest: <strong>{remQty(p.id)}</strong></div></div><button onClick={()=>{setProdModal(p);setProdQtyVal("");}} style={{...Btn(S.green),fontSize:12,padding:"8px 12px"}}>🍳</button></div></div>);})}
           {productions.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>PRODUCTIONS DU JOUR</div>{[...productions].reverse().map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{p.time} </span>{p.snackEmoji}{p.snackName}</div><div style={{color:S.green,fontWeight:700}}>× {p.qty}</div></div>)}</div>}
         </div>}
@@ -472,6 +560,15 @@ export default function App(){
           </div>);})}
         </div>}
         {stSub==="verif"&&<div>
+          <div style={{background:"#1a0d00",border:`1px solid ${S.orange}`,borderRadius:10,padding:10,marginBottom:12}}>
+            <div style={{fontSize:11,color:"#aaa",marginBottom:8}}>🌙 Comptage soir. Saisie manuelle ou scan de fiche 📸</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <button onClick={()=>{if(scanRef.current){scanRef.current.dataset.target="verif";scanRef.current.click();}}} disabled={scanLoading&&scanTarget==="verif"} style={{background:S.orange,color:S.bg,border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,flex:1,opacity:scanLoading&&scanTarget==="verif"?0.5:1}}>
+                {scanLoading&&scanTarget==="verif"?"⏳ Lecture...":"📸 Scanner fiche stock soir"}
+              </button>
+              <div style={{fontSize:10,color:"#aaa",flex:1}}>Photo de la fiche de comptage soir → l'IA détecte les écarts automatiquement</div>
+            </div>
+          </div>
           {ingredients.map(ing=>{const th=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:10,marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,fontWeight:600}}>{ing.emoji} {ing.name}</span><span style={{fontSize:11,color:S.blue}}>Théo: <strong>{fmtQ(th,ing.unit)}</strong></span></div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -483,6 +580,8 @@ export default function App(){
           {ingAlerts.length>0&&<div style={{background:"#1a0000",border:`1px solid ${S.red}`,borderRadius:12,padding:12,marginTop:8}}><div style={{fontWeight:700,color:S.red,marginBottom:6,fontSize:12}}>🚨 {ingAlerts.length} ÉCART(S)</div>{ingAlerts.map(i=>{const a=ingAlert(i.id);return<div key={i.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:3}}>{i.emoji} {i.name} → Manque {fmtQ(a.diff,i.unit)} — {fmt(a.diff*i.unitCost)}</div>;})} <div style={{marginTop:6,fontSize:12,fontWeight:700,color:S.red,borderTop:`1px solid ${S.red}`,paddingTop:6}}>Perte totale: {fmt(ingAlerts.reduce((s,i)=>{const a=ingAlert(i.id);return s+a.diff*i.unitCost;},0))}</div></div>}
         </div>}
       </div>}
+
+      <input ref={scanRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
 
       {/* ══ PLANNING ══ */}
       {tab==="planning"&&<div style={{padding:14}}>
@@ -588,7 +687,25 @@ export default function App(){
           {[{l:"CA TOTAL",v:totalCA,c:S.green},{l:"DÉPENSES",v:totalExpenses,c:S.red},{l:"BÉNÉFICE NET",v:netProfit,c:netProfit>=0?S.green:S.red},{l:"GAMING",v:totalGaming,c:S.blue},{l:"VENTES",v:sales.length,c:S.orange,n:true},{l:"TICKETS",v:ticketNo-1001,c:S.teal,n:true}].map(c=><div key={c.l} style={{...Card(),textAlign:"center"}}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:c.n?28:16,fontWeight:800,color:c.c}}>{c.n?c.v:fmt(c.v)}</div></div>)}
         </div>
         <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>📅 7 JOURS</div>{last7.map(d=><div key={d.ds} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><span style={{color:S.muted,minWidth:36}}>{d.label}</span><div style={{display:"flex",gap:16}}><span style={{color:d.ca>0?S.green:S.muted,fontWeight:700}}>{fmt(d.ca)}</span><span style={{color:d.net>=0?S.green:S.red,fontSize:11}}>net {fmt(d.net)}</span></div></div>)}</div>
-        <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{fontSize:10,color:"#aaa",marginTop:2}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</div></div>)}</div>
+        <div style={Card()}>
+  <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>💳 MODES DE PAIEMENT</div>
+  {(()=>{
+    const byMode={especes:0,wave:0,orange:0,free:0};
+    sales.forEach(s=>{const m=s.payMode||"especes";byMode[m]=(byMode[m]||0)+s.total;});
+    const cfg=[{id:"especes",label:"💵 Espèces",color:S.green},{id:"wave",label:"📱 Wave",color:S.blue},{id:"orange",label:"🟠 Orange Money",color:S.orange},{id:"free",label:"📲 Free Money",color:S.purple}];
+    return cfg.filter(c=>byMode[c.id]>0).map(c=>(
+      <div key={c.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}>
+        <span style={{color:c.color,fontWeight:600}}>{c.label}</span>
+        <span style={{fontWeight:800,color:c.color}}>{fmt(byMode[c.id])}</span>
+      </div>
+    ));
+  })()}
+  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0 0",fontSize:11,color:S.muted,marginTop:4}}>
+    <span>💵 En caisse physique</span>
+    <span style={{fontWeight:700,color:S.green}}>{fmt(sales.filter(s=>!s.payMode||s.payMode==="especes").reduce((a,s)=>a+s.total,0))}</span>
+  </div>
+</div>
+<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2,flexWrap:"wrap"}}><span style={{fontSize:10,color:"#aaa"}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</span>{sale.payMode&&sale.payMode!=="especes"&&<span style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:10,background:sale.payMode==="wave"?"#1565c0":sale.payMode==="orange"?"#e65100":"#6a1b9a",color:"#fff"}}>{sale.payMode==="wave"?"Wave":sale.payMode==="orange"?"Orange":"Free"}</span>}</div></div>)}</div>
       </div>}
 
       {/* ══ AIDE ══ */}
@@ -813,7 +930,7 @@ export default function App(){
         <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid #25D366`}}>
           <div style={{fontWeight:800,fontSize:15,color:"#25D366",marginBottom:12}}>📱 RAPPORT WHATSAPP</div>
           <div style={{background:S.card2,borderRadius:10,padding:14,fontSize:11,color:"#ccc",lineHeight:1.8,maxHeight:280,overflowY:"auto",whiteSpace:"pre-wrap",fontFamily:"monospace"}}>
-            {`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 Objectif: ${goalPct}%\n\n🥞 Food: ${fmt(totalFood)} (${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes)\n🎮 Gaming: ${fmt(totalGaming)} (${doneSess.length} sessions)\n🎫 Tickets émis: ${ticketNo-1001}\n💸 Dépenses: ${fmt(totalExpenses)}\n\n${top5.length?`⭐ Top:\n${top5.map(p=>`• ${p.emoji}${p.name}: ${p.sold}×`).join("\n")}\n\n`:""}${lossAlerts.length?`🚨 PERTES:\n${lossAlerts.map(p=>`• ${p.emoji}${p.name}: ${lossQty(p.id)} manquant(s) = ${fmt(lossQty(p.id)*p.price)}`).join("\n")}\n\n`:"✅ Stock OK\n\n"}🔒 ${timeStr()} — ${user.name}`}
+            {`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 Objectif: ${goalPct}%\n\n🥞 Food: ${fmt(totalFood)} (${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes)\n🎮 Gaming: ${fmt(totalGaming)} (${doneSess.length} sessions)\n🎫 Tickets émis: ${ticketNo-1001}\n💵 Espèces: ${fmt(sales.filter(s=>(!s.payMode||s.payMode==="especes")).reduce((a,s)=>a+s.total,0))}\n📱 Wave: ${fmt(sales.filter(s=>s.payMode==="wave").reduce((a,s)=>a+s.total,0))}\n🟠 Orange: ${fmt(sales.filter(s=>s.payMode==="orange").reduce((a,s)=>a+s.total,0))}\n💸 Dépenses: ${fmt(totalExpenses)}\n\n${top5.length?`⭐ Top:\n${top5.map(p=>`• ${p.emoji}${p.name}: ${p.sold}×`).join("\n")}\n\n`:""}${lossAlerts.length?`🚨 PERTES:\n${lossAlerts.map(p=>`• ${p.emoji}${p.name}: ${lossQty(p.id)} manquant(s) = ${fmt(lossQty(p.id)*p.price)}`).join("\n")}\n\n`:"✅ Stock OK\n\n"}🔒 ${timeStr()} — ${user.name}`}
           </div>
           <div style={{display:"flex",gap:10,marginTop:14}}><button onClick={()=>setWhatsModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Fermer</button><button onClick={()=>{try{navigator.clipboard.writeText(`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 ${goalPct}%\n\nFood: ${fmt(totalFood)} | Gaming: ${fmt(totalGaming)}\n🎫 ${ticketNo-1001} tickets\nDépenses: ${fmt(totalExpenses)}\n\n${lossAlerts.length?`🚨 PERTES: ${lossAlerts.map(p=>`${p.name}: ${lossQty(p.id)} manquant(s)`).join(", ")}\n`:"✅ Stock OK\n"}\n🔒 ${timeStr()} — ${user.name}`);}catch(e){}showToast("✓ Copié","#25D366");}} style={{...Btn("#25D366"),flex:1}}>📋 Copier</button></div>
         </div>
