@@ -14,7 +14,62 @@ const STORES=[{id:"s1",name:"Game & Gaufre — Limamoulaye",emoji:"🏪"},{id:"s
 const INIT_EMPS=[{id:"patron",name:"Patron",pin:"1234",role:"patron"},{id:"e1",name:"Employé 1",pin:"0001",role:"employe"},{id:"e2",name:"Employé 2",pin:"0002",role:"employe"},{id:"e3",name:"Employé 3",pin:"0003",role:"employe"},{id:"e4",name:"Employé 4",pin:"0004",role:"employe"},{id:"e5",name:"Employé 5",pin:"0005",role:"employe"}];
 const INIT_B=[{id:"b1",name:"Café",price:200,emoji:"☕"},{id:"b2",name:"Café Lait",price:250,emoji:"☕"},{id:"b3",name:"Chocolat",price:300,emoji:"🍫"},{id:"b4",name:"Thé",price:200,emoji:"🍵"},{id:"b5",name:"Café Touba",price:150,emoji:"☕"},{id:"b6",name:"Canette",price:500,emoji:"🥤"},{id:"b7",name:"Autre Jus",price:300,emoji:"🧃"}];
 const INIT_S=[{id:"s1",name:"Crêpe Sucre",price:500,emoji:"🥞"},{id:"s2",name:"Crêpe Confiture",price:600,emoji:"🥞"},{id:"s3",name:"Crêpe Nutella",price:1500,emoji:"🥞"},{id:"s4",name:"Gaufre Sucre",price:500,emoji:"🧇"},{id:"s5",name:"Gaufre Nutella",price:1200,emoji:"🧇"},{id:"s6",name:"Poulet-Fromage",price:1500,emoji:"🍗"},{id:"s7",name:"Bœuf-Fromage",price:2000,emoji:"🥩"},{id:"s8",name:"Sandwich",price:1000,emoji:"🥪"}];
-const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62},{id:"i6",name:"Confiture",unit:"kg",emoji:"🍓",unitCost:5000},{id:"i7",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000},{id:"i8",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200},{id:"i9",name:"Fromage",unit:"kg",emoji:"🧀",unitCost:6000},{id:"i10",name:"Thon",unit:"kg",emoji:"🐟",unitCost:3000},{id:"i11",name:"Pain",unit:"pcs",emoji:"🍞",unitCost:50},{id:"i12",name:"Levure",unit:"kg",emoji:"🧪",unitCost:5000}];
+const INIT_ING=[
+  // Pâte de base (crêpes & gaufres)
+  {id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300,cat:"Pâte"},
+  {id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000,cat:"Pâte"},
+  {id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000,cat:"Pâte"},
+  {id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470,cat:"Pâte"},
+  {id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62,cat:"Pâte"},
+  {id:"i6",name:"Levure chimique",unit:"kg",emoji:"🧪",unitCost:5000,cat:"Pâte"},
+  {id:"i7",name:"Maizena",unit:"kg",emoji:"🌽",unitCost:1000,cat:"Pâte"},
+  {id:"i8",name:"Sel",unit:"kg",emoji:"🧂",unitCost:200,cat:"Pâte"},
+  {id:"i9",name:"Huile",unit:"L",emoji:"🫙",unitCost:1500,cat:"Pâte"},
+  {id:"i10",name:"Vanille",unit:"pcs",emoji:"🌿",unitCost:50,cat:"Pâte"},
+  // Garnitures sucrées
+  {id:"i11",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000,cat:"Sucré"},
+  {id:"i12",name:"Confiture fraise",unit:"kg",emoji:"🍓",unitCost:5000,cat:"Sucré"},
+  {id:"i13",name:"Confiture abricot",unit:"kg",emoji:"🍑",unitCost:5000,cat:"Sucré"},
+  {id:"i14",name:"Miel",unit:"kg",emoji:"🍯",unitCost:8000,cat:"Sucré"},
+  {id:"i15",name:"Sucre glace",unit:"kg",emoji:"❄️",unitCost:600,cat:"Sucré"},
+  {id:"i16",name:"Banane",unit:"pcs",emoji:"🍌",unitCost:100,cat:"Sucré"},
+  {id:"i17",name:"Chocolat poudre",unit:"kg",emoji:"🍫",unitCost:4000,cat:"Sucré"},
+  // Garnitures salées
+  {id:"i18",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200,cat:"Salé"},
+  {id:"i19",name:"Boeuf haché",unit:"kg",emoji:"🥩",unitCost:4500,cat:"Salé"},
+  {id:"i20",name:"Thon boite",unit:"pcs",emoji:"🐟",unitCost:500,cat:"Salé"},
+  {id:"i21",name:"Jambon",unit:"kg",emoji:"🍖",unitCost:8000,cat:"Salé"},
+  {id:"i22",name:"Mortadelle",unit:"kg",emoji:"🍖",unitCost:3000,cat:"Salé"},
+  {id:"i23",name:"Oeuf dur",unit:"pcs",emoji:"🥚",unitCost:100,cat:"Salé"},
+  // Fromages & crèmes
+  {id:"i24",name:"Fromage rape",unit:"kg",emoji:"🧀",unitCost:6000,cat:"Fromage"},
+  {id:"i25",name:"Fromage fondu",unit:"pcs",emoji:"🧀",unitCost:200,cat:"Fromage"},
+  {id:"i26",name:"Creme fraiche",unit:"kg",emoji:"🥛",unitCost:4000,cat:"Fromage"},
+  // Pains & sandwichs
+  {id:"i27",name:"Pain baguette",unit:"pcs",emoji:"🥖",unitCost:200,cat:"Pain"},
+  {id:"i28",name:"Pain sandwich",unit:"pcs",emoji:"🍞",unitCost:150,cat:"Pain"},
+  {id:"i29",name:"Pain hot dog",unit:"pcs",emoji:"🌭",unitCost:150,cat:"Pain"},
+  // Sauces & condiments
+  {id:"i30",name:"Mayonnaise",unit:"kg",emoji:"🫙",unitCost:3000,cat:"Sauce"},
+  {id:"i31",name:"Ketchup",unit:"kg",emoji:"🍅",unitCost:2500,cat:"Sauce"},
+  {id:"i32",name:"Moutarde",unit:"kg",emoji:"💛",unitCost:2500,cat:"Sauce"},
+  {id:"i33",name:"Sauce piquante",unit:"kg",emoji:"🌶",unitCost:3000,cat:"Sauce"},
+  {id:"i34",name:"Oignon",unit:"kg",emoji:"🧅",unitCost:300,cat:"Sauce"},
+  {id:"i35",name:"Tomate",unit:"kg",emoji:"🍅",unitCost:500,cat:"Sauce"},
+  {id:"i36",name:"Salade verte",unit:"kg",emoji:"🥬",unitCost:1000,cat:"Sauce"},
+  // Boissons maison
+  {id:"i37",name:"Fleurs bissap",unit:"kg",emoji:"🌺",unitCost:3000,cat:"Boisson"},
+  {id:"i38",name:"Gingembre",unit:"kg",emoji:"🫚",unitCost:1500,cat:"Boisson"},
+  {id:"i39",name:"Poudre baobab",unit:"kg",emoji:"🌳",unitCost:5000,cat:"Boisson"},
+  {id:"i40",name:"Cafe Touba moulu",unit:"kg",emoji:"☕",unitCost:4500,cat:"Boisson"},
+  {id:"i41",name:"The Gunpowder",unit:"kg",emoji:"🍵",unitCost:5000,cat:"Boisson"},
+  {id:"i42",name:"Citron",unit:"pcs",emoji:"🍋",unitCost:100,cat:"Boisson"},
+  {id:"i43",name:"Menthe",unit:"kg",emoji:"🌿",unitCost:1000,cat:"Boisson"},
+  // Emballages
+  {id:"i44",name:"Gobelets jetables",unit:"pcs",emoji:"🥤",unitCost:15,cat:"Emballage"},
+  {id:"i45",name:"Serviettes",unit:"pcs",emoji:"🧻",unitCost:5,cat:"Emballage"},
+  {id:"i46",name:"Sachets",unit:"pcs",emoji:"🛍",unitCost:10,cat:"Emballage"},
+];
 const INIT_REC=[{id:"r1",emoji:"🥞",name:"Crêpe Sucre",category:"Crêpes",snackId:"s1",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i4",qty:0.005},{id:"i5",qty:0.5}]},{id:"r2",emoji:"🥞",name:"Crêpe Confiture",category:"Crêpes",snackId:"s2",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i6",qty:0.030},{id:"i5",qty:0.5}]},{id:"r3",emoji:"🥞",name:"Crêpe Nutella",category:"Crêpes",snackId:"s3",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i7",qty:0.040},{id:"i5",qty:0.5}]},{id:"r4",emoji:"🧇",name:"Gaufre Sucre",category:"Gaufres",snackId:"s4",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i4",qty:0.008},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r5",emoji:"🧇",name:"Gaufre Nutella",category:"Gaufres",snackId:"s5",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i7",qty:0.040},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r6",emoji:"🍗",name:"Poulet-Fromage",category:"Salées",snackId:"s6",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r7",emoji:"🥩",name:"Bœuf-Fromage",category:"Salées",snackId:"s7",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r8",emoji:"🥪",name:"Sandwich Thon",category:"Sandwichs",snackId:"s8",ingredients:[{id:"i10",qty:0.060},{id:"i9",qty:0.030},{id:"i11",qty:2}]}];
 const STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
 
@@ -411,7 +466,7 @@ export default function App(){
         {stSub==="ing"&&<div>
           <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
           {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><div style={{display:"flex",gap:4,alignItems:"center"}}><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span>{user.role==="patron"&&<><button onClick={()=>setEditIng({...ing})} style={{background:"transparent",border:`1px solid ${S.blue}`,color:S.blue,borderRadius:4,padding:"2px 6px",cursor:"pointer",fontSize:10,marginLeft:4}}>✏️</button><button onClick={()=>{if(!window.confirm("Supprimer "+ing.name+"?"))return;const ni=ingredients.filter(x=>x.id!==ing.id);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR ING",ing.name);showToast("✓ Supprimé");}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"2px 6px",cursor:"pointer",fontSize:10}}>🗑</button></>}</div></div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
               <div style={{flex:1,minWidth:90}}><div style={{fontSize:10,color:S.muted,marginBottom:3}}>Stock matin ({ing.unit})</div><input type="number" step="0.001" value={s.opening??""} placeholder="0" onChange={e=>setIngField(ing.id,"opening",e.target.value)} style={{...Inp("100%"),padding:"7px 8px",fontSize:13}}/></div>
               <div style={{display:"flex",gap:6}}>
@@ -667,7 +722,38 @@ export default function App(){
       </div>}
 
       {/* Add ingredient */}
-      {addIngModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+      {editIng&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>✏️ Modifier ingrédient</div>
+          {[
+            {l:"Emoji",k:"emoji",t:"text",ph:"🌾"},
+            {l:"Nom",k:"name",t:"text",ph:"Ex: Farine"},
+            {l:"Unité",k:"unit",t:"text",ph:"kg / L / pcs"},
+            {l:"Prix unitaire (FCFA)",k:"unitCost",t:"number",ph:"300"},
+          ].map(f=>(
+            <div key={f.k} style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:3}}>{f.l}</div>
+              <input type={f.t} value={editIng[f.k]||""} placeholder={f.ph}
+                onChange={e=>setEditIng(p=>({...p,[f.k]:f.t==="number"?parseFloat(e.target.value)||0:e.target.value}))}
+                style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setEditIng(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{
+              if(!editIng.name)return;
+              const ni=ingredients.map(x=>x.id===editIng.id?editIng:x);
+              setIngredients(ni);
+              saveProds(boissons,snacks,ni,recipes,photoPrice,dailyGoal,ticketNo);
+              addAudit("MODIF ING",editIng.name);
+              setEditIng(null);
+              showToast("✓ Ingrédient mis à jour");
+            }} style={{background:S.blue,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
+          </div>
+        </div>
+      </div>}
+
+            {addIngModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
         <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
           <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>＋ Nouvel ingrédient</div>
           {[{l:"Emoji",k:"emoji",t:"text",ph:"🥄"},{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg, L, pcs)",k:"unit",t:"text",ph:"kg"},{l:"Coût/unité (F)",k:"unitCost",t:"number",ph:"300"}].map(f=><div key={f.k} style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>{f.l}</div><input type={f.t} value={newIng[f.k]} placeholder={f.ph} onChange={e=>setNewIng(p=>({...p,[f.k]:e.target.value}))} style={Inp()}/></div>)}
