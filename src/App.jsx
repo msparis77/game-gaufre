@@ -137,6 +137,7 @@ export default function App(){
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
+  const [addProdCat,setAddProdCat]=useState(null);
   const [scanLoading,setScanLoading]=useState(false);
   const [scanTarget,setScanTarget]=useState("");
   const scanRef=useRef(null);
@@ -407,14 +408,21 @@ export default function App(){
         <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button></div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
           {(cTab==="boissons"?boissons:snacks).map(p=>(
-            <button key={p.id} onClick={()=>addToCart(p,cTab)} style={{background:S.card2,border:`1px solid ${S.border}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",transition:"transform .1s"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.95)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
-              <div style={{fontSize:24}}>{p.emoji}</div>
-              <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
-              <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
-              {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
-            </button>
+            <div key={p.id}>
+              <button onClick={()=>addToCart(p,cTab)} style={{background:S.card2,border:`1px solid ${S.border}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",color:S.text,textAlign:"center",width:"100%"}} onTouchStart={e=>e.currentTarget.style.transform="scale(0.95)"} onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
+                <div style={{fontSize:24}}>{p.emoji}</div>
+                <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
+                <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
+                {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
+              </button>
+              {user.role==="patron"&&<div style={{display:"flex",gap:2,marginTop:2}}>
+                <button onClick={()=>setEditProd({...p,cat:cTab})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"2px 0",cursor:"pointer",fontSize:10}}>✏️</button>
+                <button onClick={()=>{if(!window.confirm("Supprimer "+p.name+"?"))return;if(cTab==="boissons"){const nb=boissons.filter(x=>x.id!==p.id);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.filter(x=>x.id!==p.id);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}addAudit("SUPPR",p.name);showToast("Supprime",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"2px 0",cursor:"pointer",fontSize:10}}>🗑</button>
+              </div>}
+            </div>
           ))}
         </div>
+        {user.role==="patron"&&<button onClick={()=>setAddProdCat(cTab)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"8px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:12,marginBottom:8}}>＋ Ajouter {cTab==="boissons"?"une boisson":"un snack"}</button>}
         {cart.length>0?<div style={Card()}>
           <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
           {cart.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:15}}>{item.emoji}</span><div style={{flex:1,fontSize:12}}>{item.name}</div><button onClick={()=>updQty(item.id,-1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>−</button><span style={{fontSize:14,fontWeight:700,minWidth:20,textAlign:"center"}}>{item.qty}</span><button onClick={()=>updQty(item.id,+1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>+</button><div style={{minWidth:68,textAlign:"right",fontSize:12,fontWeight:700}}>{fmt(item.price*item.qty)}</div><button onClick={()=>updQty(item.id,-99)} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:16}}>✕</button></div>)}
@@ -717,6 +725,55 @@ export default function App(){
       </div>}
 
       {/* Add ingredient */}
+      {/* Modal modifier produit */}
+      {editProd&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.blue}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>✏️ Modifier produit</div>
+          {[{l:"Emoji",k:"emoji",t:"text"},{l:"Nom",k:"name",t:"text"},{l:"Prix (FCFA)",k:"price",t:"number"},{l:"Catégorie",k:"category",t:"text"}].map(f=>(
+            <div key={f.k} style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:3}}>{f.l}</div>
+              <input type={f.t} value={editProd[f.k]||""} onChange={e=>setEditProd(p=>({...p,[f.k]:f.t==="number"?parseFloat(e.target.value)||0:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setEditProd(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{
+              if(!editProd.name)return;
+              if(editProd.cat==="boissons"){const nb=boissons.map(x=>x.id===editProd.id?editProd:x);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}
+              else{const ns=snacks.map(x=>x.id===editProd.id?editProd:x);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}
+              addAudit("MODIF",editProd.name);setEditProd(null);showToast("✓ Produit mis à jour");
+            }} style={{background:S.blue,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Modal ajouter produit */}
+      {addProdCat&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.gold}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.gold,marginBottom:16}}>＋ Nouveau {addProdCat==="boissons"?"boisson":"snack"}</div>
+          {[{l:"Emoji",k:"emoji",t:"text",ph:"🥤"},{l:"Nom",k:"name",t:"text",ph:"Coca-Cola"},{l:"Prix (FCFA)",k:"price",t:"number",ph:"500"},{l:"Catégorie",k:"category",t:"text",ph:"Sodas"}].map(f=>(
+            <div key={f.k} style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:3}}>{f.l}</div>
+              <input type={f.t} placeholder={f.ph} id={"np_"+f.k} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setAddProdCat(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{
+              const emoji=document.getElementById("np_emoji")?.value||"🍽️";
+              const name=document.getElementById("np_name")?.value;
+              const price=parseFloat(document.getElementById("np_price")?.value)||0;
+              const category=document.getElementById("np_category")?.value||"Autres";
+              if(!name)return;
+              const np={id:"p"+Date.now(),name,emoji,price,category,cat:addProdCat};
+              if(addProdCat==="boissons"){const nb=[...boissons,np];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}
+              else{const ns=[...snacks,np];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}
+              addAudit("AJOUT",name);setAddProdCat(null);showToast("✓ "+name+" ajouté");
+            }} style={{background:S.gold,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Ajouter</button>
+          </div>
+        </div>
+      </div>}
+
       {addIngModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
         <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.blue}`}}>
           <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>＋ Nouvel ingrédient</div>
