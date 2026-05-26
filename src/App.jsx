@@ -137,6 +137,7 @@ export default function App(){
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
+  const [editRec,setEditRec]=useState(null);
   const [addProdCat,setAddProdCat]=useState(null);
   const [scanLoading,setScanLoading]=useState(false);
   const [scanTarget,setScanTarget]=useState("");
@@ -484,7 +485,7 @@ export default function App(){
         {stSub==="prod"&&<div>
           <div style={{background:"#0d1a0d",border:`1px solid ${S.green}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🍳 Enregistrez chaque fabrication. Ingrédients déduits automatiquement.</div>
           {snacks.map(p=>{const rec=recipes.find(r=>r.snackId===p.id);return(<div key={p.id} style={Card()}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:24}}>{p.emoji}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{p.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec?rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • "):"Pas de recette"}</div><div style={{fontSize:11,color:S.green,marginTop:2}}>Fab: <strong>{prodQtyFn(p.id)}</strong> | Vendu: <strong>{soldQty(p.id)}</strong> | Rest: <strong>{remQty(p.id)}</strong></div></div><button onClick={()=>{setProdModal(p);setProdQtyVal("");}} style={{...Btn(S.green),fontSize:12,padding:"8px 12px"}}>🍳</button></div></div>);})}
-          {productions.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>PRODUCTIONS DU JOUR</div>{[...productions].reverse().map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{p.time} </span>{p.snackEmoji}{p.snackName}</div><div style={{color:S.green,fontWeight:700}}>× {p.qty}</div></div>)}</div>}
+          {productions.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>PRODUCTIONS DU JOUR</div>{[...productions].reverse().map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{p.time} </span>{p.snackEmoji}{p.snackName}</div><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:S.green,fontWeight:700}}>× {p.qty}</span><button onClick={()=>{const np=productions.filter(x=>x.id!==p.id);setProductions(np);saveDay({productions:np});showToast("✓ Supprimé",S.red);}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"1px 5px",cursor:"pointer",fontSize:10}}>🗑</button></div></div>)}</div>}
         </div>}
         {stSub==="finis"&&<div>
           <div style={{background:"#0d0a1a",border:`1px solid ${S.purple}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>📊 Fabriqué − Vendu = Restant. Comptez pour détecter pertes/vols.</div>
@@ -544,6 +545,7 @@ export default function App(){
 
       {/* ══ RECETTES ══ */}
       {tab==="recettes"&&<div style={{padding:14}}>
+        {user.role==="patron"&&<button onClick={()=>setEditRec({id:"",emoji:"🍽️",name:"",category:"Crêpes",snackId:"",ingredients:[]})} style={{width:"100%",background:"transparent",border:`2px dashed ${S.orange}`,borderRadius:10,padding:"10px",cursor:"pointer",color:S.orange,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Nouvelle recette</button>}
         {[...new Set(recipes.map(r=>r.category))].map(cat=>(
           <div key={cat} style={Card()}>
             <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
@@ -551,7 +553,7 @@ export default function App(){
               <div key={rec.id} style={{background:S.card2,borderRadius:10,padding:12,marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>
-                  {user.role==="patron"&&<button onClick={()=>{}} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button>}
+                  {user.role==="patron"&&<div style={{display:"flex",gap:4}}><button onClick={()=>setEditRec({...rec})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button><button onClick={()=>{if(!window.confirm("Supprimer "+rec.name+"?"))return;const nr=recipes.filter(x=>x.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR REC",rec.name);showToast("✓ Supprimé",S.red);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>🗑</button></div>}
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
               </div>
@@ -770,6 +772,55 @@ export default function App(){
               else{const ns=[...snacks,np];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,photoPrice,dailyGoal,ticketNo);}
               addAudit("AJOUT",name);setAddProdCat(null);showToast("✓ "+name+" ajouté");
             }} style={{background:S.gold,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Ajouter</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Modal recette */}
+      {editRec&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.93)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,padding:12,overflowY:"auto"}}>
+        <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid ${S.orange}`,marginTop:16,marginBottom:20}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.orange,marginBottom:14}}>{editRec.id?"✏️ Modifier":"＋ Nouvelle"} recette</div>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            <div style={{width:60}}>
+              <div style={{fontSize:10,color:S.muted,marginBottom:3}}>Emoji</div>
+              <input value={editRec.emoji||""} onChange={e=>setEditRec(p=>({...p,emoji:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px",fontSize:20,width:"100%",boxSizing:"border-box",outline:"none",textAlign:"center"}}/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:10,color:S.muted,marginBottom:3}}>Nom</div>
+              <input value={editRec.name||""} onChange={e=>setEditRec(p=>({...p,name:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 10px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,color:S.muted,marginBottom:3}}>Catégorie</div>
+            <input value={editRec.category||""} onChange={e=>setEditRec(p=>({...p,category:e.target.value}))} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 10px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+          </div>
+          <div style={{fontWeight:600,fontSize:11,marginBottom:6,color:S.muted}}>🌾 Ingrédients utilisés</div>
+          {(editRec.ingredients||[]).map((ri,idx)=>{
+            const ing=ingredients.find(x=>x.id===ri.id);
+            return(
+            <div key={idx} style={{display:"grid",gridTemplateColumns:"1fr 70px 32px 26px",gap:4,alignItems:"center",marginBottom:5}}>
+              <select value={ri.id||""} onChange={e=>{const ni=[...editRec.ingredients];ni[idx]={...ni[idx],id:e.target.value};setEditRec(p=>({...p,ingredients:ni}));}} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"5px",fontSize:10,outline:"none"}}>
+                {ingredients.map(x=><option key={x.id} value={x.id}>{x.emoji} {x.name}</option>)}
+              </select>
+              <input type="number" step="0.001" value={ri.qty||""} placeholder="qté" onChange={e=>{const ni=[...editRec.ingredients];ni[idx]={...ni[idx],qty:parseFloat(e.target.value)||0};setEditRec(p=>({...p,ingredients:ni}));}} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.gold,borderRadius:6,padding:"5px",fontSize:12,fontWeight:700,outline:"none",width:"100%",boxSizing:"border-box"}}/>
+              <span style={{fontSize:9,color:S.muted,textAlign:"center"}}>{ing?.unit||"kg"}</span>
+              <button onClick={()=>setEditRec(p=>({...p,ingredients:p.ingredients.filter((_,i)=>i!==idx)}))} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"2px 4px",cursor:"pointer",fontSize:10}}>✕</button>
+            </div>
+          );})}
+          <button onClick={()=>setEditRec(p=>({...p,ingredients:[...(p.ingredients||[]),{id:ingredients[0]?.id||"",qty:0}]}))} style={{width:"100%",background:"transparent",border:`1px dashed ${S.teal}`,color:S.teal,borderRadius:6,padding:"6px",cursor:"pointer",fontSize:11,fontWeight:700,marginBottom:12}}>＋ Ajouter un ingrédient</button>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setEditRec(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{
+              if(!editRec.name)return;
+              let nr;
+              if(editRec.id){nr=recipes.map(x=>x.id===editRec.id?editRec:x);}
+              else{nr=[...recipes,{...editRec,id:"r"+Date.now()}];}
+              setRecipes(nr);
+              saveProds(boissons,snacks,ingredients,nr,photoPrice,dailyGoal,ticketNo);
+              addAudit(editRec.id?"MODIF REC":"AJOUT REC",editRec.name);
+              setEditRec(null);
+              showToast("✓ Recette sauvegardée");
+            }} style={{background:S.orange,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:800,flex:2}}>✓ Sauvegarder</button>
           </div>
         </div>
       </div>}
