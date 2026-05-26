@@ -14,7 +14,7 @@ const STORES=[{id:"s1",name:"Game & Gaufre — Limamoulaye",emoji:"🏪"},{id:"s
 const INIT_EMPS=[{id:"patron",name:"Patron",pin:"1234",role:"patron"},{id:"e1",name:"Employé 1",pin:"0001",role:"employe"},{id:"e2",name:"Employé 2",pin:"0002",role:"employe"},{id:"e3",name:"Employé 3",pin:"0003",role:"employe"},{id:"e4",name:"Employé 4",pin:"0004",role:"employe"},{id:"e5",name:"Employé 5",pin:"0005",role:"employe"}];
 const INIT_B=[{id:"b1",name:"Café",price:200,emoji:"☕"},{id:"b2",name:"Café Lait",price:250,emoji:"☕"},{id:"b3",name:"Chocolat",price:300,emoji:"🍫"},{id:"b4",name:"Thé",price:200,emoji:"🍵"},{id:"b5",name:"Café Touba",price:150,emoji:"☕"},{id:"b6",name:"Canette",price:500,emoji:"🥤"},{id:"b7",name:"Autre Jus",price:300,emoji:"🧃"}];
 const INIT_S=[{id:"s1",name:"Crêpe Sucre",price:500,emoji:"🥞"},{id:"s2",name:"Crêpe Confiture",price:600,emoji:"🥞"},{id:"s3",name:"Crêpe Nutella",price:1500,emoji:"🥞"},{id:"s4",name:"Gaufre Sucre",price:500,emoji:"🧇"},{id:"s5",name:"Gaufre Nutella",price:1200,emoji:"🧇"},{id:"s6",name:"Poulet-Fromage",price:1500,emoji:"🍗"},{id:"s7",name:"Bœuf-Fromage",price:2000,emoji:"🥩"},{id:"s8",name:"Sandwich",price:1000,emoji:"🥪"}];
-const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300,cat:"Pate"},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000,cat:"Pate"},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000,cat:"Pate"},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470,cat:"Pate"},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62,cat:"Pate"},{id:"i6",name:"Levure chimique",unit:"kg",emoji:"🧪",unitCost:5000,cat:"Pate"},{id:"i7",name:"Maizena",unit:"kg",emoji:"🌽",unitCost:1000,cat:"Pate"},{id:"i8",name:"Sel",unit:"kg",emoji:"🧂",unitCost:200,cat:"Pate"},{id:"i9",name:"Huile",unit:"L",emoji:"🫙",unitCost:1500,cat:"Pate"},{id:"i10",name:"Vanille",unit:"pcs",emoji:"🌿",unitCost:50,cat:"Pate"},{id:"i11",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000,cat:"Sucre"},{id:"i12",name:"Confiture fraise",unit:"kg",emoji:"🍓",unitCost:5000,cat:"Sucre"},{id:"i13",name:"Confiture abricot",unit:"kg",emoji:"🍑",unitCost:5000,cat:"Sucre"},{id:"i14",name:"Miel",unit:"kg",emoji:"🍯",unitCost:8000,cat:"Sucre"},{id:"i15",name:"Sucre glace",unit:"kg",emoji:"🍬",unitCost:600,cat:"Sucre"},{id:"i16",name:"Banane",unit:"pcs",emoji:"🍌",unitCost:100,cat:"Sucre"},{id:"i17",name:"Chocolat poudre",unit:"kg",emoji:"🍫",unitCost:4000,cat:"Sucre"},{id:"i18",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200,cat:"Sale"},{id:"i19",name:"Boeuf hache",unit:"kg",emoji:"🥩",unitCost:4500,cat:"Sale"},{id:"i20",name:"Thon boite",unit:"pcs",emoji:"🐟",unitCost:500,cat:"Sale"},{id:"i21",name:"Jambon",unit:"kg",emoji:"🍖",unitCost:8000,cat:"Sale"},{id:"i22",name:"Mortadelle",unit:"kg",emoji:"🍖",unitCost:3000,cat:"Sale"},{id:"i23",name:"Oeuf dur",unit:"pcs",emoji:"🥚",unitCost:100,cat:"Sale"},{id:"i24",name:"Fromage rape",unit:"kg",emoji:"🧀",unitCost:6000,cat:"Fromage"},{id:"i25",name:"Fromage fondu",unit:"pcs",emoji:"🧀",unitCost:200,cat:"Fromage"},{id:"i26",name:"Creme fraiche",unit:"kg",emoji:"🥛",unitCost:4000,cat:"Fromage"},{id:"i27",name:"Pain baguette",unit:"pcs",emoji:"🥖",unitCost:200,cat:"Pain"},{id:"i28",name:"Pain sandwich",unit:"pcs",emoji:"🍞",unitCost:150,cat:"Pain"},{id:"i29",name:"Mayonnaise",unit:"kg",emoji:"🫙",unitCost:3000,cat:"Sauce"},{id:"i30",name:"Ketchup",unit:"kg",emoji:"🍅",unitCost:2500,cat:"Sauce"},{id:"i31",name:"Moutarde",unit:"kg",emoji:"🥭",unitCost:2500,cat:"Sauce"},{id:"i32",name:"Oignon",unit:"kg",emoji:"🧅",unitCost:300,cat:"Sauce"},{id:"i33",name:"Tomate",unit:"kg",emoji:"🍅",unitCost:500,cat:"Sauce"},{id:"i34",name:"Salade verte",unit:"kg",emoji:"🥬",unitCost:1000,cat:"Sauce"},{id:"i35",name:"Fleurs bissap",unit:"kg",emoji:"🌺",unitCost:3000,cat:"Boisson"},{id:"i36",name:"Gingembre",unit:"kg",emoji:"🫚",unitCost:1500,cat:"Boisson"},{id:"i37",name:"Poudre baobab",unit:"kg",emoji:"🌳",unitCost:5000,cat:"Boisson"},{id:"i38",name:"Cafe Touba",unit:"kg",emoji:"☕",unitCost:4500,cat:"Boisson"},{id:"i39",name:"The Gunpowder",unit:"kg",emoji:"🍵",unitCost:5000,cat:"Boisson"},{id:"i40",name:"Citron",unit:"pcs",emoji:"🍋",unitCost:100,cat:"Boisson"},{id:"i41",name:"Menthe",unit:"kg",emoji:"🌿",unitCost:1000,cat:"Boisson"},{id:"i42",name:"Gobelets",unit:"pcs",emoji:"🥤",unitCost:15,cat:"Emballage"},{id:"i43",name:"Serviettes",unit:"pcs",emoji:"🧻",unitCost:5,cat:"Emballage"},{id:"i44",name:"Sachets",unit:"pcs",emoji:"🛍",unitCost:10,cat:"Emballage"}];
+const INIT_ING=[{id:"i1",name:"Farine",unit:"kg",emoji:"🌾",unitCost:300},{id:"i2",name:"Lait poudre",unit:"kg",emoji:"🥛",unitCost:6000},{id:"i3",name:"Beurre",unit:"kg",emoji:"🧈",unitCost:7000},{id:"i4",name:"Sucre",unit:"kg",emoji:"🍬",unitCost:470},{id:"i5",name:"Oeufs",unit:"pcs",emoji:"🥚",unitCost:62},{id:"i6",name:"Confiture",unit:"kg",emoji:"🍓",unitCost:5000},{id:"i7",name:"Nutella",unit:"kg",emoji:"🍫",unitCost:10000},{id:"i8",name:"Poulet",unit:"kg",emoji:"🍗",unitCost:2200},{id:"i9",name:"Fromage",unit:"kg",emoji:"🧀",unitCost:6000},{id:"i10",name:"Thon",unit:"kg",emoji:"🐟",unitCost:3000},{id:"i11",name:"Pain",unit:"pcs",emoji:"🍞",unitCost:50},{id:"i12",name:"Levure",unit:"kg",emoji:"🧪",unitCost:5000}];
 const INIT_REC=[{id:"r1",emoji:"🥞",name:"Crêpe Sucre",category:"Crêpes",snackId:"s1",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i4",qty:0.005},{id:"i5",qty:0.5}]},{id:"r2",emoji:"🥞",name:"Crêpe Confiture",category:"Crêpes",snackId:"s2",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i6",qty:0.030},{id:"i5",qty:0.5}]},{id:"r3",emoji:"🥞",name:"Crêpe Nutella",category:"Crêpes",snackId:"s3",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i7",qty:0.040},{id:"i5",qty:0.5}]},{id:"r4",emoji:"🧇",name:"Gaufre Sucre",category:"Gaufres",snackId:"s4",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i4",qty:0.008},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r5",emoji:"🧇",name:"Gaufre Nutella",category:"Gaufres",snackId:"s5",ingredients:[{id:"i1",qty:0.050},{id:"i2",qty:0.008},{id:"i3",qty:0.015},{id:"i7",qty:0.040},{id:"i5",qty:0.5},{id:"i12",qty:0.002}]},{id:"r6",emoji:"🍗",name:"Poulet-Fromage",category:"Salées",snackId:"s6",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r7",emoji:"🥩",name:"Bœuf-Fromage",category:"Salées",snackId:"s7",ingredients:[{id:"i1",qty:0.060},{id:"i2",qty:0.015},{id:"i3",qty:0.005},{id:"i5",qty:0.5},{id:"i8",qty:0.080},{id:"i9",qty:0.040}]},{id:"r8",emoji:"🥪",name:"Sandwich Thon",category:"Sandwichs",snackId:"s8",ingredients:[{id:"i10",qty:0.060},{id:"i9",qty:0.030},{id:"i11",qty:2}]}];
 const STATIONS=[{id:"ps1",name:"PS5 N°1",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps2",name:"PS5 N°2",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps3",name:"PS5 N°3",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps4",name:"PS5 N°4",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps5",name:"PS5 N°5",emoji:"🎮",rate1:1000,rate2:1500},{id:"ps6",name:"Écran Géant",emoji:"🖥️",rate1:1500,rate2:2000},{id:"pc1",name:"PC N°1",emoji:"💻",rate1:1000,rate2:1500},{id:"pc2",name:"PC N°2",emoji:"💻",rate1:1000,rate2:1500},{id:"pc3",name:"PC N°3",emoji:"💻",rate1:1000,rate2:1500}];
 
@@ -85,6 +85,7 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
         <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
       </div>
       <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:8}}>Obligatoire avant encaissement</div>
+    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
     </div>
   );
 }
@@ -136,6 +137,9 @@ export default function App(){
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
+  const [scanLoading,setScanLoading]=useState(false);
+  const [scanTarget,setScanTarget]=useState("");
+  const scanRef=useRef(null);
   const [newIng,setNewIng]=useState({name:"",unit:"kg",emoji:"🥄",unitCost:""});
   const [prodModal,setProdModal]=useState(null);
   const [prodQtyVal,setProdQtyVal]=useState("");
@@ -221,6 +225,46 @@ export default function App(){
   // STOCK
   const setIngField=(id,field,val)=>{setIngStock(prev=>{const ns={...prev,[id]:{...prev[id]||{},[field]:Number(val)||0}};if(field==="opening")ns[id].current=Number(val)||0;saveDay({ingStock:ns});return ns;});};
   const setIngPhysVal=(id,val)=>{setIngPhys(prev=>{const np={...prev,[id]:Number(val)||0};saveDay({ingPhys:np});return np;});};
+
+  const scanIA=async(file,target)=>{
+    setScanLoading(true);setScanTarget(target);
+    try{
+      const b64=await new Promise((res,rej)=>{
+        const img=new Image();const url=URL.createObjectURL(file);
+        img.onload=()=>{const canvas=document.createElement("canvas");let w=img.width,h=img.height;const MAX=1600;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}canvas.width=w;canvas.height=h;canvas.getContext("2d").drawImage(img,0,0,w,h);URL.revokeObjectURL(url);res(canvas.toDataURL("image/jpeg",0.85).split(",")[1]);};
+        img.onerror=rej;img.src=url;
+      });
+      const liste=ingredients.map(i=>i.name).join(", ");
+      const moment=target==="verif"?"du soir":"du matin";
+      const prompt=`Tu es assistant pour un cafe-crêperie a Dakar. Ingredients connus: ${liste}. Regarde cette fiche et extrais les quantites de stock ${moment}. Si un produit n'existe pas dans la liste, indique nouveau:true. Reponds UNIQUEMENT en JSON: {"stocks":[{"nom":"...","quantite":0,"unite":"kg","prixUnitaire":0,"nouveau":false,"emoji":"📦"}]}`;
+      const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})});
+      const d=await r.json();
+      const txt=d.content?.map(c=>c.text||"").join("")||"";
+      const match=txt.match(/\{[\s\S]*\}/);
+      if(!match)throw new Error("L'IA n'a pas pu lire la fiche");
+      const parsed=JSON.parse(match[0]);
+      if(parsed.stocks){
+        const newIS=target==="verif"?{...ingPhys}:{...ingStock};
+        let newIngList=[...ingredients];
+        let nbNew=0;
+        parsed.stocks.forEach(s=>{
+          let ing=newIngList.find(i=>i.name.toLowerCase().includes(s.nom.toLowerCase())||s.nom.toLowerCase().includes(i.name.toLowerCase()));
+          if(!ing&&s.nouveau!==false){
+            const nid="ing_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+            ing={id:nid,name:s.nom,emoji:s.emoji||"📦",unit:s.unite||"kg",unitCost:s.prixUnitaire||0};
+            newIngList=[...newIngList,ing];nbNew++;
+          }
+          if(ing){if(target==="verif")newIS[ing.id]=s.quantite;else newIS[ing.id]={...newIS[ing.id]||{},opening:s.quantite};}
+        });
+        if(nbNew>0){setIngredients(newIngList);saveProds(boissons,snacks,newIngList,recipes,photoPrice,dailyGoal,ticketNo);}
+        if(target==="verif"){setIngPhys(newIS);saveDay({ingPhys:newIS});}else{setIngStock(newIS);saveDay({ingStock:newIS});}
+        addAudit("SCAN STOCK",`${parsed.stocks.length} ingredients${nbNew>0?" (+"+nbNew+" nouveaux)":""}`);
+        showToast(nbNew>0?`✓ ${parsed.stocks.length} ingredients — ${nbNew} nouveaux crees`:`✓ ${parsed.stocks.length} ingredients mis a jour`);
+      }
+    }catch(e){showToast("Erreur: "+e.message,S.red);}
+    setScanLoading(false);setScanTarget("");
+  };
+
   const recordProduction=()=>{if(!prodModal||!prodQtyVal)return;const qty=parseInt(prodQtyVal)||0;const rec=recipes.find(r=>r.snackId===prodModal.id);const newIS={...ingStock};if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*qty)};});}const prod={id:uid(),snackId:prodModal.id,snackName:prodModal.name,snackEmoji:prodModal.emoji,qty,time:timeStr()};const np=[...productions,prod];setIngStock(newIS);setProductions(np);saveDay({ingStock:newIS,productions:np});addAudit("PRODUCTION",`${prodModal.emoji}${prodModal.name} × ${qty}`);setProdModal(null);setProdQtyVal("");showToast(`✓ ${qty} ${prodModal.name} produit(s)`);};
 
   // GAMING
@@ -407,6 +451,14 @@ export default function App(){
           <button style={Sub(stSub==="verif")} onClick={()=>setStSub("verif")}>🔍 Vérif</button>
         </div>
         {stSub==="ing"&&<div>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            <button onClick={()=>{if(scanRef.current){scanRef.current.dataset.target="stock";scanRef.current.click();}}} disabled={scanLoading&&scanTarget==="stock"} style={{flex:1,background:S.purple,color:"#fff",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontSize:12,fontWeight:700}}>
+              {scanLoading&&scanTarget==="stock"?"⏳ Lecture...":"📸 Scanner stock matin"}
+            </button>
+            <button onClick={()=>{if(scanRef.current){scanRef.current.dataset.target="verif";scanRef.current.click();}}} disabled={scanLoading&&scanTarget==="verif"} style={{flex:1,background:S.orange,color:S.bg,border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontSize:12,fontWeight:700}}>
+              {scanLoading&&scanTarget==="verif"?"⏳ Lecture...":"📸 Scanner stock soir"}
+            </button>
+          </div>
           <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
           {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span></div>
@@ -745,6 +797,7 @@ export default function App(){
           <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setGoalModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{const g=parseInt(newGoal)||DEFAULT_GOAL;setDailyGoal(g);saveProds(boissons,snacks,ingredients,recipes,photoPrice,g,ticketNo);setGoalModal(false);showToast("✓ Objectif mis à jour");}} style={{...Btn(S.gold),flex:1}}>✓ OK</button></div>
         </div>
       </div>}
+    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
     </div>
   );
 }
