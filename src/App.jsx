@@ -137,6 +137,7 @@ export default function App(){
   const [emojiSuggesting,setEmojiSuggesting]=useState(false);
   const [editProd,setEditProd]=useState(null);
   const [addIngModal,setAddIngModal]=useState(false);
+  const [editIng,setEditIng]=useState(null);
   const [stations,setStations]=useState(INIT_STATIONS);
   const [editStation,setEditStation]=useState(null);
   const [addStationModal,setAddStationModal]=useState(false);
@@ -479,7 +480,16 @@ export default function App(){
           </div>
           <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
           {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span><span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span>
+              <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                <span style={{fontSize:10,color:S.muted}}>{ing.unit} • {fmt(ing.unitCost)}/{ing.unit}</span>
+                {user.role==="patron"&&<>
+                  <button onClick={()=>setEditIng({...ing})} style={{background:"transparent",border:`1px solid ${S.blue}`,color:S.blue,borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:10,marginLeft:4}}>✏️</button>
+                  <button onClick={()=>{if(!window.confirm("Supprimer "+ing.name+"?"))return;const ni=ingredients.filter(x=>x.id!==ing.id);setIngredients(ni);saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR ING",ing.name);showToast("✓ Supprimé",S.red);}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:10}}>🗑</button>
+                </>}
+              </div>
+            </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
               <div style={{flex:1,minWidth:90}}><div style={{fontSize:10,color:S.muted,marginBottom:3}}>Stock matin ({ing.unit})</div><input type="number" step="0.001" value={s.opening??""} placeholder="0" onChange={e=>setIngField(ing.id,"opening",e.target.value)} style={{...Inp("100%"),padding:"7px 8px",fontSize:13}}/></div>
               <div style={{display:"flex",gap:6}}>
@@ -886,6 +896,33 @@ export default function App(){
               setAddStationModal(false);
               showToast("✓ "+name+" ajoutée");
             }} style={{background:S.gold,color:S.bg,border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Ajouter</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Modal modifier ingrédient */}
+      {editIng&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:320,border:`2px solid ${S.blue}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.blue,marginBottom:16}}>✏️ Modifier ingrédient</div>
+          {[{l:"Emoji",k:"emoji",t:"text",ph:"🌾"},{l:"Nom",k:"name",t:"text",ph:"Farine"},{l:"Unité (kg / L / pcs)",k:"unit",t:"text",ph:"kg"},{l:"Prix / unité (FCFA)",k:"unitCost",t:"number",ph:"300"}].map(f=>(
+            <div key={f.k} style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:S.muted,marginBottom:3}}>{f.l}</div>
+              <input type={f.t} value={editIng[f.k]||""} placeholder={f.ph}
+                onChange={e=>setEditIng(p=>({...p,[f.k]:f.t==="number"?parseFloat(e.target.value)||0:e.target.value}))}
+                style={{background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"8px 12px",fontSize:13,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>setEditIng(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
+            <button onClick={()=>{
+              if(!editIng.name)return;
+              const ni=ingredients.map(x=>x.id===editIng.id?editIng:x);
+              setIngredients(ni);
+              saveProds(boissons,snacks,ni,recipes,stations,photoPrice,dailyGoal,ticketNo);
+              addAudit("MODIF ING",editIng.name);
+              setEditIng(null);
+              showToast("✓ Ingrédient mis à jour");
+            }} style={{background:S.blue,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:1}}>✓ Sauvegarder</button>
           </div>
         </div>
       </div>}
