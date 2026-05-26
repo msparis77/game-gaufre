@@ -85,7 +85,7 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
         <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
       </div>
       <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:8}}>Obligatoire avant encaissement</div>
-    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
+    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value='';}}}/>
     </div>
   );
 }
@@ -533,15 +533,22 @@ export default function App(){
       {/* ══ PLANNING ══ */}
       {tab==="planning"&&<div style={{padding:14}}>
         <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:12,marginBottom:14,fontSize:12,color:"#aaa",lineHeight:1.6}}>🧮 Entrez les quantités à produire. L'outil calcule les ingrédients en KG et votre liste de courses exacte.</div>
+        {user.role==="patron"&&<button onClick={()=>setEditRec({id:"",emoji:"🍽️",name:"",category:"Crêpes",snackId:"",ingredients:[]})} style={{width:"100%",background:"transparent",border:`2px dashed ${S.orange}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.orange,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une recette</button>}
         {[...new Set(recipes.map(r=>r.category))].map(cat=>(
           <div key={cat} style={Card()}>
             <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
             {recipes.filter(r=>r.category===cat).map(rec=>(
-              <div key={rec.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${S.border}`}}>
-                <div style={{fontSize:22,minWidth:28}}>{rec.emoji}</div>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{rec.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • ")}</div></div>
-                <input type="number" min="0" placeholder="0" value={planQty[rec.id]||""} onChange={e=>setPlanQty(p=>({...p,[rec.id]:parseInt(e.target.value)||0}))} style={{...Inp("65px"),padding:"7px 8px",fontSize:14,textAlign:"center",fontWeight:700}}/>
-                <span style={{fontSize:10,color:S.muted,minWidth:20}}>pcs</span>
+              <div key={rec.id} style={{marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${S.border}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:user.role==="patron"?6:0}}>
+                  <div style={{fontSize:22,minWidth:28}}>{rec.emoji}</div>
+                  <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>{rec.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{rec.ingredients.map(ri=>{const ing=ingredients.find(i=>i.id===ri.id);return ing?`${fmtQ(ri.qty,ing.unit)} ${ing.name}`:""}).filter(Boolean).join(" • ")}</div></div>
+                  <input type="number" min="0" placeholder="0" value={planQty[rec.id]||""} onChange={e=>setPlanQty(p=>({...p,[rec.id]:parseInt(e.target.value)||0}))} style={{...Inp("65px"),padding:"7px 8px",fontSize:14,textAlign:"center",fontWeight:700}}/>
+                  <span style={{fontSize:10,color:S.muted,minWidth:20}}>pcs</span>
+                </div>
+                {user.role==="patron"&&<div style={{display:"flex",gap:4}}>
+                  <button onClick={()=>setEditRec({...rec})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>✏️ Modifier</button>
+                  <button onClick={()=>{if(!window.confirm("Supprimer "+rec.name+"?"))return;const nr=recipes.filter(x=>x.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR REC",rec.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>🗑 Supprimer</button>
+                </div>}
               </div>
             ))}
           </div>
@@ -567,6 +574,7 @@ export default function App(){
       {/* ══ RECETTES ══ */}
       {tab==="recettes"&&<div style={{padding:14}}>
         {user.role==="patron"&&<button onClick={()=>setEditRec({id:"",emoji:"🍽️",name:"",category:"Crêpes",snackId:"",ingredients:[]})} style={{width:"100%",background:"transparent",border:`2px dashed ${S.orange}`,borderRadius:10,padding:"10px",cursor:"pointer",color:S.orange,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Nouvelle recette</button>}
+        {user.role==="patron"&&<button onClick={()=>setEditRec({id:"",emoji:"🍽️",name:"",category:"Crêpes",snackId:"",ingredients:[]})} style={{width:"100%",background:"transparent",border:`2px dashed ${S.orange}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.orange,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une recette</button>}
         {[...new Set(recipes.map(r=>r.category))].map(cat=>(
           <div key={cat} style={Card()}>
             <div style={{fontSize:11,fontWeight:700,color:S.orange,letterSpacing:2,marginBottom:12}}>{cat.toUpperCase()}</div>
@@ -1007,7 +1015,7 @@ export default function App(){
           <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setGoalModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={()=>{const g=parseInt(newGoal)||DEFAULT_GOAL;setDailyGoal(g);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,g,ticketNo);setGoalModal(false);showToast("✓ Objectif mis à jour");}} style={{...Btn(S.gold),flex:1}}>✓ OK</button></div>
         </div>
       </div>}
-    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value="";}}}/>
+    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value='';}}}/>
     </div>
   );
 }
