@@ -441,7 +441,7 @@ export default function App(){
       {/* ══ GAMING ══ */}
       {tab==="gaming"&&<div style={{padding:14}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {STATIONS.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
+          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
             <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
               <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
