@@ -440,58 +440,21 @@ export default function App(){
 
       {/* ══ GAMING ══ */}
       {tab==="gaming"&&<div style={{padding:14}}>
-        {(Array.isArray(stations)&&stations.length>0)?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {stations.map(st=>{
-            let ses=null;try{ses=sessions&&sessions[st.id]?sessions[st.id]:null;}catch(e){}
-            const active=!!ses;
-            return(<div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                <span style={{fontSize:20}}>{st.emoji||"🎮"}</span>
-                {active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}
-              </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          {STATIONS.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
+            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
               <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
-              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1||1000)} • 2J {fmt(st.rate2||1500)}/30min</div>
-              {active&&ses?<>
-                <div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div>
-                <div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div>
-                <button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button>
-              </>:<div style={{display:"flex",gap:6}}>
-                <button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button>
-                <button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button>
-              </div>}
-              {user&&user.role==="patron"&&!active&&<div style={{display:"flex",gap:4,marginTop:4}}>
-                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>✏️</button>
-                <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:5,padding:"3px 0",cursor:"pointer",fontSize:10}}>🗑</button>
-              </div>}
-            </div>);
-          })}
-        </div>:<div style={{...Card(),textAlign:"center",color:S.muted,padding:20}}>Aucune console configurée</div>}
-        {user&&user.role==="patron"&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"8px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:12,marginBottom:12}}>＋ Ajouter console / poste</button>}
-        <div style={Card()}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <div>
-              <div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div>
-              <div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>
-                Prix: {user&&user.role==="patron"?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,stations,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button>
-              <span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span>
-              <button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button>
-              <div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div>
-            </div>
-          </div>
+              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
+              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
+              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
+            </div>);})}
         </div>
-        {doneSess&&doneSess.length>0&&<div style={Card()}>
-          <div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>
-          {[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}>
-            <div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div>
-            <div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div>
-          </div>)}
-        </div>}
+        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {user.role==="patron"?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
+        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
       </div>}
 
+      {/* ══ STOCKS ══ */}
       {/* ══ STOCKS ══ */}
       {tab==="stocks"&&<div style={{padding:14}}>
         <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
