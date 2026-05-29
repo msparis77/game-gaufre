@@ -53,12 +53,12 @@ function PinPad({onConfirm,error}){
 }
 
 // TICKET COMPONENT
-function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
+function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkip}){
   const printTicket=()=>{
     const w=window.open("","_blank","width=300,height=600");
     w.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:12px;width:250px;margin:0;padding:8px;}h2{text-align:center;font-size:14px;margin:4px 0;}hr{border-top:1px dashed #000;}td{padding:2px 0;}.r{text-align:right;}.total{font-weight:bold;font-size:14px;}</style></head><body>
     <h2>🎮 GAME & GAUFRE</h2><p style="text-align:center;font-size:10px;margin:2px;">${storeName}</p><hr/>
-    <p style="font-size:10px;margin:2px;">Ticket #${ticketNo} | ${new Date().toLocaleDateString("fr-FR")} ${timeStr()}</p>
+    <p style="font-size:10px;margin:2px;">Ticket #${ticketNo} | ${new Date().toLocaleDateString("fr-FR")} ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>
     <p style="font-size:10px;margin:2px;">Employé: ${employeeName}</p><hr/>
     <table width="100%">${items.map(i=>`<tr><td>${i.emoji||""}${i.name} ×${i.qty}</td><td class="r">${Number(i.price*i.qty).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
     <table width="100%"><tr><td class="total">TOTAL</td><td class="r total">${Number(total).toLocaleString("fr-FR")} F</td></tr></table><hr/>
@@ -73,7 +73,7 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
       <div style={{textAlign:"center",marginBottom:16}}>
         <div style={{fontSize:32}}>🎫</div>
         <div style={{fontSize:15,fontWeight:800,color:S.teal}}>TICKET DE CAISSE</div>
-        <div style={{fontSize:10,color:S.muted,marginTop:2}}>N° {ticketNo} — {timeStr()}</div>
+        <div style={{fontSize:10,color:S.muted,marginTop:2}}>N° {ticketNo} — {new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</div>
       </div>
       <div style={{background:S.card2,borderRadius:10,padding:12,marginBottom:12,fontFamily:"monospace"}}>
         <div style={{fontSize:11,fontWeight:700,color:S.muted,marginBottom:8,textAlign:"center"}}>🎮 GAME & GAUFRE</div>
@@ -84,8 +84,8 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel}){
         <button onClick={onCancel} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
         <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
       </div>
-      <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:8}}>Obligatoire avant encaissement</div>
-    <input ref={scanRef} type="file" accept="image/*,image/heic,image/heif" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]){const t=e.target.dataset.target||"stock";scanIA(e.target.files[0],t);e.target.value='';}}}/>
+      <button onClick={onSkip||onCancel} style={{width:"100%",marginTop:8,background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12}}>⚡ Valider sans imprimante</button>
+      <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:6}}>Sans ticket = vente enregistrée quand même</div>
     </div>
   );
 }
@@ -350,7 +350,7 @@ export default function App(){
       {pinModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:400,gap:20}}><div style={{color:S.gold,fontWeight:800,fontSize:16}}>🔒 CODE PATRON REQUIS</div><PinPad onConfirm={tryPatronModal} error={pinMErr}/><button onClick={()=>setPinModal(null)} style={{...Btn(S.card2,S.muted),border:`1px solid ${S.border}`}}>Annuler</button></div>}
 
       {/* TICKET MODAL */}
-      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)}/></div>}
+      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)} onSkip={()=>{confirmSaleAfterPrint();addAudit("SANS TICKET","vente validée sans impression");}}/></div>}
 
       {/* HEADER */}
       <div style={{background:S.card,padding:"11px 16px",borderBottom:`3px solid ${S.gold}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
