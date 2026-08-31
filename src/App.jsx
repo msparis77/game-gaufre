@@ -126,6 +126,8 @@ export default function App(){
   const [checklist,setChecklist]=useState({});
   const [dailyGoal,setDailyGoal]=useState(DEFAULT_GOAL);
   const [history,setHistory]=useState({});
+  const [globalData,setGlobalData]=useState(null);
+  const [globalLoading,setGlobalLoading]=useState(false);
   const [aiMessages,setAiMessages]=useState([{role:"assistant",content:"👋 Bonjour ! Je suis votre assistant IA Game & Gaufre.\n\nJe connais vos ventes, stocks et recettes en temps réel. Je peux :\n\n📊 Analyser vos pertes\n🛒 Calculer vos courses\n💡 Optimiser votre rentabilité\n🚨 Détecter les vols\n📈 Proposer des améliorations\n\nPosez-moi n'importe quelle question !"}]);
   const [aiInput,setAiInput]=useState("");
   const [aiLoading,setAiLoading]=useState(false);
@@ -185,6 +187,7 @@ export default function App(){
   const saveDay=upd=>{try{const k="gg3-"+currentStore.id+"-day-"+todayStr();let c={};try{const s=localStorage.getItem(k);if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem(k,JSON.stringify(nd));fbSave(k,nd);}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
+  const loadGlobalView=async()=>{setGlobalLoading(true);try{const ds=todayStr();const rows=await Promise.all(STORES.map(async st=>{const[day,prods]=await Promise.all([fbGet("gg3-"+st.id+"-day-"+ds),fbGet("gg3-"+st.id+"-prods")]);const sal=(day&&day.sales)||[];const exp=(day&&day.expenses)||[];const pc=(day&&day.pc)||0;const pp=(prods&&prods.pp)||50;const ca=sal.reduce((s,x)=>s+x.total,0)+pc*pp;const food=sal.filter(x=>x.items[0]?.cat!=="gaming").reduce((s,x)=>s+x.total,0);const gaming=sal.filter(x=>x.items[0]?.cat==="gaming").reduce((s,x)=>s+x.total,0);const dep=exp.reduce((s,x)=>s+x.amount,0);return{id:st.id,name:st.name,emoji:st.emoji,ca,food,gaming,dep,net:ca-dep,ventes:sal.length};}));setGlobalData(rows);}catch(e){showToast("Erreur chargement",S.red);}setGlobalLoading(false);};
 
   // AUTH
   const tryLogin=code=>{const emp=empRef.current.find(e=>e.pin===code);if(emp){setUser(emp);setPinErr(false);}else{setPinErr(true);setTimeout(()=>setPinErr(false),1200);}};
@@ -373,7 +376,7 @@ export default function App(){
 
       {/* TABS */}
       <div style={{display:"flex",background:S.card,borderBottom:`1px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none"}}>
-        {[["home","🏠"],["caisse","🛒"],["gaming","🎮"],["stocks","📦"],["planning","🧮"],["recettes","📖"],["ia","🤖"],["bilan","📊"],["aide","❓"],["audit","🔍"]].map(([id,l])=>(
+        {[["home","🏠"],["caisse","🛒"],["gaming","🎮"],["stocks","📦"],["planning","🧮"],["recettes","📖"],["ia","🤖"],["bilan","📊"],...(user.role==="patron"?[["global","🏢"]]:[]),["aide","❓"],["audit","🔍"]].map(([id,l])=>(
           <button key={id} style={{...T(tab===id),fontSize:id==="aide"?14:9}} onClick={()=>{setTab(id);touch();}}>{l}</button>
         ))}
       </div>
@@ -647,6 +650,14 @@ export default function App(){
         <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>📅 7 JOURS</div>{last7.map(d=><div key={d.ds} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><span style={{color:S.muted,minWidth:36}}>{d.label}</span><div style={{display:"flex",gap:16}}><span style={{color:d.ca>0?S.green:S.muted,fontWeight:700}}>{fmt(d.ca)}</span><span style={{color:d.net>=0?S.green:S.red,fontSize:11}}>net {fmt(d.net)}</span></div></div>)}</div>
         <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>VENTES RÉCENTES</div>{sales.length===0?<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:12}}>Aucune vente</div>:[...sales].reverse().slice(0,12).map(sale=><div key={sale.id} style={{borderBottom:`1px solid ${S.border}`,paddingBottom:6,marginBottom:6}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{color:S.muted}}>{sale.time} <span style={{color:S.teal,fontSize:10}}>#{sale.ticketNo||"—"}</span> <span style={{color:S.blue,fontSize:10}}>({sale.by})</span></span><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:800,color:S.green}}>{fmt(sale.total)}</span>{user.role==="patron"&&<button onClick={()=>deleteSale(sale.id)} style={{background:"transparent",border:"none",color:S.red,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div><div style={{fontSize:10,color:"#aaa",marginTop:2}}>{sale.items.map(i=>`${i.emoji||""}${i.name}×${i.qty}`).join(" • ")}</div></div>)}</div>
       </div>}
+      {/* ══ VUE GLOBALE (PATRON) ══ */}
+      {tab==="global"&&<div style={{padding:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontWeight:800,color:S.gold,fontSize:14}}>🏢 Vue consolidée</div><button onClick={loadGlobalView} style={{...Btn(S.card2,S.gold),border:`1px solid ${S.gold}`,fontSize:12}}>{globalLoading?"…":"↺ Actualiser"}</button></div>
+        {!globalData&&!globalLoading&&<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:20}}>Appuyez sur Actualiser pour charger les 3 boutiques.</div>}
+        {globalLoading&&<div style={{color:S.muted,fontSize:13,textAlign:"center",padding:20}}>Chargement…</div>}
+        {globalData&&<><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>{[{l:"CA GLOBAL",v:globalData.reduce((s,r)=>s+r.ca,0),c:S.green},{l:"DÉPENSES",v:globalData.reduce((s,r)=>s+r.dep,0),c:S.red},{l:"BÉNÉFICE NET",v:globalData.reduce((s,r)=>s+r.net,0),c:globalData.reduce((s,r)=>s+r.net,0)>=0?S.green:S.red},{l:"VENTES",v:globalData.reduce((s,r)=>s+r.ventes,0),c:S.orange,n:true}].map(c=><div key={c.l} style={{...Card(),textAlign:"center"}}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:c.n?24:16,fontWeight:800,color:c.c}}>{c.n?c.v:fmt(c.v)}</div></div>)}</div>
+          <div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>PAR BOUTIQUE — AUJOURD'HUI</div>{globalData.map(r=><div key={r.id} style={{padding:"8px 0",borderBottom:`1px solid ${S.border}`}}><div style={{fontWeight:700,fontSize:12,marginBottom:4}}>{r.emoji} {r.name.split("—")[1]?.trim()||r.name}</div><div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:S.muted,flexWrap:"wrap",gap:6}}><span>CA <b style={{color:S.green}}>{fmt(r.ca)}</b></span><span>Dép <b style={{color:S.red}}>{fmt(r.dep)}</b></span><span>Net <b style={{color:r.net>=0?S.green:S.red}}>{fmt(r.net)}</b></span><span>Ventes <b style={{color:S.text}}>{r.ventes}</b></span></div></div>)}</div></>}
+            </div>}
 
       {/* ══ AIDE ══ */}
       {tab==="aide"&&<div style={{padding:14}}>
