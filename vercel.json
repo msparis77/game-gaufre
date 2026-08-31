@@ -1,11 +1,16 @@
 {
   "functions": {
     "api/chat.js": { "memory": 256 },
-    "api/store.js": { "memory": 256 }
+    "api/store.js": { "memory": 256 },
+    "api/backup.js": { "memory": 256 }
   },
   "rewrites": [
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/store", "destination": "/api/store.js" },
+    { "source": "/api/backup", "destination": "/api/backup.js" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/backup", "schedule": "0 0 * * *" }
   ]
 }
