@@ -45,7 +45,7 @@ const BASE = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`
         if (r.ok) return res.status(200).json({ ok: true })
         const e = await r.json().catch(()=>({}))
         lastErr = e
-        const isConflict = r.status === 409 || (r.status === 422 && /sha/i.test(e.message||''))
+        const isConflict = r.status === 409 || r.status === 422 || /does not match|is at .* but expected|sha/i.test(e.message||'')
         if (!isConflict) return res.status(500).json({ error: e.message || 'write failed' })
         await new Promise(r2=>setTimeout(r2, 150*(attempt+1)+Math.random()*150))
       }
