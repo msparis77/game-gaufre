@@ -98,7 +98,7 @@ export default function App(){
   const empRef=useRef(INIT_EMPS);
   const [pinModal,setPinModal]=useState(null);
   const [pinMErr,setPinMErr]=useState(false);
-  const [currentStore,setCurrentStore]=useState(STORES[0]);
+  const [currentStore,setCurrentStore]=useState(()=>{try{const sid=localStorage.getItem("gg3-last-store");const f=STORES.find(s=>s.id===sid);return f||STORES[0];}catch(e){return STORES[0];}});
   const [tab,setTab]=useState("home");
   const [stSub,setStSub]=useState("ing");
   const [cTab,setCTab]=useState("boissons");
@@ -166,6 +166,7 @@ export default function App(){
   const [addRecModal,setAddRecModal]=useState(false);
   const [newRec,setNewRec]=useState({name:"",emoji:"🍽️",category:"Autre",snackId:"",ingredients:[]});
   const [storeModal,setStoreModal]=useState(false);
+  const [storeConfirmed,setStoreConfirmed]=useState(false);
   const [tick,setTick]=useState(0);
   const [lastAct,setLastAct]=useState(Date.now());
   const [toast,setToast]=useState(null);
@@ -339,11 +340,11 @@ export default function App(){
     <div style={{background:S.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{fontSize:52,marginBottom:6}}>🎮</div>
       <div style={{fontSize:22,fontWeight:800,color:S.gold,marginBottom:2}}>GAME & GAUFRE</div>
-      <button onClick={()=>setStoreModal(true)} style={{background:S.card,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,marginBottom:20}}>{currentStore.emoji} {currentStore.name} ▾</button>
-      <PinPad onConfirm={tryLogin} error={pinErr}/>
-      <div style={{marginTop:20,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6}}>
-        {emps.map(e=><div key={e.id} style={{background:S.card,border:`1px solid ${e.role==="patron"?S.gold:S.border}`,borderRadius:8,padding:"4px 10px",fontSize:11,color:e.role==="patron"?S.gold:S.muted}}>{e.role==="patron"?"👑":"👤"} {e.name}</div>)}
-      </div>
+   {!storeConfirmed?<div style={{width:"100%",maxWidth:340,marginTop:10}}><div style={{color:S.muted,fontSize:13,textAlign:"center",marginBottom:16}}>Choisissez votre boutique pour continuer</div>{STORES.map(store=><button key={store.id} onClick={()=>{setCurrentStore(store);try{localStorage.setItem("gg3-last-store",store.id);}catch(e){}setStoreConfirmed(true);}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",background:store.id===currentStore.id?S.card2:S.card,border:`2px solid ${store.id===currentStore.id?S.gold:S.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",color:S.text,marginBottom:10,textAlign:"left"}}><span style={{fontSize:28}}>{store.emoji}</span><div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:store.id===currentStore.id?S.gold:S.text}}>{store.name}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{store.id===currentStore.id?"Dernière boutique utilisée":"Appuyez pour sélectionner"}</div></div>{store.id===currentStore.id&&<span style={{color:S.gold,fontSize:18}}>✓</span>}</button>)}</div>:<>
+     <button onClick={()=>setStoreConfirmed(false)} style={{background:S.card,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,marginBottom:20}}>{currentStore.emoji} {currentStore.name} ▾</button>
+     <PinPad onConfirm={tryLogin} error={pinErr}/>
+     <div style={{marginTop:20,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6}}>{emps.map(e=><div key={e.id} style={{background:S.card,border:`1px solid ${e.role==="patron"?S.gold:S.border}`,borderRadius:8,padding:"4px 10px",fontSize:11,color:e.role==="patron"?S.gold:S.muted}}>{e.role==="patron"?"👑":"👤"} {e.name}</div>)}</div>
+     </>}
     </div>
   );
 
