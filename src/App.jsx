@@ -110,6 +110,7 @@ export default function App(){
   const [ingStock,setIngStock]=useState({});
   const [ingPhys,setIngPhys]=useState({});
   const [productions,setProductions]=useState([]);
+  const [manualExits,setManualExits]=useState([]);
   const [finPhys,setFinPhys]=useState({});
   const [planQty,setPlanQty]=useState({});
   const [planStock,setPlanStock]=useState({});
@@ -152,6 +153,9 @@ export default function App(){
   const [newIng,setNewIng]=useState({name:"",unit:"kg",emoji:"🥄",unitCost:""});
   const [prodModal,setProdModal]=useState(null);
   const [prodQtyVal,setProdQtyVal]=useState("");
+  const [exitModal,setExitModal]=useState(null);
+  const [exitQtyVal,setExitQtyVal]=useState("");
+  const [exitNote,setExitNote]=useState("");
   const [cashModal,setCashModal]=useState(false);
   const [cashCount,setCashCount]=useState({});
   const [whatsModal,setWhatsModal]=useState(false);
@@ -180,7 +184,7 @@ export default function App(){
   useEffect(()=>{(async()=>{
         try{const k="gg3-"+currentStore.id+"-emps";let s=localStorage.getItem(k);let e=s?JSON.parse(s):await fbGet(k);if(e){setEmps(e);empRef.current=e;}else{setEmps(INIT_EMPS);empRef.current=INIT_EMPS;}}catch(e){}
     try{const k2="gg3-"+currentStore.id+"-prods";let s=localStorage.getItem(k2);let d=s?JSON.parse(s):await fbGet(k2);if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
-    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions({});if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setDoneSess([]);setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setFinPhys({});}}catch(e){}
+    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions({});if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setDoneSess([]);setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setFinPhys({});}}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let s=localStorage.getItem(k4);let d=s?JSON.parse(s):await fbGet(k4);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
   })();},[currentStore.id]);
@@ -202,7 +206,9 @@ export default function App(){
   const prodQtyFn=id=>productions.filter(p=>p.snackId===id).reduce((s,p)=>s+p.qty,0);
   const remQty=id=>Math.max(0,prodQtyFn(id)-soldQty(id));
   const lossQty=id=>{const p=finPhys[id];if(p==null)return null;return remQty(id)-p;};
-  const ingUsed=id=>productions.reduce((s,p)=>{const rec=recipes.find(r=>r.snackId===p.snackId);const ri=rec?.ingredients.find(i=>i.id===id);return s+(ri?ri.qty*p.qty:0);},0);
+  const ingUsedDirect=id=>sales.reduce((s,sale)=>s+sale.items.reduce((s2,item)=>{const prod=[...boissons,...snacks].find(p=>p.id===item.id);return s2+(prod&&prod.dIngId===id?(prod.dIngQty||0)*item.qty:0);},0),0);
+  const ingUsedManual=id=>manualExits.filter(m=>m.ingId===id).reduce((s,m)=>s+m.qty,0);
+  const ingUsed=id=>productions.reduce((s,p)=>{const rec=recipes.find(r=>r.snackId===p.snackId);const ri=rec?.ingredients.find(i=>i.id===id);return s+(ri?ri.qty*p.qty:0);},0)+ingUsedDirect(id)+ingUsedManual(id);
   const ingRem=id=>Math.max(0,(ingStock[id]?.opening||0)-ingUsed(id));
   const ingAlert=id=>{const p=ingPhys[id];if(p==null)return null;const t=ingRem(id);const diff=t-p;return diff!==0?{diff,t,p}:null;};
   const totalCA=sales.reduce((s,sale)=>s+sale.total,0)+photoCount*photoPrice;
@@ -279,6 +285,7 @@ export default function App(){
   };
 
   const recordProduction=()=>{if(!prodModal||!prodQtyVal)return;const qty=parseInt(prodQtyVal)||0;const rec=recipes.find(r=>r.snackId===prodModal.id);const newIS={...ingStock};if(rec){rec.ingredients.forEach(ri=>{const cur=newIS[ri.id]?.opening??0;newIS[ri.id]={...newIS[ri.id]||{},opening:Math.max(0,cur-ri.qty*qty)};});}const prod={id:uid(),snackId:prodModal.id,snackName:prodModal.name,snackEmoji:prodModal.emoji,qty,time:timeStr()};const np=[...productions,prod];setIngStock(newIS);setProductions(np);saveDay({ingStock:newIS,productions:np});addAudit("PRODUCTION",`${prodModal.emoji}${prodModal.name} × ${qty}`);setProdModal(null);setProdQtyVal("");showToast(`✓ ${qty} ${prodModal.name} produit(s)`);};
+  const recordManualExit=()=>{if(!exitModal||!exitQtyVal)return;const qty=parseFloat(exitQtyVal)||0;if(qty<=0)return;const ex={id:uid(),ingId:exitModal.id,ingName:exitModal.name,ingEmoji:exitModal.emoji,unit:exitModal.unit,qty,note:exitNote.trim(),by:user?.name,time:timeStr()};const ne=[...manualExits,ex];setManualExits(ne);saveDay({manualExits:ne});addAudit("SORTIE STOCK",`${exitModal.emoji}${exitModal.name} -${fmtQ(qty,exitModal.unit)}${exitNote.trim()?` (${exitNote.trim()})`:""}`);setExitModal(null);setExitQtyVal("");setExitNote("");showToast(`✓ Sortie: ${fmtQ(qty,exitModal.unit)} ${exitModal.name}`);};
 
   // GAMING
   const elapsed=start=>{const s=Math.floor((Date.now()-start)/1000);return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;};
@@ -436,6 +443,7 @@ export default function App(){
                 <div style={{fontSize:10,fontWeight:600,margin:"3px 0 2px",lineHeight:1.2}}>{p.name}</div>
                 <div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(p.price)}</div>
                 {cTab==="snacks"&&prodQtyFn(p.id)>0&&<div style={{fontSize:9,color:remQty(p.id)>0?S.green:S.red,marginTop:2}}>{remQty(p.id)>0?`Dispo: ${remQty(p.id)}`:"Épuisé ⚠️"}</div>}
+                {p.dIngId&&<div style={{fontSize:9,color:ingRem(p.dIngId)>0?S.muted:S.red,marginTop:2}}>{ingRem(p.dIngId)>0?`Stock: ${fmtQ(ingRem(p.dIngId),ingredients.find(i=>i.id===p.dIngId)?.unit||"")}`:"Rupture ⚠️"}</div>}
               </button>
               {user.role==="patron"&&<div style={{display:"flex",gap:2,marginTop:2}}>
                 <button onClick={()=>setEditProd({...p,cat:cTab})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:5,padding:"2px 0",cursor:"pointer",fontSize:10}}>✏️</button>
@@ -513,10 +521,12 @@ export default function App(){
                 <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Utilisé</div><div style={{fontSize:14,fontWeight:800,color:S.orange,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(used,ing.unit)}</div></div>
                 <div style={{textAlign:"center"}}><div style={{fontSize:9,color:S.muted,marginBottom:3}}>Restant</div><div style={{fontSize:14,fontWeight:800,color:rem>0?S.green:S.muted,background:S.card2,borderRadius:6,padding:"4px 8px"}}>{fmtQ(rem,ing.unit)}</div></div>
               </div>
+              <button onClick={()=>{setExitModal(ing);setExitQtyVal("");setExitNote("");}} style={{background:S.card2,border:`1px solid ${S.orange}`,color:S.orange,borderRadius:6,padding:"8px 10px",cursor:"pointer",fontSize:16}}>📤</button>
             </div>
             {al&&<div style={{marginTop:6,background:S.red,borderRadius:6,padding:"4px 8px",fontSize:11,color:"#fff",fontWeight:700}}>⚠️ {al.diff>0?`MANQUE ${fmtQ(al.diff,ing.unit)}`:`SURPLUS`}</div>}
           </div>);})}
           {user.role==="patron"&&<button onClick={()=>setAddIngModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.blue}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.blue,fontWeight:700,fontSize:13,marginTop:4}}>＋ Ajouter ingrédient</button>}
+          {manualExits.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SORTIES MANUELLES DU JOUR</div>{[...manualExits].reverse().map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{m.time} </span>{m.ingEmoji}{m.ingName}{m.note?` (${m.note})`:""}</div><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:S.red,fontWeight:700}}>-{fmtQ(m.qty,m.unit)}</span><button onClick={()=>{const ne=manualExits.filter(x=>x.id!==m.id);setManualExits(ne);saveDay({manualExits:ne});showToast("✓ Supprimé",S.red);}} style={{background:"transparent",border:`1px solid ${S.red}`,color:S.red,borderRadius:4,padding:"1px 5px",cursor:"pointer",fontSize:10}}>🗑</button></div></div>)}</div>}
         </div>}
         {stSub==="prod"&&<div>
           <div style={{background:"#0d1a0d",border:`1px solid ${S.green}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🍳 Enregistrez chaque fabrication. Ingrédients déduits automatiquement.</div>
@@ -781,6 +791,15 @@ export default function App(){
           <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setProdModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={recordProduction} style={{...Btn(S.green),flex:1}}>✓ Confirmer</button></div>
         </div>
       </div>}
+      {exitModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.orange}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.orange,marginBottom:4}}>📤 Sortie de stock</div>
+          <div style={{fontSize:13,color:S.muted,marginBottom:12}}>{exitModal.emoji} {exitModal.name} (dispo: {fmtQ(ingRem(exitModal.id),exitModal.unit)})</div>
+          <input type="number" step="0.01" value={exitQtyVal} placeholder={`Quantité (${exitModal.unit})`} autoFocus onChange={e=>setExitQtyVal(e.target.value)} style={Inp()}/>
+          <input type="text" value={exitNote} placeholder="Note (optionnel)" onChange={e=>setExitNote(e.target.value)} style={{...Inp(),marginTop:8}}/>
+          <div style={{display:"flex",gap:10,marginTop:16}}><button onClick={()=>setExitModal(null)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button><button onClick={recordManualExit} style={{...Btn(S.orange),flex:1}}>✓ Confirmer</button></div>
+        </div>
+      </div>}
 
       {/* Add ingredient */}
       {/* Modal modifier produit */}
@@ -988,9 +1007,11 @@ export default function App(){
             <input type="text" value={editProd?editProd.emoji:newProd.emoji} onChange={e=>editProd?setEditProd(p=>({...p,emoji:e.target.value})):setNewProd(p=>({...p,emoji:e.target.value}))} style={{...Inp(),fontSize:24,textAlign:"center",padding:"8px"}} maxLength={4}/>
           </div>
           <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Prix (FCFA)</div><input type="number" value={editProd?editProd.price:newProd.price} onChange={e=>editProd?setEditProd(p=>({...p,price:e.target.value})):setNewProd(p=>({...p,price:e.target.value}))} style={Inp()}/></div>
+          <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Ingrédient lié (optionnel)</div><select value={editProd?(editProd.dIngId||""):(newProd.dIngId||"")} onChange={e=>editProd?setEditProd(p=>({...p,dIngId:e.target.value})):setNewProd(p=>({...p,dIngId:e.target.value}))} style={Inp()}><option value="">Aucun</option>{ingredients.map(ing=><option key={ing.id} value={ing.id}>{ing.emoji} {ing.name}</option>)}</select></div>
+          <div style={{marginBottom:12}}><div style={{fontSize:11,color:S.muted,marginBottom:4}}>Qté utilisée / vente</div><input type="number" step="0.01" value={editProd?(editProd.dIngQty||""):(newProd.dIngQty||"")} onChange={e=>editProd?setEditProd(p=>({...p,dIngQty:e.target.value})):setNewProd(p=>({...p,dIngQty:e.target.value}))} style={Inp()}/></div>
           <div style={{display:"flex",gap:10,marginTop:8}}>
             <button onClick={()=>{setAddProdModal(null);setEditProd(null);}} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Annuler</button>
-            <button onClick={()=>{if(editProd){const up={...editProd,price:parseInt(editProd.price)||0};if(editProd.cat==="boissons"){const nb=boissons.map(p=>p.id===up.id?up:p);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.map(p=>p.id===up.id?up:p);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("MODIF",`${up.name}`);setEditProd(null);showToast("✓ Mis à jour");}else{if(!newProd.name||!newProd.price)return;const p={id:`c${uid()}`,name:newProd.name,price:parseInt(newProd.price)||0,emoji:newProd.emoji||"🍽️"};if(addProdModal==="boissons"){const nb=[...boissons,p];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=[...snacks,p];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("AJOUT",`${p.emoji}${p.name}`);setAddProdModal(null);setNewProd({name:"",price:"",emoji:"🍽️"});showToast("✓ Produit ajouté");}}} style={{...Btn(editProd?S.blue:S.gold),flex:1}}>✓ {editProd?"Modifier":"Ajouter"}</button>
+            <button onClick={()=>{if(editProd){const up={...editProd,price:parseInt(editProd.price)||0,dIngId:editProd.dIngId||null,dIngQty:editProd.dIngQty?parseFloat(editProd.dIngQty):null};if(editProd.cat==="boissons"){const nb=boissons.map(p=>p.id===up.id?up:p);setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=snacks.map(p=>p.id===up.id?up:p);setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("MODIF",`${up.name}`);setEditProd(null);showToast("✓ Mis à jour");}else{if(!newProd.name||!newProd.price)return;const p={id:`c${uid()}`,name:newProd.name,price:parseInt(newProd.price)||0,emoji:newProd.emoji||"🍽️",dIngId:newProd.dIngId||null,dIngQty:newProd.dIngQty?parseFloat(newProd.dIngQty):null};if(addProdModal==="boissons"){const nb=[...boissons,p];setBoissons(nb);saveProds(nb,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}else{const ns=[...snacks,p];setSnacks(ns);saveProds(boissons,ns,ingredients,recipes,stations,photoPrice,dailyGoal,ticketNo);}addAudit("AJOUT",`${p.emoji}${p.name}`);setAddProdModal(null);setNewProd({name:"",price:"",emoji:"🍽️",dIngId:"",dIngQty:""});showToast("✓ Produit ajouté");}}} style={{...Btn(editProd?S.blue:S.gold),flex:1}}>✓ {editProd?"Modifier":"Ajouter"}</button>
           </div>
         </div>
       </div>}
