@@ -173,16 +173,16 @@ export default function App(){
   const touch=()=>setLastAct(Date.now());
 
   useEffect(()=>{(async()=>{
-    try{let s=localStorage.getItem("gg3-emps");let e=s?JSON.parse(s):await fbGet("gg3-emps");if(e){setEmps(e);empRef.current=e;}}catch(e){}
-    try{let s=localStorage.getItem("gg3-prods");let d=s?JSON.parse(s):await fbGet("gg3-prods");if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}}catch(e){}
-    try{let s=localStorage.getItem("gg3-day-"+todayStr());let d=s?JSON.parse(s):await fbGet("gg3-day-"+todayStr());if(d){if(d.sales)setSales(d.sales);setSessions({});if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}}catch(e){}
-    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{let s=localStorage.getItem("gg3-day-"+ds);let d=s?JSON.parse(s):await fbGet("gg3-day-"+ds);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
+        try{const k="gg3-"+currentStore.id+"-emps";let s=localStorage.getItem(k);let e=s?JSON.parse(s):await fbGet(k);if(e){setEmps(e);empRef.current=e;}else{setEmps(INIT_EMPS);empRef.current=INIT_EMPS;}}catch(e){}
+    try{const k2="gg3-"+currentStore.id+"-prods";let s=localStorage.getItem(k2);let d=s?JSON.parse(s):await fbGet(k2);if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
+    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions({});if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setDoneSess([]);setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setFinPhys({});}}catch(e){}
+    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let s=localStorage.getItem(k4);let d=s?JSON.parse(s):await fbGet(k4);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
-  })();},[]);
+  })();},[currentStore.id]);
 
-  const saveEmps=e=>{try{localStorage.setItem("gg3-emps",JSON.stringify(e));}catch(e){}fbSave("gg3-emps",e);};
-  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{try{localStorage.setItem("gg3-prods",JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno}));}catch(e){}fbSave("gg3-prods",{b,s,ing,rec,sta,pp,goal:g,tno});};
-  const saveDay=upd=>{try{let c={};try{const s=localStorage.getItem("gg3-day-"+todayStr());if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem("gg3-day-"+todayStr(),JSON.stringify(nd));fbSave("gg3-day-"+todayStr(),nd);}catch(e){}};
+  const saveEmps=e=>{const k="gg3-"+currentStore.id+"-emps";try{localStorage.setItem(k,JSON.stringify(e));}catch(e){}fbSave(k,e);};
+  const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{const k="gg3-"+currentStore.id+"-prods";try{localStorage.setItem(k,JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno}));}catch(e){}fbSave(k,{b,s,ing,rec,sta,pp,goal:g,tno});};
+  const saveDay=upd=>{try{const k="gg3-"+currentStore.id+"-day-"+todayStr();let c={};try{const s=localStorage.getItem(k);if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem(k,JSON.stringify(nd));fbSave(k,nd);}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user]);
 
