@@ -1,1 +1,1 @@
-{"expenses":[{"id":"1788177780073_ors8","label":"TEST Limamoulaye","amount":1111,"emoji":"🛒","time":"14:03:00"}],"audit":[{"id":"1788177780075_atwd","time":"14:03:00","date":"2026-08-31","who":"Patron","role":"patron","action":"DÉPENSE","details":"🛒TEST Limamoulaye 1 111 F"}]}
+{"expenses":[],"audit":[{"id":"1788177780075_atwd","time":"14:03:00","date":"2026-08-31","who":"Patron","role":"patron","action":"DÉPENSE","details":"🛒TEST Limamoulaye 1 111 F"}]}
