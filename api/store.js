@@ -31,16 +31,25 @@ const BASE = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`
       const { key, data } = req.body || {}
       if (!key) return res.status(400).json({ error: 'key required' })
       const k = key.replace(/[^a-zA-Z0-9_-]/g, '_')
+      const url = `${BASE}/${k}.json`
       const content = Buffer.from(JSON.stringify(data)).toString('base64')
-      let sha = null
-      const check = await fetch(`${BASE}/${k}.json`, { headers })
-      if (check.ok) { const ex = await check.json(); sha = ex.sha }
-      const r = await fetch(`${BASE}/${k}.json`, {
-        method: 'PUT', headers,
-        body: JSON.stringify({ message: `update ${k}`, content, ...(sha ? { sha } : {}) })
-      })
-      if (!r.ok) { const e = await r.json(); return res.status(500).json({ error: e.message }) }
-      return res.status(200).json({ ok: true })
+      let lastErr = null
+      for (let attempt = 0; attempt < 5; attempt++) {
+        let sha = null
+        const check = await fetch(url, { headers })
+        if (check.ok) { const ex = await check.json(); sha = ex.sha }
+        const r = await fetch(url, {
+          method: 'PUT', headers,
+          body: JSON.stringify({ message: `update ${k}`, content, ...(sha ? { sha } : {}) })
+        })
+        if (r.ok) return res.status(200).json({ ok: true })
+        const e = await r.json().catch(()=>({}))
+        lastErr = e
+        const isConflict = r.status === 409 || (r.status === 422 && /sha/i.test(e.message||''))
+        if (!isConflict) return res.status(500).json({ error: e.message || 'write failed' })
+        await new Promise(r2=>setTimeout(r2, 150*(attempt+1)+Math.random()*150))
+      }
+      return res.status(500).json({ error: (lastErr&&lastErr.message) || 'write failed after retries' })
     }
   } catch (e) { return res.status(500).json({ error: e.message }) }
   return res.status(405).end()
