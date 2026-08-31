@@ -171,6 +171,8 @@ export default function App(){
   const [lastAct,setLastAct]=useState(Date.now());
   const [toast,setToast]=useState(null);
   const chatRef=useRef(null);
+  const recognitionRef=useRef(null);
+  const [listening,setListening]=useState(false);
 
   useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
   const touch=()=>setLastAct(Date.now());
@@ -320,6 +322,16 @@ export default function App(){
     catch(e){setAiMessages(prev=>[...prev,{role:"assistant",content:"❌ Erreur de connexion."}]);}
     setAiLoading(false);
     setTimeout(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},100);
+  };
+  const startVoice=()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){showToast("🎤 Dictée vocale non supportée sur ce navigateur",S.red);return;}
+    if(listening){recognitionRef.current?.stop();return;}
+    const rec=new SR();rec.lang="fr-FR";rec.interimResults=true;rec.continuous=false;
+    rec.onresult=(e)=>{let txt="";for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript;setAiInput(txt);};
+    rec.onend=()=>setListening(false);
+    rec.onerror=()=>setListening(false);
+    recognitionRef.current=rec;rec.start();setListening(true);
   };
   const generateInsight=async()=>{setInsightLoading(true);const ctx=buildCtx();const txt=await callAI(ctx,"3 insights clés du jour en bullet points courts avec emoji. Max 2 lignes chacun.");setAiInsight(txt);setInsightLoading(false);};
 
@@ -628,7 +640,7 @@ export default function App(){
           ))}
           {aiLoading&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{background:S.card2,borderRadius:12,padding:"10px 14px",fontSize:12,color:S.muted}}>⏳ Analyse...</div></div>}
         </div>
-        <div style={{display:"flex",gap:8}}><input value={aiInput} onChange={e=>setAiInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendAiMessage()} placeholder="Posez votre question..." style={{...Inp(),fontSize:13}}/><button onClick={sendAiMessage} disabled={aiLoading||!aiInput.trim()} style={{...Btn(S.purple,"#fff"),padding:"10px 14px",fontSize:18,opacity:aiLoading||!aiInput.trim()?0.5:1}}>▶</button></div>
+        <div style={{display:"flex",gap:8}}><button onClick={startVoice} style={{...Btn(listening?S.red:S.card2,listening?"#fff":S.muted),padding:"10px 14px",fontSize:16,border:listening?"none":`1px solid ${S.border}`}}>{listening?"🔴":"🎤"}</button><input value={aiInput} onChange={e=>setAiInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendAiMessage()} placeholder="Posez votre question..." style={{...Inp(),fontSize:13}}/><button onClick={sendAiMessage} disabled={aiLoading||!aiInput.trim()} style={{...Btn(S.purple,"#fff"),padding:"10px 14px",fontSize:18,opacity:aiLoading||!aiInput.trim()?0.5:1}}>▶</button></div>
         <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
           {["🔍 Analyse les pertes","🛒 Courses pour 100 crêpes","💡 Comment augmenter le CA","📈 Meilleur produit à pousser"].map(q=><button key={q} onClick={()=>setAiInput(q)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:20,padding:"5px 10px",cursor:"pointer",fontSize:10}}>{q}</button>)}
         </div>
