@@ -54,21 +54,71 @@ function PinPad({onConfirm,error}){
   </div>);
 }
 
+// ══════════════════ IMPRESSION ══════════════════
+// Le mode imprimante est un réglage LOCAL au poste (localStorage), comme
+// "gg3-last-store" : chaque boutique/PC a son propre branchement.
+const PRINTER_KEY="gg3-printer-mode";
+const PRINT_SERVER_URL=(import.meta.env.VITE_PRINT_BRIDGE_URL||"http://localhost:3001").replace(/\/+$/,"");
+const PRINTER_MODES=[
+  {id:"usb",emoji:"🔌",title:"USB",short:"USB",desc:"Imprimante branchée directement sur ce poste. Passe par le pilote d'impression Windows."},
+  {id:"network",emoji:"🌐",title:"Réseau",short:"Réseau",desc:`Imprimante partagée via le serveur local (${PRINT_SERVER_URL}).`}
+];
+const loadPrinterMode=()=>{try{const v=localStorage.getItem(PRINTER_KEY);return PRINTER_MODES.some(m=>m.id===v)?v:null;}catch(e){return null;}};
+const savePrinterMode=m=>{try{localStorage.setItem(PRINTER_KEY,m);}catch(e){}};
+const printerLabel=m=>PRINTER_MODES.find(x=>x.id===m)?.short||"—";
+
+const ticketHtml=({items,total,storeName,employeeName,ticketNo})=>`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:12px;width:250px;margin:0;padding:8px;}h2{text-align:center;font-size:14px;margin:4px 0;}hr{border-top:1px dashed #000;}td{padding:2px 0;}.r{text-align:right;}.total{font-weight:bold;font-size:14px;}</style></head><body>
+<h2>🎮 GAME & GAUFRE</h2><p style="text-align:center;font-size:10px;margin:2px;">${storeName}</p><hr/>
+<p style="font-size:10px;margin:2px;">Ticket #${ticketNo} | ${new Date().toLocaleDateString("fr-FR")} ${timeStr()}</p>
+<p style="font-size:10px;margin:2px;">Employé: ${employeeName}</p><hr/>
+<table width="100%">${items.map(i=>`<tr><td>${i.emoji||""}${i.name} ×${i.qty}</td><td class="r">${Number(i.price*i.qty).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
+<table width="100%"><tr><td class="total">TOTAL</td><td class="r total">${Number(total).toLocaleString("fr-FR")} F</td></tr></table><hr/>
+<p style="text-align:center;font-size:10px;margin:4px;">Merci pour votre visite ! 😊</p>
+<p style="text-align:center;font-size:9px;margin:2px;">Game & Gaufre — Limamoulaye, Guédiawaye</p>
+</body></html>`;
+
+// MODE USB — impression par le pilote Windows (boîte de dialogue d'impression)
+function printViaWindows(t){
+  const w=window.open("","_blank","width=300,height=600");
+  if(!w)throw new Error("Fenêtre d'impression bloquée (autorisez les pop-ups)");
+  w.document.write(ticketHtml(t));
+  w.document.close();w.focus();w.print();w.close();
+}
+// MODE RÉSEAU — impression déléguée au serveur local (server.js → ESC/POS)
+async function printViaNetwork(t){
+  const r=await fetch(`${PRINT_SERVER_URL}/print`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(t)});
+  if(!r.ok)throw new Error(`Serveur d'impression: erreur ${r.status}`);
+}
+
 // TICKET COMPONENT
-function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,onSkip}){
-  const printTicket=()=>{
-    const w=window.open("","_blank","width=300,height=600");
-    w.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:12px;width:250px;margin:0;padding:8px;}h2{text-align:center;font-size:14px;margin:4px 0;}hr{border-top:1px dashed #000;}td{padding:2px 0;}.r{text-align:right;}.total{font-weight:bold;font-size:14px;}</style></head><body>
-    <h2>🎮 GAME & GAUFRE</h2><p style="text-align:center;font-size:10px;margin:2px;">${storeName}</p><hr/>
-    <p style="font-size:10px;margin:2px;">Ticket #${ticketNo} | ${new Date().toLocaleDateString("fr-FR")} ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</p>
-    <p style="font-size:10px;margin:2px;">Employé: ${employeeName}</p><hr/>
-    <table width="100%">${items.map(i=>`<tr><td>${i.emoji||""}${i.name} ×${i.qty}</td><td class="r">${Number(i.price*i.qty).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
-    <table width="100%"><tr><td class="total">TOTAL</td><td class="r total">${Number(total).toLocaleString("fr-FR")} F</td></tr></table><hr/>
-    <p style="text-align:center;font-size:10px;margin:4px;">Merci pour votre visite ! 😊</p>
-    <p style="text-align:center;font-size:9px;margin:2px;">Game & Gaufre — Limamoulaye, Guédiawaye</p>
-    </body></html>`);
-    w.document.close();w.focus();w.print();w.close();
-    onPrint();
+function Ticket({items,total,storeName,employeeName,ticketNo,printerMode,onPrint,onCancel,onSkip,onNotify}){
+  const [printing,setPrinting]=useState(false);
+  const mode=PRINTER_MODES.find(m=>m.id===printerMode)||PRINTER_MODES[0];
+  const printTicket=async()=>{
+    if(printing)return;
+    setPrinting(true);
+    // `cashier`/`date` sont les champs attendus par le pont réseau (server.js) ;
+    // `employeeName`/`ticketNo` ceux du pont USB (print-bridge/server.mjs).
+    const payload={items,total,storeName,employeeName,ticketNo,cashier:employeeName,date:`${new Date().toLocaleDateString("fr-FR")} ${timeStr()}`};
+    try{
+      if(mode.id==="network")await printViaNetwork(payload);
+      else printViaWindows(payload);
+      onPrint();
+    }catch(error){
+      // Ne jamais bloquer l'encaissement : on retombe sur le pilote Windows.
+      if(mode.id==="network"){
+        try{
+          printViaWindows(payload);
+          onNotify?.("⚠️ Réseau injoignable — imprimé via Windows",S.orange);
+          onPrint();
+        }catch(e2){
+          onNotify?.("❌ Impression impossible : "+(e2.message||error.message),S.red);
+        }
+      }else{
+        onNotify?.("❌ Impression impossible : "+(error.message||""),S.red);
+      }
+    }
+    setPrinting(false);
   };
   return(
     <div style={{background:S.card,borderRadius:16,padding:20,border:`2px solid ${S.teal}`,maxWidth:340,width:"100%"}}>
@@ -76,6 +126,7 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,on
         <div style={{fontSize:32}}>🎫</div>
         <div style={{fontSize:15,fontWeight:800,color:S.teal}}>TICKET DE CAISSE</div>
         <div style={{fontSize:10,color:S.muted,marginTop:2}}>N° {ticketNo} — {new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</div>
+        <div style={{fontSize:10,color:S.muted,marginTop:4}}>🖨️ Imprimante : <span style={{color:S.gold,fontWeight:700}}>{mode.emoji} {mode.title}</span></div>
       </div>
       <div style={{background:S.card2,borderRadius:10,padding:12,marginBottom:12,fontFamily:"monospace"}}>
         <div style={{fontSize:11,fontWeight:700,color:S.muted,marginBottom:8,textAlign:"center"}}>🎮 GAME & GAUFRE</div>
@@ -83,13 +134,29 @@ function Ticket({items,total,storeName,employeeName,ticketNo,onPrint,onCancel,on
         <div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`2px dashed ${S.border}`}}><span style={{fontWeight:800,fontSize:14}}>TOTAL</span><span style={{fontWeight:800,fontSize:16,color:S.green}}>{Number(total).toLocaleString("fr-FR")} F</span></div>
       </div>
       <div style={{display:"flex",gap:10}}>
-        <button onClick={onCancel} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
-        <button onClick={printTicket} style={{background:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,fontWeight:700,flex:2}}>🖨️ Imprimer & Valider</button>
+        <button onClick={onCancel} disabled={printing} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>✕ Annuler</button>
+        <button onClick={printTicket} disabled={printing} style={{background:printing?S.card3:S.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px",cursor:printing?"wait":"pointer",fontSize:13,fontWeight:700,flex:2}}>{printing?"⏳ Impression…":"🖨️ Imprimer & Valider"}</button>
       </div>
       <button onClick={onSkip||onCancel} style={{width:"100%",marginTop:8,background:"transparent",border:`1px solid ${S.orange}`,color:S.orange,borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12}}>⚡ Valider sans imprimante</button>
       <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:6}}>Sans ticket = vente enregistrée quand même</div>
     </div>
   );
+}
+
+// PRINTER SELECTOR (écran de config + modal des réglages)
+function PrinterChoice({value,onSelect}){
+  return(<div style={{display:"flex",flexDirection:"column",gap:10,width:"100%"}}>
+    {PRINTER_MODES.map(m=>(
+      <button key={m.id} onClick={()=>onSelect(m.id)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",background:m.id===value?S.card2:S.card,border:`2px solid ${m.id===value?S.gold:S.border}`,borderRadius:10,padding:"14px",cursor:"pointer",color:S.text,textAlign:"left"}}>
+        <span style={{fontSize:30}}>{m.emoji}</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:700,color:m.id===value?S.gold:S.text}}>Imprimante {m.title}</div>
+          <div style={{fontSize:10,color:S.muted,marginTop:3,lineHeight:1.5}}>{m.desc}</div>
+        </div>
+        {m.id===value&&<span style={{color:S.gold,fontSize:18}}>✓</span>}
+      </button>
+    ))}
+  </div>);
 }
 
 export default function App(){
@@ -179,6 +246,8 @@ export default function App(){
   const [newRec,setNewRec]=useState({name:"",emoji:"🍽️",category:"Autre",snackId:"",ingredients:[]});
   const [storeModal,setStoreModal]=useState(false);
   const [storeConfirmed,setStoreConfirmed]=useState(false);
+  const [printerMode,setPrinterMode]=useState(loadPrinterMode);
+  const [printerModal,setPrinterModal]=useState(false);
   const [tick,setTick]=useState(0);
   const [lastAct,setLastAct]=useState(Date.now());
   const [toast,setToast]=useState(null);
@@ -204,6 +273,15 @@ export default function App(){
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user,currentStore.id]);
   const loadGlobalView=async()=>{setGlobalLoading(true);try{const ds=todayStr();const rows=await Promise.all(STORES.map(async st=>{const[day,prods]=await Promise.all([fbGet("gg3-"+st.id+"-day-"+ds),fbGet("gg3-"+st.id+"-prods")]);const sal=(day&&day.sales)||[];const exp=(day&&day.expenses)||[];const pc=(day&&day.pc)||0;const pp=(prods&&prods.pp)||50;const ca=sal.reduce((s,x)=>s+x.total,0)+pc*pp;const food=sal.filter(x=>x.items[0]?.cat!=="gaming").reduce((s,x)=>s+x.total,0);const gaming=sal.filter(x=>x.items[0]?.cat==="gaming").reduce((s,x)=>s+x.total,0);const dep=exp.reduce((s,x)=>s+x.amount,0);return{id:st.id,name:st.name,emoji:st.emoji,ca,food,gaming,dep,net:ca-dep,ventes:sal.length};}));setGlobalData(rows);}catch(e){showToast("Erreur chargement",S.red);}setGlobalLoading(false);};
+
+  // PRINTER CONFIG
+  const choosePrinter=mode=>{
+    touch();
+    const first=!printerMode;
+    setPrinterMode(mode);savePrinterMode(mode);setPrinterModal(false);
+    if(user&&!first)addAudit("IMPRIMANTE",`Mode ${printerLabel(mode)}`);
+    if(!first)showToast(`🖨️ Imprimante ${printerLabel(mode)}`);
+  };
 
   // AUTH
   const tryLogin=code=>{const emp=empRef.current.find(e=>e.pin===code);if(emp){setUser(emp);setTab("home");setPinErr(false);}else{setPinErr(true);setTimeout(()=>setPinErr(false),1200);}};
@@ -376,6 +454,21 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
   const Inp=(w="100%")=>({width:w,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"9px 12px",fontSize:14,outline:"none",boxSizing:"border-box"});
   const Card=(col=S.border)=>({background:S.card,borderRadius:12,padding:14,border:`1px solid ${col}`,marginBottom:12});
 
+  // ══════════════════ CONFIG IMPRIMANTE (1er démarrage) ══════════════════
+  if(!printerMode)return(
+    <div style={{background:S.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"system-ui,sans-serif",color:S.text}}>
+      <div style={{width:"100%",maxWidth:380}}>
+        <div style={{textAlign:"center",marginBottom:22}}>
+          <div style={{fontSize:48,marginBottom:6}}>🖨️</div>
+          <div style={{fontSize:20,fontWeight:800,color:S.gold}}>CONFIGURATION</div>
+          <div style={{fontSize:12,color:S.muted,marginTop:6,lineHeight:1.6}}>Comment l'imprimante de tickets est-elle<br/>connectée à ce poste ?</div>
+        </div>
+        <PrinterChoice value={printerMode} onSelect={choosePrinter}/>
+        <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:18,lineHeight:1.6}}>Réglage enregistré sur ce poste uniquement.<br/>Modifiable ensuite dans 📊 Bilan → Changer d'imprimante.</div>
+      </div>
+    </div>
+  );
+
   // ══════════════════ LOCK SCREEN ══════════════════
   if(!user)return(
     <div style={{background:S.bg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -397,7 +490,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
       {pinModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:400,gap:20}}><div style={{color:S.gold,fontWeight:800,fontSize:16}}>🔒 AUTORISATION REQUISE</div><PinPad onConfirm={tryPatronModal} error={pinMErr}/><button onClick={()=>setPinModal(null)} style={{...Btn(S.card2,S.muted),border:`1px solid ${S.border}`}}>Annuler</button></div>}
 
       {/* TICKET MODAL */}
-      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)} onSkip={()=>{confirmSaleAfterPrint();addAudit("SANS TICKET","vente validée sans impression");}}/></div>}
+      {pendingTicket&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}><Ticket items={pendingTicket.items} total={pendingTicket.total} storeName={currentStore.name} employeeName={user.name} ticketNo={ticketNo} printerMode={printerMode} onNotify={showToast} onPrint={confirmSaleAfterPrint} onCancel={()=>setPendingTicket(null)} onSkip={()=>{confirmSaleAfterPrint();addAudit("SANS TICKET","vente validée sans impression");}}/></div>}
 
       {/* HEADER */}
       <div style={{background:S.card,padding:"11px 16px",borderBottom:`3px solid ${S.gold}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
@@ -694,9 +787,11 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           <button onClick={()=>setWhatsModal(true)} style={{...Btn("#25D366"),flex:1,fontSize:12}}>📱 WhatsApp</button>
           {isPatron&&<button onClick={()=>setEmpModal(true)} style={{...Btn(S.card2,S.gold),border:`1px solid ${S.gold}`,flex:1,fontSize:12}}>👥 Équipe</button>}
           {isManager&&<button onClick={()=>setExpModal(true)} style={{...Btn(S.orange,"#fff"),flex:1,fontSize:12}}>💸 Dépense</button>}
+          <button onClick={()=>{touch();setPrinterModal(true);}} style={{...Btn(S.card2,S.teal),border:`1px solid ${S.teal}`,flex:1,fontSize:12,whiteSpace:"nowrap"}}>🖨️ Changer d'imprimante</button>
                     <button onClick={()=>{const lossDetails=lossAlerts.map(p=>({emoji:p.emoji,name:p.name,missing:lossQty(p.id),value:lossQty(p.id)*p.price}));exportClosingPDF({storeName:currentStore.name,dateStr:new Date().toLocaleDateString("fr-FR"),employeeName:user.name,totalCA,totalFood,totalGaming,totalExpenses,netProfit,cashTotal,cashDiff,ticketCount:ticketNo-1001,top5,lossAlerts:lossDetails,sales,expenses});}} style={{...Btn(S.blue),flex:1,fontSize:12}}>📄 PDF</button>
                     <button onClick={()=>{const lossDetails=lossAlerts.map(p=>({emoji:p.emoji,name:p.name,missing:lossQty(p.id),value:lossQty(p.id)*p.price}));exportClosingExcel({storeName:currentStore.name,dateStr:new Date().toLocaleDateString("fr-FR"),employeeName:user.name,totalCA,totalFood,totalGaming,totalExpenses,netProfit,cashTotal,cashDiff,ticketCount:ticketNo-1001,top5,lossAlerts:lossDetails,sales,expenses});}} style={{...Btn(S.teal),flex:1,fontSize:12}}>📊 Excel</button>
         </div>
+        <div style={{fontSize:10,color:S.muted,marginBottom:14,marginTop:-6}}>Imprimante active : <span style={{color:S.teal,fontWeight:700}}>{printerLabel(printerMode)}</span></div>
         {isManager&&expenses.length>0&&<div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontWeight:700,color:S.orange,fontSize:12}}>💸 DÉPENSES <span style={{fontWeight:400,color:S.muted,fontSize:10}}>(charges: loyer, élec, personnel...)</span></div></div>{expenses.map(e=><div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><div>{e.emoji} {e.label}</div><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:S.red,fontWeight:700}}>{fmt(e.amount)}</span>{isManager&&<button onClick={()=>{const ne=expenses.filter(x=>x.id!==e.id);setExpenses(ne);saveDay({expenses:ne});}} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:13}}>🗑</button>}</div></div>)}<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}><span>Total</span><span style={{color:S.red}}>{fmt(totalExpenses)}</span></div></div>}{purchases.length>0&&<div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontWeight:700,color:S.green,fontSize:12}}>🛒 ACHATS <span style={{fontWeight:400,color:S.muted,fontSize:10}}>(matières: nourriture, boissons...)</span></div></div>{purchases.map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${S.border}`,fontSize:12}}><div>{p.ingEmoji} {p.ingName} {fmtQ(p.qty,p.unit)}</div><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:S.green,fontWeight:700}}>{fmt(p.cost)}</span></div></div>)}<div style={{display:"flex",justifyContent:"space-between",marginTop:8,paddingTop:8,borderTop:`1px solid ${S.border}`,fontWeight:700}}><span>Total</span><span style={{color:S.green}}>{fmt(totalPurchasesCost)}</span></div></div>}
         {isManager&&<>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
@@ -798,6 +893,16 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
       </div>}
 
       {/* ══ MODALS ══ */}
+
+      {/* Printer selector */}
+      {printerModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+        <div style={{background:S.card,borderRadius:16,padding:24,width:"100%",maxWidth:340,border:`2px solid ${S.teal}`}}>
+          <div style={{fontWeight:800,fontSize:15,color:S.teal,marginBottom:4}}>🖨️ CHANGER D'IMPRIMANTE</div>
+          <div style={{fontSize:11,color:S.muted,marginBottom:16}}>Mode actuel : <span style={{color:S.teal,fontWeight:700}}>{printerLabel(printerMode)}</span></div>
+          <PrinterChoice value={printerMode} onSelect={choosePrinter}/>
+          <button onClick={()=>setPrinterModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,width:"100%",marginTop:12}}>Fermer</button>
+        </div>
+      </div>}
 
       {/* Store selector */}
       {storeModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
