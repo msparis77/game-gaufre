@@ -2,7 +2,7 @@ import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
-import { fcfa, faireLigne, prixUnitaire, estBoisson } from "./shared/prix.js";
+import { fcfa, faireLigne, prixUnitaire, estBoisson, aChoixPain, painsDuMenu } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
@@ -128,9 +128,12 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
   const [boissonId, setBoissonId] = useState(o.boissonsFormule[0]?.id);
   const [fromage, setFromage] = useState(false);
   const [sauce, setSauce] = useState("");
+  const [pain, setPain] = useState("");
   const [qte, setQte] = useState(1);
-  const choix = { formule, boissonId, fromage, sauce };
+  const choix = { formule, boissonId, fromage, sauce, pain };
   const pu = prixUnitaire(menu, article, choix);
+  const choixPain = aChoixPain(menu, article);
+  const manquePain = choixPain && !pain;
   const manqueSauce = article.omelette && !sauce;
   return (
     <div class="voile" onClick={fermer}>
@@ -150,6 +153,17 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
                 <button class={!formule ? "on" : ""} onClick={() => setFormule(false)}>Sandwich seul<br /><small>−{o.remiseSansBoisson} F</small></button>
               </div>
             </div>
+            {choixPain && (
+              <div class="groupe">
+                <div class="label">Ton pain <em>(obligatoire)</em></div>
+                {painsDuMenu(menu).map((p) => (
+                  <label key={p} class="radio">
+                    <input type="radio" name="pain" checked={pain === p} onChange={() => setPain(p)} />
+                    <span>{p === "Baguette" ? "🥖 " : "🍞 "}{p}</span>
+                  </label>
+                ))}
+              </div>
+            )}
             {formule && (
               <div class="groupe">
                 <div class="label">Ta boisson</div>
@@ -188,9 +202,9 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
           <b>{qte}</b>
           <button onClick={() => setQte(Math.min(10, qte + 1))} aria-label="Plus">+</button>
         </div>
-        <button class="gros" disabled={manqueSauce || pu == null}
+        <button class="gros" disabled={manquePain || manqueSauce || pu == null}
           onClick={() => ajouter(faireLigne(menu, article, choix, qte))}>
-          {manqueSauce ? "Choisis ta sauce" : `Ajouter · ${fcfa(pu * qte)}`}
+          {manquePain ? "Choisis ton pain" : manqueSauce ? "Choisis ta sauce" : `Ajouter · ${fcfa(pu * qte)}`}
         </button>
       </div>
     </div>

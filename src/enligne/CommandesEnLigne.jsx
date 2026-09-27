@@ -261,6 +261,7 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
             <input type="number" value={boisson ? a.prix : a.prixFormule} onChange={(e) => majArticle(a.id, boisson ? "prix" : "prixFormule", nombre(e.target.value))} style={Inp(90)} />
             {!boisson && <span style={{ fontSize: 11, color: S.muted }}>seul : {fcfa(a.prixFormule - m.options.remiseSansBoisson)}</span>}
             {cat.id !== "boissons" && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!!a.omelette} onChange={(e) => majArticle(a.id, "omelette", e.target.checked)} /> omelette (sauce + fromage)</label>}
+            {cat.id !== "boissons" && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!a.sansChoixPain} onChange={(e) => majArticle(a.id, "sansChoixPain", !e.target.checked)} /> choix du pain</label>}
             <label style={{ fontSize: 11, color: a.dispo !== false ? S.green : S.red }}><input type="checkbox" checked={a.dispo !== false} onChange={(e) => majArticle(a.id, "dispo", e.target.checked)} /> dispo</label>
             <button onClick={() => window.confirm(`Supprimer « ${a.nom} » ?`) && maj((n) => { n.articles = n.articles.filter((x) => x.id !== a.id); })} style={{ ...Btn(S.card3, S.red), padding: "4px 8px", fontSize: 11 }}>Supprimer</button>
           </div>
@@ -286,6 +287,8 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
       <button onClick={() => maj((n) => { n.options.boissonsFormule.push({ id: nouvelId("f"), nom: "Nouvelle boisson", sup: 0 }); })} style={{ ...Btn(S.card3, S.text), fontSize: 11 }}>+ Boisson de formule</button>
       <div style={{ fontSize: 12, fontWeight: 700, margin: "10px 0 4px" }}>Sauces des omelettes (séparées par des virgules)</div>
       <input value={m.options.sauces.join(", ")} onChange={(e) => maj((n) => { n.options.sauces = e.target.value.split(",").map((x) => x.trim()).filter(Boolean); })} style={Inp()} />
+      <div style={{ fontSize: 12, fontWeight: 700, margin: "10px 0 4px" }}>Pains au choix (séparés par des virgules)</div>
+      <input value={(m.options.pains || []).join(", ")} onChange={(e) => maj((n) => { n.options.pains = e.target.value.split(",").map((x) => x.trim()).filter(Boolean); })} placeholder="Baguette, Pain local brioché" style={Inp()} />
     </div>
 
     <div style={{ position: "sticky", bottom: 64, display: "flex", gap: 8 }}>
