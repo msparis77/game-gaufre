@@ -62,14 +62,14 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
       const liste = dispo.filter((a) => a.categorie === cat.id);
       if (!liste.length) return null;
       return <div key={cat.id}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()}</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()} · <span style={{ color: S.gold }}>FORMULE = SANDWICH + BOISSON</span></div>
         <div style={grille}>{liste.map((a) => (
           <button key={a.id} style={{ ...tuile, border: `1px solid ${art && art.id === a.id ? S.gold : S.border}` }}
             onClick={() => setChoix({ article: a, formule: true, boissonId: (o.boissonsFormule || [])[0]?.id || "", fromage: false, sauce: "" })}>
             <div style={{ fontSize: 26 }}>{a.emoji}</div>
             <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom.replace(/^Sandwich /, "")}</div>
+            <div style={{ display: "inline-block", background: S.gold, color: S.bg, fontSize: 10, fontWeight: 900, borderRadius: 5, padding: "1px 6px", margin: "2px 0" }}>🥤 FORMULE</div>
             <div style={{ fontSize: 13, fontWeight: 800, color: S.gold }}>{fcfa(a.prixFormule)}</div>
-            <div style={{ fontSize: 10, color: S.muted }}>formule</div>
           </button>))}</div>
       </div>;
     })}
@@ -81,7 +81,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
           <button onClick={() => setChoix(null)} style={{ background: "transparent", border: "none", color: S.muted, fontSize: 22, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button style={{ ...puce(c.formule), flex: 1 }} onClick={() => setChoix({ ...c, formule: true })}>🥤 Formule (avec boisson)</button>
+          <button style={{ ...puce(c.formule), flex: 1 }} onClick={() => setChoix({ ...c, formule: true })}>🥤 Formule (sandwich + boisson)</button>
           <button style={{ ...puce(!c.formule), flex: 1 }} onClick={() => setChoix({ ...c, formule: false })}>Seul · {fcfa(art.prixFormule - (o.remiseSansBoisson || 0))}</button>
         </div>
         {c.formule && <>

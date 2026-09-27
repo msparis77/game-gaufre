@@ -96,7 +96,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
         return (
           <section key={c.id} id={"cat-" + c.id} class="section">
             <h2>{c.emoji} {c.nom}</h2>
-            {c.id !== "boissons" && <p class="aide">Formule = sandwich + café Touba ou thé. Sandwich seul : {menu.options.remiseSansBoisson} F de moins.</p>}
+            {c.id !== "boissons" && <p class="formule-info"><span class="tag-formule">🥤 FORMULE</span> = sandwich + boisson (café Touba ou thé inclus). Sandwich seul : {menu.options.remiseSansBoisson} F de moins.</p>}
             {liste.map((a) => (
               <button key={a.id} class="carte" onClick={() => setChoisi(a)}>
                 <Photo article={a} />
@@ -105,7 +105,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
                   {a.nomWolof && <div class="wolof">{a.nomWolof}</div>}
                   {a.description && <div class="desc">{a.description}</div>}
                   <div class="prix">
-                    {estBoisson(a) ? fcfa(a.prix) : <>Formule {fcfa(a.prixFormule)} <span>· seul {fcfa(a.prixFormule - menu.options.remiseSansBoisson)}</span></>}
+                    {estBoisson(a) ? fcfa(a.prix) : <><span class="tag-formule">🥤 FORMULE</span> {fcfa(a.prixFormule)} <span>· seul {fcfa(a.prixFormule - menu.options.remiseSansBoisson)}</span></>}
                   </div>
                 </div>
                 <span class="plus" aria-hidden="true">+</span>
@@ -146,7 +146,7 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
             <div class="groupe">
               <div class="label">Comment tu le veux ?</div>
               <div class="choix2">
-                <button class={formule ? "on" : ""} onClick={() => setFormule(true)}>Formule<br /><small>avec boisson</small></button>
+                <button class={formule ? "on" : ""} onClick={() => setFormule(true)}>🥤 Formule<br /><small>sandwich + boisson</small></button>
                 <button class={!formule ? "on" : ""} onClick={() => setFormule(false)}>Sandwich seul<br /><small>−{o.remiseSansBoisson} F</small></button>
               </div>
             </div>

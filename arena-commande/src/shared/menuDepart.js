@@ -28,7 +28,7 @@ export const MENU_DEPART = {
     sauces: ["Mayo", "Ketchup", "Sauce piquante"],
   },
   articles: [
-    { id: "essentiel", categorie: "sandwichs", nom: "Sandwich Essentiel", nomWolof: "Ñebbe", description: "Niébé mijoté, oignons, sauce maison", prixFormule: 500, omelette: false, emoji: "🫘", photo: "", dispo: true },
+    { id: "essentiel", categorie: "sandwichs", nom: "Sandwich Essentiel", nomWolof: "Ñebbe", description: "Haricots mijotés, oignons, sauce maison", prixFormule: 500, omelette: false, emoji: "🫘", photo: "", dispo: true },
     { id: "gourmand", categorie: "sandwichs", nom: "Sandwich Gourmand", nomWolof: "Neex", description: "Beurre, pâte chocolat-noisette", prixFormule: 700, omelette: false, emoji: "🍫", photo: "", dispo: true },
     { id: "ocean", categorie: "sandwichs", nom: "Sandwich Océan", nomWolof: "Géej", description: "Thon, pommes de terre, oignons, mayo", prixFormule: 850, omelette: false, emoji: "🐟", photo: "", dispo: true },
     { id: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Saucisson de bœuf pimentaise", nomWolof: "", description: "Saucisson de bœuf, pommes de terre, petits pois, poulet, sauce pimentée", prixFormule: 1150, omelette: false, emoji: "🌶️", photo: "", dispo: true },
