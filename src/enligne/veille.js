@@ -3,7 +3,7 @@
 // - écoute les commandes en temps réel
 // - sonne à chaque nouvelle commande (et toutes les 30 s tant qu'il en reste en « reçue »)
 // - imprime automatiquement le ticket cuisine via le print bridge (port 3001)
-import { collection, query, where, orderBy, onSnapshot, doc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, surConnexion, firebaseConfigure } from "./firebaseCaisse.js";
 import { hhmm } from "../../arena-commande/src/shared/creneaux.js";
 
@@ -256,7 +256,29 @@ export function demarrerVeille() {
     etat.connecte = u;
     etat.pret = true;
     arreter();
-    if (u) ecouter();
+    if (u) { ecouter(); mettreAJourMenu().catch(() => {}); }
     prevenir();
   });
+}
+
+// Mises à jour du menu en ligne demandées par le patron, appliquées une seule
+// fois par la caisse connectée (le site ne peut pas modifier le menu) :
+// v2 : « Niébé » → « Haricots », catégories « Formules sandwich » / « Formules omelette ».
+export function migrerMenu(m) {
+  if (!m || (m.version || 1) >= 2) return null;
+  const n = JSON.parse(JSON.stringify(m));
+  n.version = 2;
+  const noms = { "Sandwichs": "Formules sandwich", "Sandwichs omelette": "Formules omelette" };
+  (n.categories || []).forEach((c) => { if (noms[c.nom]) c.nom = noms[c.nom]; });
+  (n.articles || []).forEach((a) => {
+    for (const k of ["nom", "description"]) if (typeof a[k] === "string")
+      a[k] = a[k].replace(/Niébé mijoté/g, "Haricots mijotés").replace(/Niébé/g, "Haricots").replace(/niébé/g, "haricots");
+  });
+  return n;
+}
+async function mettreAJourMenu() {
+  const ref = doc(db, "config/menu");
+  const s = await getDoc(ref);
+  const n = s.exists() ? migrerMenu(s.data()) : null;
+  if (n) await updateDoc(ref, { version: n.version, categories: n.categories, articles: n.articles });
 }

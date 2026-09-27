@@ -3,11 +3,11 @@
 // puis modifié uniquement depuis la caisse. Ce fichier ne sert plus ensuite.
 
 export const MENU_DEPART = {
-  version: 1,
+  version: 2,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
-    { id: "sandwichs", nom: "Sandwichs", emoji: "🥖" },
-    { id: "omelettes", nom: "Sandwichs omelette", emoji: "🍳" },
+    { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
+    { id: "omelettes", nom: "Formules omelette", emoji: "🍳" },
     { id: "boissons", nom: "Boissons", emoji: "☕" },
   ],
   options: {
