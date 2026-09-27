@@ -12,7 +12,8 @@ Preact + Vite + Firebase (Firestore + connexion anonyme). Relié à la caisse
 ## Déploiement Vercel
 
 Nouveau projet Vercel sur ce dépôt, **Root Directory = `arena-commande`**,
-avec les variables de `.env.example` (clés Firebase Web, non secrètes).
+sans variable d'environnement (les clés Web du projet `game-gaufre-dakar`
+sont dans `src/firebase.js`, elles ne sont pas secrètes).
 
 ## Tester en local
 
