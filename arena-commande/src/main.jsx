@@ -1,11 +1,12 @@
 import { render } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
 import { fcfa, faireLigne, prixUnitaire, estBoisson } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
+import { activerAlertes, alerterPrete, notificationsPossibles } from "./alerte.js";
 import "./style.css";
 
 const fs = { doc, collection, runTransaction, serverTimestamp, Timestamp };
@@ -227,6 +228,7 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
     setEnvoi(true);
     try {
       ecrire("ac-prenom", prenom.trim()); ecrire("ac-tel", tel);
+      activerAlertes(); // son + notification pour « Prête » (profite du geste de l'élève)
       const u = await utilisateur();
       const r = await passerCommande(fs, db, u.uid, { prenom, telephone: telNet, lignes: panier, total, creneau });
       ajouterCommande(r);
@@ -296,6 +298,14 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
 function PageSuivi({ id }) {
   const [c, setC] = useState(null);
   const [erreur, setErreur] = useState(false);
+  const [alerte, setAlerte] = useState(() => notificationsPossibles() && Notification.permission === "granted" ? "granted" : "");
+  const avant = useRef(null);
+  // Sonnerie + vibration + notification quand la boutique passe la commande à « Prête »
+  useEffect(() => {
+    if (!c) return;
+    if (c.statut === "prete" && avant.current && avant.current !== "prete") alerterPrete(c);
+    avant.current = c.statut;
+  }, [c && c.statut]);
   useEffect(() => {
     let stop = () => {};
     utilisateur().then(() => {
@@ -322,6 +332,9 @@ function PageSuivi({ id }) {
         <b>{c.codeRetrait}</b>
         <small>Donne ce code au comptoir pour récupérer ta commande. Ne le partage avec personne.</small>
       </div>}
+      {(c.statut === "recue" || c.statut === "preparation") && (alerte
+        ? <p class="alerte-ok">🔔 Ton téléphone sonnera quand ta commande sera prête. Garde cette page ouverte.</p>
+        : <button class="gros alerte" onClick={async () => setAlerte(await activerAlertes())}>🔔 Me prévenir quand c'est prêt</button>)}
       <p class="aide centre">Montre ton numéro {c.codeRetrait ? "et ton code secret " : ""}au comptoir. Garde cette page ouverte : elle se met à jour toute seule.</p>
       {annulee ? <div class="erreur">Cette commande a été annulée par la boutique.</div> : (
         <ol class="etapes">
