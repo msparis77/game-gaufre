@@ -92,3 +92,6 @@ h2{font-size:20px;font-weight:900;color:var(--vert);margin:20px 0 8px}
 .secret small{font-weight:600}
 .alerte{background:var(--vert);color:var(--creme)}
 .alerte-ok{text-align:center;font-weight:700;color:var(--vert);background:#fff;border-radius:12px;padding:10px;margin:10px 0}
+.prete{display:flex;flex-direction:column;gap:4px;text-align:center;background:#1faa59;color:#fff;border-radius:20px;padding:16px;margin:0 0 12px;animation:pulse 1.2s ease-in-out 3}
+.prete b{font-size:22px;font-weight:900}
+@keyframes pulse{50%{transform:scale(1.04)}}

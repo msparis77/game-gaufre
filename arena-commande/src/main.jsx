@@ -6,7 +6,7 @@ import { fcfa, faireLigne, prixUnitaire, estBoisson } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
-import { activerAlertes, alerterPrete, notificationsPossibles } from "./alerte.js";
+import { activerAlertes, alerterPrete, notificationsPossibles, enregistrerSW } from "./alerte.js";
 import "./style.css";
 
 const fs = { doc, collection, runTransaction, serverTimestamp, Timestamp };
@@ -311,7 +311,12 @@ function PageSuivi({ id }) {
     utilisateur().then(() => {
       stop = onSnapshot(doc(db, "commandes_en_ligne", id), (s) => setC(s.exists() ? s.data() : false), () => setErreur(true));
     }).catch(() => setErreur(true));
-    return () => stop();
+    // Quand l'élève revient sur la page (écran rallumé, retour d'une autre appli),
+    // on relit la commande tout de suite : le téléphone a pu mettre la page en pause.
+    const relire = () => { if (document.visibilityState === "visible") getDoc(doc(db, "commandes_en_ligne", id)).then((s) => s.exists() && setC(s.data())).catch(() => {}); };
+    document.addEventListener("visibilitychange", relire);
+    window.addEventListener("focus", relire);
+    return () => { stop(); document.removeEventListener("visibilitychange", relire); window.removeEventListener("focus", relire); };
   }, [id]);
   if (erreur) return <main class="vide"><p>Impossible d'afficher cette commande sur ce téléphone.</p><a class="gros" href="#/">Menu</a></main>;
   if (c === null) return <main class="vide"><p>Chargement…</p></main>;
@@ -321,6 +326,10 @@ function PageSuivi({ id }) {
   const idx = STATUTS.findIndex((s) => s.id === c.statut);
   return (
     <main class="suivi">
+      {c.statut === "prete" && <div class="prete">
+        <b>✅ {c.prenom}, ta commande est prête !</b>
+        <span>Tu peux venir la retirer au comptoir{c.codeRetrait ? " avec ton code secret" : ""}.</span>
+      </div>}
       <p class="merci">Merci {c.prenom} !</p>
       <div class="numero">
         <small>Ton numéro de commande</small>
@@ -402,4 +411,5 @@ function App() {
   );
 }
 
+enregistrerSW();
 render(<App />, document.getElementById("app"));

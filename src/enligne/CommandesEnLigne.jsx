@@ -158,20 +158,11 @@ function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, j
     </div>
     {!finie && <div style={{ display: "flex", gap: 6 }}>
       {suivant && <button disabled={occupe === c.id} onClick={() => changer(c, suivant.statut)} style={{ ...Btn(STATUTS[suivant.statut].couleur === "#555" ? S.gold : STATUTS[suivant.statut].couleur), flex: 3 }}>{occupe === c.id ? "…" : suivant.label}</button>}
-      <a href={lienWhatsApp(c)} target="_blank" rel="noopener" title="Prévenir l'élève sur WhatsApp" style={{ ...Btn(c.statut === "prete" ? "#25D366" : S.card3, c.statut === "prete" ? "#fff" : S.text), flex: c.statut === "prete" ? 2 : 1, textAlign: "center", textDecoration: "none" }}>📲{c.statut === "prete" ? " WhatsApp" : ""}</a>
       <button onClick={() => imprimer(c, { force: true })} title="Réimprimer via le print bridge" style={{ ...Btn(S.card3, S.text), flex: 1 }}>🖨️</button>
       <button onClick={() => imprimerNavigateur(c)} title="Imprimer avec la fenêtre du navigateur" style={{ ...Btn(S.card3, S.text), flex: 1 }}>🪟</button>
       <button onClick={() => annuler(c)} title="Annuler" style={{ ...Btn(S.card3, S.red), flex: 1 }}>✕</button>
     </div>}
   </div>;
-}
-
-// Message WhatsApp prêt à envoyer à l'élève (le caissier n'a plus qu'à appuyer sur Envoyer).
-function lienWhatsApp(c) {
-  const texte = c.statut === "prete"
-    ? `Bonjour ${c.prenom}, ta commande ${c.code} est prête à l'Arena Café !${c.codeRetrait ? ` Ton code de retrait : ${c.codeRetrait}.` : ""} À tout de suite 😊`
-    : `Bonjour ${c.prenom}, c'est l'Arena Café pour ta commande ${c.code}.`;
-  return `https://wa.me/221${c.telephone}?text=${encodeURIComponent(texte)}`;
 }
 
 // ─────────────── Éditeur du menu ───────────────

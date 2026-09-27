@@ -5,6 +5,10 @@ let audio = null;
 export const notificationsPossibles = () => typeof Notification !== "undefined";
 
 // À appeler depuis un appui (le navigateur exige un geste pour le son et les notifications).
+export function enregistrerSW() {
+  try { navigator.serviceWorker?.register("/sw.js").catch(() => {}); } catch (e) {}
+}
+
 export async function activerAlertes() {
   try {
     audio = audio || new (window.AudioContext || window.webkitAudioContext)();
@@ -31,17 +35,16 @@ function sonner() {
 }
 
 export function alerterPrete(c) {
-  const texte = `${c.prenom}, ta commande ${c.code} est prête !` + (c.codeRetrait ? ` Ton code : ${c.codeRetrait}` : "");
+  const titre = `✅ ${c.prenom}, ta commande est prête !`;
+  const texte = `Ta commande ${c.code} t'attend au comptoir de l'Arena Café, tu peux venir la retirer.` + (c.codeRetrait ? ` Ton code secret : ${c.codeRetrait}` : "");
   sonner();
   try { navigator.vibrate && navigator.vibrate([400, 200, 400, 200, 800]); } catch (e) {}
   document.title = "✅ Commande prête ! · Arena Café";
-  if (notificationsPossibles() && Notification.permission === "granted") {
-    try {
-      const n = new Notification("✅ Ta commande est prête !", { body: texte, icon: "/icon-192.png", tag: "prete-" + c.code, requireInteraction: true });
-      n.onclick = () => { window.focus(); n.close(); };
-    } catch (e) {
-      // Android : les notifications passent par le service worker s'il y en a un
-      navigator.serviceWorker?.ready?.then((r) => r.showNotification("✅ Ta commande est prête !", { body: texte, icon: "/icon-192.png", tag: "prete-" + c.code })).catch(() => {});
-    }
-  }
+  if (!notificationsPossibles() || Notification.permission !== "granted") return;
+  const options = { body: texte, icon: "/icon-192.png", tag: "prete-" + c.code, requireInteraction: true, vibrate: [400, 200, 400] };
+  // Par le service worker d'abord (obligatoire sur Android), sinon directement.
+  const direct = () => { try { const n = new Notification(titre, options); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {} };
+  if (navigator.serviceWorker?.getRegistration) {
+    navigator.serviceWorker.getRegistration().then((r) => (r ? r.showNotification(titre, options) : direct())).catch(direct);
+  } else direct();
 }
