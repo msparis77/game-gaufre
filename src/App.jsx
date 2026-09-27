@@ -29,7 +29,7 @@ const INIT_EXP_CATS=[{id:"c1",emoji:"⚡",label:"Électricité"},{id:"c2",emoji:
 const GUIDE_SECTIONS=[
   {id:"g1",emoji:"🔐",title:"Se connecter",color:"#FFD600",steps:[{icon:"1️⃣",text:"Sur l'écran de verrouillage, entrez votre code PIN à 4 chiffres."},{icon:"2️⃣",text:"Le PATRON a accès à tout. L'EMPLOYÉ peut encaisser et gérer le gaming."},{icon:"⚠️",text:"L'outil se verrouille automatiquement après 5 minutes d'inactivité."},{icon:"💡",text:"En cas d'oubli de PIN, demandez au patron de le modifier dans Bilan → Employés."}]},
   {id:"g2",emoji:"🛒",title:"Encaisser une vente",color:"#00E676",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🛒 Caisse."},{icon:"2️⃣",text:"Appuyez sur un produit pour l'ajouter au panier. Appuyez plusieurs fois pour augmenter la quantité."},{icon:"3️⃣",text:"Vérifiez le panier, puis appuyez sur ✓ Encaisser."},{icon:"🖨️",text:"Un TICKET s'affiche. Vous DEVEZ appuyer sur Imprimer avant de valider la vente."},{icon:"⚠️",text:"Ne jamais valider sans ticket ! Toute vente est enregistrée avec votre nom."}]},
-  {id:"g3",emoji:"🎮",title:"Gérer le Gaming",color:"#00B0FF",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🎮 Gaming."},{icon:"2️⃣",text:"Appuyez sur ▶ 1J (1 joueur) ou ▶ 2J (2 joueurs) sur la console concernée."},{icon:"3️⃣",text:"Le chronomètre démarre. La facturation est par tranche de 30 minutes."},{icon:"4️⃣",text:"Pour arrêter, appuyez sur ⏹ Stop & Encaisser. La partie s'ajoute au panier de la Caisse (vous pouvez y ajouter boissons et snacks), puis appuyez sur 🎫 Ticket & Payer."},{icon:"💡",text:"L'écran géant est plus cher. PS5 standard : 1 000F/30min."}]},
+  {id:"g3",emoji:"🎮",title:"Gérer le Gaming",color:"#00B0FF",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🛒 Encaissement, puis 🎮 PlayStation."},{icon:"2️⃣",text:"Appuyez sur ▶ 1J (1 joueur) ou ▶ 2J (2 joueurs) sur la console concernée."},{icon:"3️⃣",text:"Le chronomètre démarre. La facturation est par tranche de 30 minutes."},{icon:"4️⃣",text:"Pour arrêter, appuyez sur ⏹ Stop & Encaisser. La partie s'ajoute au panier, juste en dessous (vous pouvez y ajouter boissons et snacks), puis appuyez sur 🎫 Ticket & Payer."},{icon:"💡",text:"L'écran géant est plus cher. PS5 standard : 1 000F/30min."}]},
   {id:"g4",emoji:"📦",title:"Gérer les Stocks",color:"#FF6D00",steps:[{icon:"🌅",text:"Chaque matin, allez dans 📦 Stocks → Ingrédients. Saisissez les quantités en KG."},{icon:"🍳",text:"Quand vous fabriquez, allez dans Production. Entrez la quantité fabriquée. Les ingrédients se déduisent automatiquement."},{icon:"🔍",text:"Le soir, allez dans Vérification. Comptez physiquement et entrez les quantités. Si ça ne correspond pas → alerte automatique."},{icon:"⚠️",text:"Toute différence est enregistrée et envoyée au patron. Soyez honnêtes !"}]},
   {id:"g5",emoji:"📊",title:"Rapport du soir",color:"#BB86FC",steps:[{icon:"1️⃣",text:"En fin de journée, allez dans 📊 Bilan → Clôturer caisse."},{icon:"2️⃣",text:"Comptez tous les billets et pièces. Entrez les quantités par coupure."},{icon:"3️⃣",text:"Si l'écart est à 0 → parfait ! Si manque → le patron est alerté automatiquement."},{icon:"4️⃣",text:"Appuyez sur 📱 Rapport WhatsApp pour envoyer le résumé de la journée au patron."},{icon:"💡",text:"Le patron voit tout depuis Paris en temps réel. Travaillez toujours honnêtement."}]},
   {id:"g6",emoji:"🚫",title:"Ce qui est interdit",color:"#FF5252",steps:[{icon:"❌",text:"Vendre sans enregistrer dans la caisse. Toutes les ventes doivent passer par l'outil."},{icon:"❌",text:"Annuler une vente sans autorisation du patron (code PIN nécessaire)."},{icon:"❌",text:"Donner des produits sans encaisser. Même les 'cadeaux' doivent être enregistrés."},{icon:"❌",text:"Laisser une session gaming tourner sans encaisser à la fin."},{icon:"✅",text:"En cas de doute, appelez le patron AVANT d'agir."}]}
@@ -332,7 +332,7 @@ export default function App(){
     // La partie part dans le panier de la Caisse : elle est encaissée avec ticket, comme le reste
     const ligne={id:"jeu_"+uid(),name:`${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji,jeu:{sid,nom:st.name,joueurs:ses.players,mins:Math.round(mins),fin:timeStr()}};
     setCart(prev=>[...prev,ligne]);setSessions(prev=>{const n={...prev};delete n[sid];saveDay({sessions:n});return n;});
-    addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)} → panier`);setTab("caisse");showToast(`${st.name} ajoutée au panier — ${fmt(total)}`);};
+    addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)} → panier`);setTab("caisse");setCTab("jeux");showToast(`${st.name} ajoutée au panier — ${fmt(total)}`);};
   const addPhoto=n=>{touch();setPhotoCount(prev=>{const np=Math.max(0,prev+n);saveDay({pc:np});return np;});if(n>0){addAudit("PHOTOCOPIE",`${n}p`);showToast(`📄 ${n}p — ${fmt(n*photoPrice)}`);}};
 
   // SMART EMOJI SUGGESTION
@@ -440,7 +440,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
 
       {/* TABS */}
       <div style={{display:"flex",flexWrap:"wrap",gap:4,padding:"6px 6px",background:S.card,borderBottom:`1px solid ${S.border}`}}>
-        {[["home","🏠","Accueil"],["caisse","🛒","Caisse"],["web","🌐","En ligne",webEnAttente],["gaming","🎮","Gaming",Object.keys(sessions).length],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
+        {[["home","🏠","Accueil"],["caisse","🛒","Encaissement",Object.keys(sessions).length],["web","🌐","En ligne",webEnAttente],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
           <button key={id} style={T(tab===id)} onClick={()=>{setTab(id);touch();}}>
             <span style={{fontSize:24,lineHeight:1,position:"relative"}}>{ic}{badge>0&&<span style={{position:"absolute",top:-6,right:-12,background:S.red,color:"#fff",fontSize:11,fontWeight:800,borderRadius:10,padding:"1px 5px"}}>{badge}</span>}</span>
             <span style={{fontSize:12}}>{nom}</span>
@@ -482,15 +482,32 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
         </div>
         {(lossAlerts.length>0||ingAlerts.length>0)&&<div style={{...Card(S.red),cursor:"pointer"}} onClick={()=>setTab("stocks")}><div style={{color:S.red,fontWeight:700,fontSize:12,marginBottom:6}}>🚨 {lossAlerts.length+ingAlerts.length} ALERTE(S)</div>{lossAlerts.map(p=><div key={p.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:2}}>{p.emoji} {p.name}: {lossQty(p.id)} manquant(s) — {fmt(lossQty(p.id)*p.price)}</div>)}</div>}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[{t:"caisse",i:"🛒",l:"Caisse",c:S.gold,s:`Ticket #${ticketNo}`},{t:"gaming",i:"🎮",l:"Gaming",c:S.green,s:Object.keys(sessions).length>0?`${Object.keys(sessions).length} en cours`:"Libre"},{t:"aide",i:"❓",l:"Guide Employé",c:S.teal,s:"Comment utiliser"},...(isPatron?[{t:"ia",i:"🤖",l:"Assistant IA",c:S.purple,s:"Conseils & alertes"}]:[{t:"stocks",i:"📦",l:"Stocks",c:S.purple,s:"Ingrédients"}])].map(r=>(
-            <button key={r.t} onClick={()=>setTab(r.t)} style={{...Card(r.c),cursor:"pointer",textAlign:"center",padding:"14px 10px",border:`2px solid ${r.c}`}}><div style={{fontSize:26}}>{r.i}</div><div style={{fontSize:12,fontWeight:700,color:r.c,marginTop:4}}>{r.l}</div><div style={{fontSize:10,color:S.muted}}>{r.s}</div></button>
+          {[{t:"caisse",i:"🛒",l:"Encaissement",c:S.gold,s:`Ticket #${ticketNo}`},{t:"jeux",i:"🎮",l:"PlayStation",c:S.green,s:Object.keys(sessions).length>0?`${Object.keys(sessions).length} en cours`:"Libre"},{t:"aide",i:"❓",l:"Guide Employé",c:S.teal,s:"Comment utiliser"},...(isPatron?[{t:"ia",i:"🤖",l:"Assistant IA",c:S.purple,s:"Conseils & alertes"}]:[{t:"stocks",i:"📦",l:"Stocks",c:S.purple,s:"Ingrédients"}])].map(r=>(
+            <button key={r.t} onClick={()=>{if(r.t==="jeux"){setCTab("jeux");setTab("caisse");}else setTab(r.t);}} style={{...Card(r.c),cursor:"pointer",textAlign:"center",padding:"14px 10px",border:`2px solid ${r.c}`}}><div style={{fontSize:26}}>{r.i}</div><div style={{fontSize:12,fontWeight:700,color:r.c,marginTop:4}}>{r.l}</div><div style={{fontSize:10,color:S.muted}}>{r.s}</div></button>
           ))}
         </div>
       </div>}
 
       {/* ══ CAISSE ══ */}
       {tab==="caisse"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button></div>
+        <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button><button style={Sub(cTab==="jeux")} onClick={()=>setCTab("jeux")}>🎮 PlayStation{Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:""}</button></div>
+        {cTab==="jeux"?<>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
+            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
+              <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
+              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
+              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
+              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
+              {isManager&&<div style={{display:"flex",gap:4,marginTop:6}}>
+                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>✏️ Modifier</button>
+                <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR CONSOLE",st.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>🗑 Supprimer</button>
+              </div>}
+            </div>);})}
+        </div>
+        {isManager&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / un poste</button>}
+        </>:<>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
           {(cTab==="boissons"?boissons:snacks).map(p=>(
             <div key={p.id}>
@@ -509,6 +526,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           ))}
         </div>
         {isManager&&<button onClick={()=>setAddProdCat(cTab)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"8px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:12,marginBottom:8}}>＋ Ajouter {cTab==="boissons"?"une boisson":"un snack"}</button>}
+        </>}
         {cart.length>0?<div style={Card()}>
           <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
           {cart.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:15}}>{item.emoji}</span><div style={{flex:1,fontSize:12}}>{item.name}</div><button onClick={()=>updQty(item.id,-1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>−</button><span style={{fontSize:14,fontWeight:700,minWidth:20,textAlign:"center"}}>{item.qty}</span><button disabled={item.cat==="gaming"} onClick={()=>updQty(item.id,+1)} style={{opacity:item.cat==="gaming"?.3:1,background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>+</button><div style={{minWidth:68,textAlign:"right",fontSize:12,fontWeight:700}}>{fmt(item.price*item.qty)}</div><button onClick={()=>updQty(item.id,-99)} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:16}}>✕</button></div>)}
@@ -518,29 +536,14 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           </div>
           <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:6}}>⚠️ Le ticket doit être imprimé avant validation</div>
         </div>:<div style={{...Card(),textAlign:"center",color:S.muted,fontSize:13,padding:24}}><div style={{fontSize:36,marginBottom:8}}>🛒</div>Appuie sur un produit</div>}
+        {cTab==="jeux"&&<>
+        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {isManager?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
+        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
+        </>}
       </div>}
 
       {/* ══ GAMING ══ */}
       {tab==="web"&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><CommandesEnLigne S={S} Btn={Btn} Inp={Inp} Card={Card} Sub={Sub} requirePatron={requirePatron} showToast={showToast} enregistrerVente={enregistrerVenteEnLigne}/></Suspense>}
-      {tab==="gaming"&&<div style={{padding:14}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
-            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
-              <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
-              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
-              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
-              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
-              {isManager&&<div style={{display:"flex",gap:4,marginTop:6}}>
-                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>✏️ Modifier</button>
-                <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR CONSOLE",st.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>🗑 Supprimer</button>
-              </div>}
-            </div>);})}
-        </div>
-        {isManager&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / un poste</button>}
-        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {isManager?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
-        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
-      </div>}
 
       {/* ══ STOCKS ══ */}
       {/* ══ STOCKS ══ */}
