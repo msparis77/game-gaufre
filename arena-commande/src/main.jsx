@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
 import { fcfa, faireLigne, prixUnitaire, estBoisson } from "./shared/prix.js";
+import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
 import "./style.css";
@@ -61,7 +62,7 @@ function Entete({ nbCommandes }) {
 
 function Photo({ article, grande }) {
   if (article.photo) return <img class={grande ? "photo grande" : "photo"} src={article.photo} alt="" loading="lazy" />;
-  return <div class={grande ? "photo grande ph" : "photo ph"} aria-hidden="true">{article.emoji || "🍽️"}</div>;
+  return <div class={grande ? "photo grande ph" : "photo ph"} aria-hidden="true">{estBoisson(article) ? iconeBoisson(article) : article.emoji || "🍽️"}</div>;
 }
 
 // ─── Page menu ───
@@ -81,7 +82,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
         ))}
       </nav>
       {menu.categories.map((c) => {
-        const liste = articles.filter((a) => a.categorie === c.id);
+        const liste = c.id === "boissons" ? boissonsParFamille(articles.filter((a) => a.categorie === c.id)).flatMap((g) => g.articles) : articles.filter((a) => a.categorie === c.id);
         if (!liste.length) return null;
         return (
           <section key={c.id} id={"cat-" + c.id} class="section">

@@ -3,6 +3,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebaseCaisse.js";
 import { estBoisson, prixUnitaire, nomLigne, fcfa } from "../../arena-commande/src/shared/prix.js";
 import { MENU_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
+import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
 // Le menu du site (config/menu dans Firebase) dans l'onglet Encaissement.
 // Même menu, mêmes prix que le site : on le modifie une seule fois dans 🌐 → Menu & prix.
@@ -38,12 +39,15 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
   const puce = (on) => ({ background: on ? S.gold : S.card3, color: on ? S.bg : S.text, border: `1px solid ${on ? S.gold : S.border}`, borderRadius: 10, padding: "10px 8px", cursor: "pointer", fontSize: 13, fontWeight: 700 });
 
   if (vue === "boissons") {
-    return <div style={grille}>{dispo.filter(estBoisson).map((a) => (
-      <button key={a.id} style={tuile} onClick={() => ajouter(ligne(menu, a, {}))}>
-        <div style={{ fontSize: 26 }}>{a.emoji}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom}</div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: S.gold }}>{fcfa(a.prix)}</div>
-      </button>))}</div>;
+    return <>{boissonsParFamille(dispo.filter(estBoisson)).map(({ famille, articles }) => <div key={famille.id}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{famille.icone} {famille.nom.toUpperCase()}</div>
+      <div style={grille}>{articles.map((a) => (
+        <button key={a.id} style={tuile} onClick={() => ajouter({ ...ligne(menu, a, {}), emoji: iconeBoisson(a) })}>
+          <div style={{ fontSize: 26 }}>{iconeBoisson(a)}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: S.gold }}>{fcfa(a.prix)}</div>
+        </button>))}</div>
+    </div>)}</>;
   }
 
   const cats = (menu.categories || []).filter((c) => c.id !== "boissons");
