@@ -203,12 +203,20 @@ test("la caisse passe une livraison en route puis livrée, et règle la livraiso
   const cfg = await preparer(configTest(), LIV_ON);
   const r = await passerCommande(fs, env.authenticatedContext("e1").firestore(), "e1", { ...commandeOk(creneauTest(cfg)), livraison: livOk });
   const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
-  await assertSucceeds(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { statut: "en_route", livreur: "Ibou", majAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { statut: "en_route", livreur: "Ibou", livreurTel: "781112233", majAt: serverTimestamp() }));
   await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { livreur: 12 }));
+  await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { livreurTel: "123" }));
+  // L'élève voit le numéro de son livreur
+  assert.equal((await getDoc(doc(env.authenticatedContext("e1").firestore(), "commandes_en_ligne", r.id))).data().livreurTel, "781112233");
   await assertSucceeds(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { statut: "livree", venteEnregistree: true }));
   await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { livraison: { ...livOk, frais: 0 } }));
   await assertSucceeds(setDoc(doc(caisse, "config/livraison"), LIV_ON));
   const eleve = env.authenticatedContext("e9").firestore();
   await assertSucceeds(getDoc(doc(eleve, "config/livraison")));
   await assertFails(setDoc(doc(eleve, "config/livraison"), { ...LIV_ON, minimum: 0 }));
+  // La liste des livreurs (avec leurs numéros) : seulement la caisse
+  await assertSucceeds(setDoc(doc(caisse, "config/livreurs"), { liste: [{ nom: "Ibou", tel: "781112233" }] }));
+  await assertSucceeds(getDoc(doc(caisse, "config/livreurs")));
+  await assertFails(getDoc(doc(eleve, "config/livreurs")));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "config/livreurs")));
 });

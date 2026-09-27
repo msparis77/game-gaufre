@@ -375,6 +375,7 @@ function PageSuivi({ id }) {
       {c.statut === "en_route" && <div class="prete">
         <b>🛵 {c.prenom}, ta commande est en route !</b>
         <span>{c.livreur ? `${c.livreur} arrive` : "Le livreur arrive"}. Prépare ton code secret et {fcfa(c.total + (liv?.frais || 0))}.</span>
+        {c.livreurTel && <a class="appel" href={"tel:+221" + c.livreurTel}>📞 Appeler {c.livreur || "le livreur"} · {c.livreurTel.replace(/(\d{2})(\d{3})(\d{2})(\d{2})/, "$1 $2 $3 $4")}</a>}
       </div>}
       <p class="merci">Merci {c.prenom} !</p>
       <div class="numero">

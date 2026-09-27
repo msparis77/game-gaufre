@@ -27,6 +27,8 @@ service cloud.firestore {
     match /config/{nom} {
       allow read: if nom in ['menu', 'creneaux', 'livraison'];
       allow write: if estCaisse() && nom in ['menu', 'creneaux', 'livraison'];
+      // Livreurs (prénoms et numéros) : seulement la caisse
+      allow read, write: if estCaisse() && nom == 'livreurs';
     }
 
     // ── Compteur de commandes par créneau et par jour (ex. c0800_20260928) ──
@@ -70,10 +72,12 @@ service cloud.firestore {
       allow create: if connecte() && commandeValide(id);
       allow update: if estCaisse()
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt', 'livreur'])
+             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt', 'livreur', 'livreurTel'])
         && request.resource.data.statut in ['recue', 'preparation', 'prete', 'recuperee',
                                             'en_route', 'livree', 'annulee']
-        && (!('livreur' in request.resource.data) || request.resource.data.livreur is string);
+        && (!('livreur' in request.resource.data) || request.resource.data.livreur is string)
+        && (!('livreurTel' in request.resource.data)
+            || (request.resource.data.livreurTel is string && request.resource.data.livreurTel.matches('^7[05678][0-9]{7}$')));
       allow delete: if false;
     }
 

@@ -38,7 +38,7 @@ export function alerterPrete(c) {
   const route = c.statut === "en_route";
   const titre = route ? `🛵 ${c.prenom}, ta commande est en route !` : `✅ ${c.prenom}, ta commande est prête !`;
   const texte = route
-    ? `${c.livreur ? c.livreur + " arrive" : "Le livreur arrive"} avec ta commande ${c.code}.` + (c.codeRetrait ? ` Donne-lui ton code secret : ${c.codeRetrait}` : "")
+    ? `${c.livreur ? c.livreur + " arrive" : "Le livreur arrive"} avec ta commande ${c.code}.` + (c.livreurTel ? ` Son numéro : ${c.livreurTel}.` : "") + (c.codeRetrait ? ` Donne-lui ton code secret : ${c.codeRetrait}` : "")
     : `Ta commande ${c.code} t'attend au comptoir de l'Arena Café, tu peux venir la retirer.` + (c.codeRetrait ? ` Ton code secret : ${c.codeRetrait}` : "");
   sonner();
   try { navigator.vibrate && navigator.vibrate([400, 200, 400, 200, 800]); } catch (e) {}

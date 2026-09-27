@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot, setDoc, updateDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { db, firebaseConfigure, connecterCaisse, deconnecterCaisse, EMAIL_CAISSE } from "./firebaseCaisse.js";
-import { abonner, imprimer, imprimerNavigateur, reglerSon, reglerImpressionAuto, debloquerSon, heureRetrait, PRINT_BRIDGE_URL } from "./veille.js";
+import { abonner, imprimer, imprimerNavigateur, imprimerBonLivraison, bonLivreurNavigateur, texteBonLivreur, reglerSon, reglerImpressionAuto, debloquerSon, heureRetrait, PRINT_BRIDGE_URL } from "./veille.js";
 import { verifierCommande, fcfa } from "../../arena-commande/src/shared/prix.js";
 import { hhmm, versMinutes } from "../../arena-commande/src/shared/creneaux.js";
+import { nettoyerTelephone, telephoneValide } from "../../arena-commande/src/shared/commander.js";
 import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 
 const STATUTS = {
@@ -56,6 +57,8 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
   const menu = useDoc("config/menu", connecte);
   const creneaux = useDoc("config/creneaux", connecte);
   const livraison = useDoc("config/livraison", connecte);
+  const livreursDoc = useDoc("config/livreurs", connecte);
+  const livreurs = (livreursDoc && livreursDoc.liste) || [];
 
   if (!firebaseConfigure)
     return <div style={{ padding: 14 }}><div style={Card(S.orange)}>
@@ -72,10 +75,10 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
           <button key={id} style={Sub(vue === id)} onClick={() => (id === "commandes" ? setVue(id) : requirePatron(() => setVue(id)))}>{l}</button>
         ))}
       </div>
-      {vue === "commandes" && <ListeCommandes {...{ S, Btn, Card, veille, menu, creneaux, livraison, showToast, enregistrerVente }} />}
+      {vue === "commandes" && <ListeCommandes {...{ S, Btn, Card, veille, menu, creneaux, livreurs, showToast, enregistrerVente }} />}
       {vue === "menu" && <EditeurMenu {...{ S, Btn, Inp, Card, menu, showToast }} />}
       {vue === "creneaux" && <EditeurCreneaux {...{ S, Btn, Inp, Card, creneaux, showToast }} />}
-      {vue === "livraison" && <EditeurLivraison {...{ S, Btn, Inp, Card, livraison, showToast }} />}
+      {vue === "livraison" && <EditeurLivraison {...{ S, Btn, Inp, Card, livraison, livreurs, showToast }} />}
     </div>
   );
 }
@@ -98,7 +101,7 @@ function ConnexionCaisse({ S, Btn, Inp, Card, showToast }) {
 }
 
 // ─────────────── Liste des commandes ───────────────
-function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livraison, showToast, enregistrerVente }) {
+function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livreurs, showToast, enregistrerVente }) {
   const [voirFinies, setVoirFinies] = useState(false);
   const [occupe, setOccupe] = useState(null);
   const auj = new Date().toISOString().slice(0, 10);
@@ -106,7 +109,6 @@ function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livraison, showT
   const actives = veille.commandes.filter((c) => EN_COURS.includes(c.statut));
   const finies = veille.commandes.filter((c) => !EN_COURS.includes(c.statut) && jour(c) === auj);
   const encaisse = finies.filter((c) => FINAL.includes(c.statut)).reduce((s, c) => s + vente(menu, c).total, 0);
-  const livreurs = (livraison && livraison.livreurs) || [];
 
   const changer = async (c, statut, extra = {}) => {
     if (c.codeRetrait && statut === "recuperee" && !window.confirm(`Vérifie avant de remettre la commande ${c.code} :\n\n${c.prenom} doit te donner le code secret ${c.codeRetrait}.\n\nLe code est bon ?`)) return;
@@ -128,6 +130,8 @@ function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livraison, showT
         else showToast("Déjà encaissée sur un autre poste", S.orange);
       } else {
         await updateDoc(doc(db, "commandes_en_ligne", c.id), { statut, ...extra, majAt: serverTimestamp() });
+        // Départ en livraison : on imprime le bon pour le livreur
+        if (statut === "en_route") imprimerBonLivraison({ ...c, ...extra });
       }
     } catch (e) { showToast("❌ Erreur : " + (e.code || e.message), S.red); }
     setOccupe(null);
@@ -161,8 +165,8 @@ function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, j
   const liv = c.livraison;
   const suivant = (liv ? SUIVANT_LIVRAISON : SUIVANT)[c.statut];
   const [choix, setLivreur] = useState(c.livreur || "");
-  const livreur = choix || livreurs[0] || "";
-  const allerSuivant = () => changer(c, suivant.statut, suivant.statut === "en_route" && livreur ? { livreur } : {});
+  const livreur = livreurs.find((x) => x.nom === choix) || livreurs[0] || null;
+  const allerSuivant = () => changer(c, suivant.statut, suivant.statut === "en_route" && livreur ? { livreur: livreur.nom, ...(livreur.tel ? { livreurTel: livreur.tel } : {}) } : {});
   const autreJour = jour(c) !== auj;
   return <div style={{ ...Card(st.couleur), borderWidth: c.statut === "recue" ? 2 : 1, opacity: finie ? 0.6 : 1 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -181,11 +185,16 @@ function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, j
       {v && v.ecart && <div style={{ color: S.orange, fontSize: 11, marginTop: 4 }}>⚠️ Le téléphone affichait {fcfa(c.total)} : le prix a été recalculé avec le menu actuel.</div>}
     </div>
     {liv && <div style={{ background: S.card2, borderRadius: 8, padding: 8, marginBottom: 8, fontSize: 13, borderLeft: `3px solid ${STATUTS.en_route.couleur}` }}>
-      <b>🛵 {liv.nom}</b> · {liv.adresse}{c.livreur && <div style={{ fontSize: 12, color: S.muted, marginTop: 2 }}>Livreur : <b style={{ color: S.text }}>{c.livreur}</b></div>}
+      <b>🛵 {liv.nom}</b> · {liv.adresse}{c.livreur && <div style={{ fontSize: 12, color: S.muted, marginTop: 2 }}>Livreur : <b style={{ color: S.text }}>{c.livreur}</b>{c.livreurTel && <> · {c.livreurTel}</>}</div>}
+      {c.statut === "en_route" && <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+        {c.livreurTel && <a href={`https://wa.me/221${c.livreurTel}?text=${encodeURIComponent(texteBonLivreur(c))}`} target="_blank" rel="noopener" style={{ ...Btn("#25D366", "#fff"), flex: 2, textAlign: "center", textDecoration: "none", fontSize: 12 }}>📲 Bon au livreur</a>}
+        <button onClick={() => imprimerBonLivraison(c)} title="Réimprimer le bon de livraison" style={{ ...Btn(S.card3, S.text), flex: 1, fontSize: 12 }}>🖨️ Bon</button>
+        <button onClick={() => bonLivreurNavigateur(c)} title="Imprimer le bon avec la fenêtre du navigateur" style={{ ...Btn(S.card3, S.text), flex: 1, fontSize: 12 }}>🪟 Bon</button>
+      </div>}
     </div>}
     {!finie && liv && c.statut === "preparation" && livreurs.length > 0 && <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
       <span style={{ fontSize: 12, color: S.muted }}>Qui livre ?</span>
-      {livreurs.map((n) => <button key={n} onClick={() => setLivreur(n)} style={{ ...Btn(livreur === n ? STATUTS.en_route.couleur : S.card3, livreur === n ? S.bg : S.text), padding: "6px 10px", fontSize: 12 }}>{n}</button>)}
+      {livreurs.map((x) => <button key={x.nom} onClick={() => setLivreur(x.nom)} style={{ ...Btn(livreur && livreur.nom === x.nom ? STATUTS.en_route.couleur : S.card3, livreur && livreur.nom === x.nom ? S.bg : S.text), padding: "6px 10px", fontSize: 12 }}>{x.nom}</button>)}
     </div>}
     {!finie && <div style={{ display: "flex", gap: 6 }}>
       {suivant && <button disabled={occupe === c.id} onClick={allerSuivant} style={{ ...Btn(STATUTS[suivant.statut].couleur === "#555" ? S.gold : STATUTS[suivant.statut].couleur), flex: 3 }}>{occupe === c.id ? "…" : suivant.label}</button>}
@@ -200,7 +209,7 @@ function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, j
 // Message WhatsApp prêt à envoyer à l'élève (le caissier n'a plus qu'à appuyer sur Envoyer).
 function lienWhatsApp(c) {
   const texte = c.statut === "en_route"
-    ? `Bonjour ${c.prenom}, ta commande ${c.code} de l'Arena Café est en route${c.livreur ? ` avec ${c.livreur}` : ""} !${c.codeRetrait ? ` Donne ton code secret ${c.codeRetrait} au livreur.` : ""} À tout de suite 😊`
+    ? `Bonjour ${c.prenom}, ta commande ${c.code} de l'Arena Café est en route${c.livreur ? ` avec ${c.livreur}` : ""}${c.livreurTel ? ` (${c.livreurTel})` : ""} !${c.codeRetrait ? ` Donne ton code secret ${c.codeRetrait} au livreur.` : ""} À tout de suite 😊`
     : c.statut === "prete"
     ? `Bonjour ${c.prenom}, ta commande ${c.code} est prête à l'Arena Café !${c.codeRetrait ? ` Ton code de retrait : ${c.codeRetrait}.` : ""} À tout de suite 😊`
     : `Bonjour ${c.prenom}, c'est l'Arena Café pour ta commande ${c.code}.`;
@@ -307,29 +316,35 @@ function Initialiser({ S, Btn, Card, showToast }) {
 }
 
 // ─────────────── Réglages de la livraison ───────────────
-function EditeurLivraison({ S, Btn, Inp, Card, livraison, showToast }) {
+function EditeurLivraison({ S, Btn, Inp, Card, livraison, livreurs, showToast }) {
   const [b, setB] = useState(null);
+  const [liv, setLiv] = useState(null);
+  useEffect(() => { if (!liv) setLiv(livreurs.map((x) => ({ ...x }))); }, [livreurs, liv]);
   useEffect(() => {
     if (livraison !== undefined && !b) {
       const l = livraison || LIVRAISON_DEPART;
-      setB({ ...l, zones: Object.entries(l.zones || {}).sort(([x], [y]) => x.localeCompare(y, "fr", { numeric: true })).map(([id, z]) => ({ id, ...z })), livreursTexte: (l.livreurs || []).join(", ") });
+      setB({ ...l, zones: Object.entries(l.zones || {}).sort(([x], [y]) => x.localeCompare(y, "fr", { numeric: true })).map(([id, z]) => ({ id, ...z })) });
     }
   }, [livraison, b]);
-  if (livraison === undefined || !b) return <div style={{ color: S.muted }}>Chargement…</div>;
+  if (livraison === undefined || !b || !liv) return <div style={{ color: S.muted }}>Chargement…</div>;
   const nombre = (v) => Math.max(0, Math.round(Number(v) || 0));
   const majZone = (i, champ, v) => setB({ ...b, zones: b.zones.map((z, j) => (j === i ? { ...z, [champ]: v } : z)) });
   const donnees = (actif) => {
     const zones = {};
     b.zones.forEach((z, i) => { zones["z" + (i + 1)] = { nom: String(z.nom).trim(), frais: nombre(z.frais), actif: !!z.actif }; });
-    return { actif, minimum: nombre(b.minimum), zones, livreurs: b.livreursTexte.split(",").map((x) => x.trim()).filter(Boolean) };
+    return { actif, minimum: nombre(b.minimum), zones };
   };
   const enregistrer = async (actif = b.actif) => {
     if (b.zones.some((z) => !String(z.nom).trim())) return showToast("❌ Donne un nom à chaque zone", S.red);
     if (actif && !b.zones.some((z) => z.actif)) return showToast("❌ Active au moins une zone avant d'ouvrir la livraison", S.red);
+    const liste = liv.map((x) => ({ nom: String(x.nom).trim(), tel: nettoyerTelephone(x.tel) })).filter((x) => x.nom);
+    const telFaux = liste.find((x) => x.tel && !telephoneValide(x.tel));
+    if (telFaux) return showToast(`❌ Numéro invalide pour ${telFaux.nom} (ex. 77 123 45 67)`, S.red);
     try {
       const d = donnees(actif);
       await setDoc(doc(db, "config/livraison"), d);
-      setB(null);
+      await setDoc(doc(db, "config/livreurs"), { liste });
+      setB(null); setLiv(null);
       showToast(actif !== !!(livraison && livraison.actif) ? (actif ? "🛵 Livraison ACTIVÉE sur le site" : "⛔ Livraison désactivée") : "✓ Réglages de livraison enregistrés");
     } catch (e) { showToast("❌ " + (e.code || e.message), S.red); }
   };
@@ -353,8 +368,13 @@ function EditeurLivraison({ S, Btn, Inp, Card, livraison, showToast }) {
     </div>
     <div style={Card()}>
       <div style={{ fontWeight: 800, color: S.gold, marginBottom: 4 }}>🛵 Livreurs</div>
-      <div style={{ fontSize: 11, color: S.muted, marginBottom: 8 }}>Prénoms séparés par des virgules. On choisit le livreur en passant une commande « En route », et l'élève voit son prénom.</div>
-      <input value={b.livreursTexte} onChange={(e) => setB({ ...b, livreursTexte: e.target.value })} placeholder="ex. Ibou, Modou" style={Inp()} />
+      <div style={{ fontSize: 11, color: S.muted, marginBottom: 8, lineHeight: 1.6 }}>On choisit le livreur en passant une commande « En route ». Le client reçoit son prénom et son numéro, et le livreur reçoit le bon de livraison (imprimé, ou sur WhatsApp). Ces numéros ne sont visibles que par la caisse et par le client livré.</div>
+      {liv.map((x, i) => <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+        <input value={x.nom} onChange={(e) => setLiv(liv.map((y, j) => (j === i ? { ...y, nom: e.target.value } : y)))} placeholder="Prénom" style={{ ...Inp(), flex: 1 }} />
+        <input value={x.tel} type="tel" onChange={(e) => setLiv(liv.map((y, j) => (j === i ? { ...y, tel: e.target.value } : y)))} placeholder="77 123 45 67" style={{ ...Inp(), flex: 1 }} />
+        <button onClick={() => setLiv(liv.filter((_, j) => j !== i))} style={{ ...Btn(S.card3, S.red), padding: "4px 8px" }}>✕</button>
+      </div>)}
+      <button onClick={() => setLiv([...liv, { nom: "", tel: "" }])} style={{ ...Btn(S.card3, S.text), width: "100%", fontSize: 12 }}>+ Ajouter un livreur</button>
     </div>
     <button onClick={() => enregistrer()} style={{ ...Btn(S.green, S.bg), width: "100%" }}>💾 Enregistrer les réglages</button>
   </>;

@@ -102,3 +102,4 @@ h2{font-size:20px;font-weight:900;color:var(--vert);margin:20px 0 8px}
 .modes button b{font-size:16px}
 .modes button small,.zones button small{font-size:12px}
 .modes button.on,.zones button.on{background:var(--vert);color:var(--creme)}
+.prete .appel{display:block;margin-top:8px;background:#fff;color:#1faa59;border-radius:12px;padding:10px;font-weight:800;text-decoration:none;font-size:17px}

@@ -70,5 +70,5 @@ export const LIVRAISON_DEPART = {
   zones: {
     z1: { nom: "Guédiawaye", frais: 500, actif: true },
   },
-  livreurs: [],
 };
+// Livreurs (config/livreurs, lisible seulement par la caisse) : [{ nom, tel }]
