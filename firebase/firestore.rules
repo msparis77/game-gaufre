@@ -1,0 +1,119 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore — commande en ligne Arena Café.
+//
+// Principe :
+// - Les élèves (connexion anonyme automatique) peuvent lire le menu et les
+//   créneaux, créer UNE commande validée, et relire uniquement LEURS commandes.
+// - Seul le compte « caisse » (email + mot de passe) voit toutes les commandes,
+//   change les statuts, et modifie le menu et les créneaux.
+// - Les données de la caisse (PIN, stock, chiffres) ne sont pas dans Firebase.
+// - Tout ce qui n'est pas autorisé ici est interdit.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ⚠️ Doit être exactement l'email du compte créé pour la caisse.
+    function estCaisse() {
+      return request.auth != null
+        && request.auth.token.email == 'caisse@arenacafe.sn'
+        && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+    function connecte() { return request.auth != null; }
+    // Jour du retrait sous forme 20260928 (heure de Dakar = UTC).
+    function jourCle(t) { return t.year() * 10000 + t.month() * 100 + t.day(); }
+
+    // ── Menu et créneaux : lecture publique, modification par la caisse ──
+    match /config/{nom} {
+      allow read: if nom in ['menu', 'creneaux'];
+      allow write: if estCaisse() && nom in ['menu', 'creneaux'];
+    }
+
+    // ── Compteur de commandes par créneau et par jour (ex. c0800_20260928) ──
+    // Il donne le numéro de commande et bloque quand le créneau est plein.
+    // Il ne peut avancer que de 1, et seulement avec la création d'une commande.
+    match /compteurs/{cid} {
+      allow read: if true;
+      allow create: if connecte() && compteurValide(cid, 1);
+      allow update: if connecte() && compteurValide(cid, resource.data.count + 1);
+      allow update, delete: if estCaisse();
+    }
+    function compteurValide(cid, attendu) {
+      let d = request.resource.data;
+      let chemin = /databases/$(database)/documents/commandes_en_ligne/$(d.derniere);
+      let cmd = getAfter(chemin).data;
+      return d.keys().hasOnly(['count', 'derniere'])
+        && d.count == attendu
+        && d.derniere is string
+        && !exists(chemin)
+        && existsAfter(chemin)
+        && cmd.numero == attendu
+        && cid == cmd.creneauId + '_' + string(jourCle(cmd.retraitAt));
+    }
+
+    // ── Anti-abus : une commande maximum toutes les 2 minutes par téléphone ──
+    match /clients/{uid} {
+      allow read: if connecte() && request.auth.uid == uid;
+      allow create: if connecte() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['derniere'])
+        && request.resource.data.derniere == request.time;
+      allow update: if connecte() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['derniere'])
+        && request.resource.data.derniere == request.time
+        && resource.data.derniere < request.time - duration.value(2, 'm');
+    }
+
+    // ── Commandes ──
+    match /commandes_en_ligne/{id} {
+      allow get, list: if estCaisse()
+        || (connecte() && resource.data.uid == request.auth.uid);
+      allow create: if connecte() && commandeValide(id);
+      allow update: if estCaisse()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt'])
+        && request.resource.data.statut in ['recue', 'preparation', 'prete', 'recuperee', 'annulee'];
+      allow delete: if false;
+    }
+
+    function commandeValide(id) {
+      let d = request.resource.data;
+      let cfg = get(/databases/$(database)/documents/config/creneaux).data;
+      let cr = cfg.creneaux[d.creneauId];
+      let cid = d.creneauId + '_' + string(jourCle(d.retraitAt));
+      let cpt = getAfter(/databases/$(database)/documents/compteurs/$(cid)).data;
+      let cli = getAfter(/databases/$(database)/documents/clients/$(request.auth.uid)).data;
+      return d.keys().hasOnly(['uid', 'prenom', 'telephone', 'lignes', 'total', 'statut',
+                               'paiement', 'createdAt', 'venteEnregistree', 'creneauId',
+                               'creneauCode', 'retraitAt', 'numero', 'code'])
+        && d.keys().hasAll(['uid', 'prenom', 'telephone', 'lignes', 'total', 'statut',
+                            'paiement', 'createdAt', 'venteEnregistree', 'creneauId',
+                            'creneauCode', 'retraitAt', 'numero', 'code'])
+        && d.uid == request.auth.uid
+        && d.prenom is string && d.prenom.size() >= 1 && d.prenom.size() <= 30
+        && d.telephone is string && d.telephone.matches('^7[05678][0-9]{7}$')
+        && d.lignes is list && d.lignes.size() >= 1 && d.lignes.size() <= 20
+        && d.total is int && d.total > 0 && d.total <= 100000
+        && d.statut == 'recue'
+        && d.paiement == {'mode': 'retrait', 'statut': 'a_payer'}
+        && d.createdAt == request.time
+        && d.venteEnregistree == false
+        // Créneau ouvert, actif, et fermé 15 min avant l'heure
+        && cfg.ouvert == true
+        && d.creneauId is string
+        && d.creneauId in cfg.creneaux
+        && cr.actif == true
+        && d.retraitAt is timestamp
+        && d.retraitAt.hours() * 60 + d.retraitAt.minutes() == cr.minutes
+        && d.retraitAt.seconds() == 0 && d.retraitAt.nanos() == 0
+        && request.time < d.retraitAt - duration.value(cfg.delaiFermetureMin, 'm')
+        && d.retraitAt < request.time + duration.value(24, 'h')
+        // Numéro de commande = compteur du créneau, dans la limite des places
+        && cpt.derniere == id
+        && d.numero is int && d.numero == cpt.count && d.numero <= cr.max
+        && d.creneauCode == cr.code
+        && d.code == cr.code + string(d.numero)
+        // Anti-abus (voir /clients)
+        && cli.derniere == request.time;
+    }
+  }
+}

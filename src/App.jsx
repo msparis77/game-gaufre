@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
+import { demarrerVeille, abonner as abonnerVeille } from "./enligne/veille.js";
+const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
+const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => abonnerVeille((e) => setN(e.commandes.filter((c) => c.statut === "recue").length)), []); return n; };
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
@@ -255,6 +258,14 @@ export default function App(){
     addAudit("VENTE",`#${ticketNo} ${fmt(pendingTicket.total)} — ${pendingTicket.items.map(i=>`${i.name}×${i.qty}`).join(", ")}`);
     showToast(`✓ Ticket #${ticketNo} — ${fmt(pendingTicket.total)}`);
   };
+  // COMMANDES EN LIGNE : veille en arrière-plan + vente ajoutée quand la commande est récupérée
+  useEffect(()=>{demarrerVeille();},[]);
+  const webEnAttente=useVeilleBadge();
+  const enregistrerVenteEnLigne=(cmd,verif)=>{
+    const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne"};
+    setSales(prev=>{if(prev.some(x=>x.id===sale.id))return prev;const ns=[...prev,sale];saveDay({sales:ns});return ns;});
+    addAudit("VENTE EN LIGNE",`${cmd.code} ${cmd.prenom} ${fmt(verif.total)}`);
+  };
   const deleteSale=id=>requirePatron(()=>{setSales(prev=>{const ns=prev.filter(s=>s.id!==id);saveDay({sales:ns});return ns;});addAudit("ANNULATION","Patron");showToast("Vente annulée",S.orange);});
 
   // STOCK
@@ -419,7 +430,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
 
       {/* TABS */}
       <div style={{display:"flex",background:S.card,borderBottom:`1px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none"}}>
-        {[["home","🏠"],["caisse","🛒"],["gaming","🎮"],["stocks","📦"],["planning","🧮"],["recettes","📖"],...(isPatron?[["ia","🤖"]]:[]),["bilan","📊"],...(isPatron?[["global","🏢"]]:[]),["aide","❓"],["audit","🔍"]].map(([id,l])=>(
+        {[["home","🏠"],["caisse","🛒"],["web",webEnAttente>0?`🌐${webEnAttente}`:"🌐"],["gaming","🎮"],["stocks","📦"],["planning","🧮"],["recettes","📖"],...(isPatron?[["ia","🤖"]]:[]),["bilan","📊"],...(isPatron?[["global","🏢"]]:[]),["aide","❓"],["audit","🔍"]].map(([id,l])=>(
           <button key={id} style={{...T(tab===id),fontSize:id==="aide"?14:9}} onClick={()=>{setTab(id);touch();}}>{l}</button>
         ))}
       </div>
@@ -497,6 +508,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
       </div>}
 
       {/* ══ GAMING ══ */}
+      {tab==="web"&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><CommandesEnLigne S={S} Btn={Btn} Inp={Inp} Card={Card} Sub={Sub} requirePatron={requirePatron} showToast={showToast} enregistrerVente={enregistrerVenteEnLigne}/></Suspense>}
       {tab==="gaming"&&<div style={{padding:14}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
           {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
