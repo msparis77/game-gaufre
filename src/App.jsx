@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from "react";
 import { demarrerVeille, abonner as abonnerVeille } from "./enligne/veille.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
+const MenuCaisse=lazy(()=>import("./enligne/MenuCaisse.jsx"));
 const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => abonnerVeille((e) => setN(e.commandes.filter((c) => c.statut === "recue").length)), []); return n; };
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
@@ -108,7 +109,7 @@ export default function App(){
   const [currentStore,setCurrentStore]=useState(()=>{try{const sid=localStorage.getItem("gg3-last-store");const f=STORES.find(s=>s.id===sid);return f||STORES[0];}catch(e){return STORES[0];}});
   const [tab,setTab]=useState("home");
   const [stSub,setStSub]=useState("ing");
-  const [cTab,setCTab]=useState("boissons");
+  const [cTab,setCTab]=useState("formules");
   const [guideSection,setGuideSection]=useState(null);
   const [boissons,setBoissons]=useState(INIT_B);
   const [snacks,setSnacks]=useState(INIT_S);
@@ -248,6 +249,7 @@ export default function App(){
 
   // TICKET + SALE
   const addToCart=(p,cat)=>{touch();setCart(prev=>{const ex=prev.find(i=>i.id===p.id);return ex?prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i):[...prev,{...p,qty:1,cat}];});};
+  const ajouterLigne=l=>{touch();setCart(prev=>prev.find(i=>i.id===l.id)?prev.map(i=>i.id===l.id?{...i,qty:i.qty+1}:i):[...prev,{...l,qty:1}]);};
   const updQty=(id,d)=>{touch();setCart(prev=>prev.map(i=>i.id===id?{...i,qty:Math.max(0,i.qty+d)}:i).filter(i=>i.qty>0));};
   const cartTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
   const requestTicket=()=>{if(!cart.length)return;setPendingTicket({items:[...cart],total:cartTotal});};
@@ -490,7 +492,10 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
 
       {/* ══ CAISSE ══ */}
       {tab==="caisse"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button><button style={Sub(cTab==="jeux")} onClick={()=>setCTab("jeux")}>🎮 PlayStation{Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:""}</button></div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
+          {[["formules","🥪","Formules"],["menuBoissons","☕","Boissons"],["jeux","🎮","PlayStation"+(Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:"")],["snacks","🥞","Autres"]].map(([id,ic,nom])=>{const on=cTab===id||(id==="snacks"&&cTab==="boissons");return(
+            <button key={id} onClick={()=>{setCTab(id);touch();}} style={{background:on?S.gold:S.card2,color:on?S.bg:S.text,border:`1px solid ${on?S.gold:S.border}`,borderRadius:10,padding:"10px 4px",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{fontSize:22}}>{ic}</span>{nom}</button>);})}
+        </div>
         {cTab==="jeux"?<>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
           {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
@@ -508,6 +513,8 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
         </div>
         {isManager&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / un poste</button>}
         </>:<>
+        {cTab==="formules"||cTab==="menuBoissons"?<Suspense fallback={<div style={{color:S.muted,padding:10}}>Chargement du menu…</div>}><MenuCaisse vue={cTab==="formules"?"formules":"boissons"} S={S} Btn={Btn} ajouter={l=>{ajouterLigne(l);showToast(`＋ ${l.name}`);}}/></Suspense>:<>
+        <div style={{display:"flex",gap:8,marginBottom:10}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>Anciennes boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>Snacks / gaufres</button></div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
           {(cTab==="boissons"?boissons:snacks).map(p=>(
             <div key={p.id}>
@@ -526,6 +533,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           ))}
         </div>
         {isManager&&<button onClick={()=>setAddProdCat(cTab)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"8px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:12,marginBottom:8}}>＋ Ajouter {cTab==="boissons"?"une boisson":"un snack"}</button>}
+        </>}
         </>}
         {cart.length>0?<div style={Card()}>
           <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
