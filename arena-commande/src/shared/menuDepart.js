@@ -42,7 +42,7 @@ export const MENU_DEPART = {
     { id: "b_the", categorie: "boissons", nom: "Thé", nomWolof: "", description: "", prix: 100, emoji: "🍵", photo: "", dispo: true },
     { id: "b_maxi_the", categorie: "boissons", nom: "Maxi thé", nomWolof: "", description: "", prix: 250, emoji: "🍵", photo: "", dispo: true },
     { id: "b_cafe_lait", categorie: "boissons", nom: "Café au lait", nomWolof: "", description: "", prix: 400, emoji: "☕", photo: "", dispo: true },
-    { id: "b_choco_lait", categorie: "boissons", nom: "Chocolat au lait", nomWolof: "", description: "", prix: 400, emoji: "🍫", photo: "", dispo: true },
+    { id: "b_choco_lait", categorie: "boissons", nom: "Chocolat au lait", nomWolof: "", description: "Chocolat chaud", prix: 400, emoji: "☕", photo: "", dispo: true },
     { id: "b_jus_orange", categorie: "boissons", nom: "Jus d'orange", nomWolof: "", description: "", prix: 300, emoji: "🍊", photo: "", dispo: true },
   ],
 };
