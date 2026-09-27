@@ -90,6 +90,7 @@ function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, showToast, enreg
   const encaisse = finies.filter((c) => c.statut === "recuperee").reduce((s, c) => s + (menu ? verifierCommande(menu, c).total : c.total), 0);
 
   const changer = async (c, statut) => {
+    if (c.codeRetrait && statut === "recuperee" && !window.confirm(`Vérifie avant de remettre la commande ${c.code} :\n\n${c.prenom} doit te donner le code secret ${c.codeRetrait}.\n\nLe code est bon ?`)) return;
     setOccupe(c.id);
     try {
       if (statut === "recuperee") {
@@ -143,7 +144,7 @@ function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, j
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       <div style={{ fontSize: 30, fontWeight: 900, color: S.gold, minWidth: 64 }}>{c.code}</div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700 }}>{c.prenom} <a href={"tel:+221" + c.telephone} style={{ color: S.blue, fontSize: 12, textDecoration: "none" }}>📞 {c.telephone}</a></div>
+        <div style={{ fontWeight: 700 }}>{c.prenom}{c.codeRetrait && <span title="Code secret de retrait" style={{ background: S.gold, color: S.bg, borderRadius: 6, padding: "1px 7px", marginLeft: 6, fontSize: 15, fontWeight: 900, letterSpacing: 2 }}>🔑 {c.codeRetrait}</span>} <a href={"tel:+221" + c.telephone} style={{ color: S.blue, fontSize: 12, textDecoration: "none" }}>📞 {c.telephone}</a></div>
         <div style={{ fontSize: 12, color: S.muted }}>Retrait <b style={{ color: S.text }}>{heureRetrait(c)}</b>{autreJour && <b style={{ color: S.orange }}> · {c.retraitAt.toDate().toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", timeZone: "UTC" })}</b>}</div>
       </div>
       <div style={{ fontSize: 10, fontWeight: 700, color: st.couleur, textAlign: "right" }}>{st.nom}<br />{c.imprimeAt ? "🖨️ imprimé" : c.statut === "recue" ? "⏳ pas imprimé" : ""}</div>

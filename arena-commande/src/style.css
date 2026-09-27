@@ -87,3 +87,6 @@ h2{font-size:20px;font-weight:900;color:var(--vert);margin:20px 0 8px}
 .recap .ligne span:last-child{white-space:nowrap}
 .lien-cmd{justify-content:space-between;text-decoration:none;padding:14px}
 .lien-cmd b{font-size:22px;color:var(--vert)}
+.secret{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--jaune);color:var(--vert);border-radius:20px;padding:14px;margin:10px 0}
+.secret b{font-size:56px;line-height:1;font-weight:900;letter-spacing:.2em;margin:6px 0 6px .2em}
+.secret small{font-weight:600}

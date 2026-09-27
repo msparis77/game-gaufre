@@ -64,6 +64,18 @@ test("un élève passe une commande valide et reçoit le numéro T1", async () =
   assert.equal(r.code, "T1");
   const snap = await assertSucceeds(getDoc(doc(db, "commandes_en_ligne", r.id)));
   assert.equal(snap.data().statut, "recue");
+  assert.match(snap.data().codeRetrait, /^[0-9]{4}$/);
+});
+
+test("code secret de retrait : 4 chiffres exigés, et la caisse ne peut pas le changer", async () => {
+  const cfg = await preparer();
+  const c = creneauTest(cfg);
+  for (const [u, mauvais] of [["m1", "12a4"], ["m2", "123"], ["m3", 1234]])
+    await assert.rejects(passerCommande(fs, env.authenticatedContext(u).firestore(), u, { ...commandeOk(c), codeRetrait: mauvais }));
+  const r = await passerCommande(fs, env.authenticatedContext("e1").firestore(), "e1", { ...commandeOk(c), codeRetrait: "0042" });
+  const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
+  assert.equal((await getDoc(doc(caisse, "commandes_en_ligne", r.id))).data().codeRetrait, "0042");
+  await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { codeRetrait: "1111" }));
 });
 
 test("un élève ne peut pas lire la commande d'un autre, ni lister toutes les commandes", async () => {
