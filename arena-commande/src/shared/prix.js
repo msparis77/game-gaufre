@@ -3,6 +3,9 @@
 // envoyé par le téléphone n'est jamais pris pour argent comptant.
 
 export const estBoisson = (a) => a && a.categorie === "boissons";
+// Choix du pain (baguette / pain local brioché) : tous les sandwichs sauf ceux marqués sansChoixPain
+export const painsDuMenu = (menu) => (menu && menu.options && menu.options.pains) || [];
+export const aChoixPain = (menu, a) => !!a && !estBoisson(a) && !a.sansChoixPain && painsDuMenu(menu).length > 0;
 
 // choix = { formule: bool, boissonId, fromage: bool, sauce }
 export function prixUnitaire(menu, article, choix = {}) {
@@ -34,6 +37,7 @@ export function nomLigne(menu, article, choix = {}) {
     n += " (seul)";
   }
   if (article.omelette && choix.sauce) n += " · " + choix.sauce;
+  if (aChoixPain(menu, article) && choix.pain) n += " · " + choix.pain;
   return n;
 }
 
@@ -47,6 +51,7 @@ export function faireLigne(menu, article, choix, qte) {
     boissonId: formule ? choix.boissonId : "",
     fromage: !!(article.omelette && choix.fromage),
     sauce: article.omelette ? choix.sauce || "" : "",
+    pain: aChoixPain(menu, article) ? choix.pain || "" : "",
     qte,
     prixUnitaire: prixUnitaire(menu, article, choix),
   };

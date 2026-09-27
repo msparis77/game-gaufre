@@ -263,14 +263,18 @@ export function demarrerVeille() {
 
 // Mises à jour du menu en ligne demandées par le patron, appliquées une seule
 // fois par la caisse connectée (le site ne peut pas modifier le menu) :
-// v2 : « Niébé » → « Haricots », catégories « Formules sandwich » / « Formules omelette ».
+// v2 : « Niébé » → « Haricots », catégories « Formules sandwich » / « Formules omelette »,
+//      pain au choix (baguette / pain local brioché) sauf pour le sandwich Océan (thon).
 export function migrerMenu(m) {
   if (!m || (m.version || 1) >= 2) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.version = 2;
   const noms = { "Sandwichs": "Formules sandwich", "Sandwichs omelette": "Formules omelette" };
   (n.categories || []).forEach((c) => { if (noms[c.nom]) c.nom = noms[c.nom]; });
+  n.options = n.options || {};
+  if (!n.options.pains) n.options.pains = ["Baguette", "Pain local brioché"];
   (n.articles || []).forEach((a) => {
+    if (a.id === "ocean") a.sansChoixPain = true;
     for (const k of ["nom", "description"]) if (typeof a[k] === "string")
       a[k] = a[k].replace(/Niébé mijoté/g, "Haricots mijotés").replace(/Niébé/g, "Haricots").replace(/niébé/g, "haricots");
   });
@@ -280,5 +284,5 @@ async function mettreAJourMenu() {
   const ref = doc(db, "config/menu");
   const s = await getDoc(ref);
   const n = s.exists() ? migrerMenu(s.data()) : null;
-  if (n) await updateDoc(ref, { version: n.version, categories: n.categories, articles: n.articles });
+  if (n) await updateDoc(ref, { version: n.version, categories: n.categories, articles: n.articles, options: n.options });
 }

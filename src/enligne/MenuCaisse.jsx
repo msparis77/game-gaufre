@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebaseCaisse.js";
-import { estBoisson, prixUnitaire, nomLigne, fcfa } from "../../arena-commande/src/shared/prix.js";
+import { estBoisson, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu } from "../../arena-commande/src/shared/prix.js";
 import { MENU_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
@@ -25,7 +25,7 @@ function useMenuSite() {
 
 // Ligne de panier : même id pour les mêmes choix, pour que la quantité s'additionne.
 function ligne(menu, a, choix) {
-  const cle = [a.id, choix.formule ? "f_" + choix.boissonId : "seul", choix.fromage ? "fromage" : "", choix.sauce || ""].join("|");
+  const cle = [a.id, choix.formule ? "f_" + choix.boissonId : "seul", choix.fromage ? "fromage" : "", choix.sauce || "", aChoixPain(menu, a) ? choix.pain || "" : ""].join("|");
   return { id: "menu:" + cle, name: nomLigne(menu, a, choix), price: prixUnitaire(menu, a, choix), cat: "menu", emoji: a.emoji || "🥖" };
 }
 
@@ -54,7 +54,8 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
   const c = choix;
   const art = c && c.article;
   const prix = art ? prixUnitaire(menu, art, c) : null;
-  const ok = art && prix != null;
+  const choixPain = aChoixPain(menu, art);
+  const ok = art && prix != null && (!choixPain || !!c.pain);
   const valider = () => { if (!ok) return; ajouter(ligne(menu, art, c)); setChoix(null); };
 
   return <>
@@ -65,7 +66,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()} · <span style={{ color: S.gold }}>FORMULE = SANDWICH + BOISSON</span></div>
         <div style={grille}>{liste.map((a) => (
           <button key={a.id} style={{ ...tuile, border: `1px solid ${art && art.id === a.id ? S.gold : S.border}` }}
-            onClick={() => setChoix({ article: a, formule: true, boissonId: (o.boissonsFormule || [])[0]?.id || "", fromage: false, sauce: "" })}>
+            onClick={() => setChoix({ article: a, formule: true, boissonId: (o.boissonsFormule || [])[0]?.id || "", fromage: false, sauce: "", pain: "" })}>
             <div style={{ fontSize: 26 }}>{a.emoji}</div>
             <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom.replace(/^Sandwich /, "")}</div>
             <div style={{ display: "inline-block", background: S.gold, color: S.bg, fontSize: 10, fontWeight: 900, borderRadius: 5, padding: "1px 6px", margin: "2px 0" }}>🥤 FORMULE</div>
@@ -84,6 +85,13 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
           <button style={{ ...puce(c.formule), flex: 1 }} onClick={() => setChoix({ ...c, formule: true })}>🥤 Formule (sandwich + boisson)</button>
           <button style={{ ...puce(!c.formule), flex: 1 }} onClick={() => setChoix({ ...c, formule: false })}>Seul · {fcfa(art.prixFormule - (o.remiseSansBoisson || 0))}</button>
         </div>
+        {choixPain && <>
+          <div style={{ fontSize: 12, color: S.muted, marginBottom: 6 }}>Pain (obligatoire)</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {painsDuMenu(menu).map((p) => (
+              <button key={p} style={{ ...puce(c.pain === p), flex: 1 }} onClick={() => setChoix({ ...c, pain: p })}>{p === "Baguette" ? "🥖 " : "🍞 "}{p}</button>))}
+          </div>
+        </>}
         {c.formule && <>
           <div style={{ fontSize: 12, color: S.muted, marginBottom: 6 }}>Boisson de la formule</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 12 }}>
@@ -100,7 +108,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
           </div>
         </>}
         <button disabled={!ok} onClick={valider} style={{ ...Btn(ok ? S.green : S.card3, ok ? S.bg : S.muted), width: "100%", fontSize: 16, padding: 14 }}>
-          ＋ Ajouter au panier{ok ? ` · ${fcfa(prix)}` : ""}
+          {ok ? `＋ Ajouter au panier · ${fcfa(prix)}` : "Choisis le pain"}
         </button>
       </div>
     </div>}
