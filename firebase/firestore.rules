@@ -84,7 +84,7 @@ service cloud.firestore {
       let cli = getAfter(/databases/$(database)/documents/clients/$(request.auth.uid)).data;
       return d.keys().hasOnly(['uid', 'prenom', 'telephone', 'lignes', 'total', 'statut',
                                'paiement', 'createdAt', 'venteEnregistree', 'creneauId',
-                               'creneauCode', 'retraitAt', 'numero', 'code'])
+                               'creneauCode', 'retraitAt', 'numero', 'code', 'codeRetrait'])
         && d.keys().hasAll(['uid', 'prenom', 'telephone', 'lignes', 'total', 'statut',
                             'paiement', 'createdAt', 'venteEnregistree', 'creneauId',
                             'creneauCode', 'retraitAt', 'numero', 'code'])
@@ -112,6 +112,8 @@ service cloud.firestore {
         && d.numero is int && d.numero == cpt.count && d.numero <= cr.max
         && d.creneauCode == cr.code
         && d.code == cr.code + string(d.numero)
+        // Code secret de retrait (4 chiffres), montré seulement à l'élève et à la caisse
+        && (!('codeRetrait' in d) || (d.codeRetrait is string && d.codeRetrait.matches('^[0-9]{4}$')))
         // Anti-abus (voir /clients)
         && cli.derniere == request.time;
     }

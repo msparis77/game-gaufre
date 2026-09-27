@@ -317,7 +317,12 @@ function PageSuivi({ id }) {
         <b>{c.code}</b>
         <small>Retrait à <strong>{hhmm(at.getUTCHours() * 60 + at.getUTCMinutes())}</strong> · {at.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</small>
       </div>
-      <p class="aide centre">Montre ce numéro au comptoir. Garde cette page ouverte : elle se met à jour toute seule.</p>
+      {c.codeRetrait && <div class="secret">
+        <small>🔑 Ton code secret de retrait</small>
+        <b>{c.codeRetrait}</b>
+        <small>Donne ce code au comptoir pour récupérer ta commande. Ne le partage avec personne.</small>
+      </div>}
+      <p class="aide centre">Montre ton numéro {c.codeRetrait ? "et ton code secret " : ""}au comptoir. Garde cette page ouverte : elle se met à jour toute seule.</p>
       {annulee ? <div class="erreur">Cette commande a été annulée par la boutique.</div> : (
         <ol class="etapes">
           {STATUTS.map((s, i) => (

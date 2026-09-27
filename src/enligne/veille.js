@@ -62,14 +62,16 @@ export function reglerImpressionAuto(v) { etat.impressionAuto = v; ecrireBool(CL
 export const heureRetrait = (c) => { const d = c.retraitAt.toDate(); return hhmm(d.getUTCHours() * 60 + d.getUTCMinutes()); };
 
 function donneesTicket(c) {
+  const secret = c.codeRetrait ? ` · CODE ${c.codeRetrait}` : "";
   // Même format que les tickets de caisse envoyés au print bridge
   // (items / total / storeName / cashier / date / ticketNo).
   return {
     type: "cuisine",
-    storeName: "COMMANDE EN LIGNE " + c.code,
+    storeName: "COMMANDE EN LIGNE " + c.code + secret,
     ticketNo: c.code,
-    cashier: `${c.prenom} · retrait ${heureRetrait(c)}`,
-    employeeName: `${c.prenom} · retrait ${heureRetrait(c)}`,
+    cashier: `${c.prenom}${secret} · retrait ${heureRetrait(c)}`,
+    employeeName: `${c.prenom}${secret} · retrait ${heureRetrait(c)}`,
+    codeRetrait: c.codeRetrait || "",
     date: new Date().toLocaleString("fr-FR"),
     client: c.prenom,
     telephone: c.telephone,
@@ -130,7 +132,7 @@ export function imprimerNavigateur(c) {
   if (!w) return;
   const esc = (s) => String(s).replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[x]));
   w.document.write(`<html><head><title>${esc(t.ticketNo)}</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0;padding:8px}h1{text-align:center;font-size:40px;margin:4px 0}hr{border-top:1px dashed #000}td{padding:2px 0}.r{text-align:right}</style></head><body>
-<p style="text-align:center;margin:0">ARENA CAFÉ · COMMANDE EN LIGNE</p><h1>${esc(t.ticketNo)}</h1>
+<p style="text-align:center;margin:0">ARENA CAFÉ · COMMANDE EN LIGNE</p><h1>${esc(t.ticketNo)}</h1>${t.codeRetrait ? `<p style="text-align:center;margin:0;font-size:22px"><b>CODE ${esc(t.codeRetrait)}</b></p>` : ""}
 <p style="text-align:center;margin:0"><b>${esc(t.client)}</b> · ${esc(t.telephone)}<br/>Retrait <b>${esc(t.retrait)}</b></p><hr/>
 <table width="100%">${t.items.map((i) => `<tr><td>${i.qty} × ${esc(i.name)}</td><td class="r">${(i.qty * i.price).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
 <p><b>TOTAL ${t.total.toLocaleString("fr-FR")} F</b><br/>${t.paiement}</p></body></html>`);

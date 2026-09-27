@@ -7,6 +7,13 @@
 
 import { compteurId } from "./creneaux.js";
 
+// Code secret à 4 chiffres que l'élève donne au comptoir pour récupérer sa commande.
+export function codeSecret() {
+  const n = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(n);
+  return String(n[0] % 10000).padStart(4, "0");
+}
+
 export class ErreurCommande extends Error {
   constructor(code, message) { super(message); this.code = code; }
 }
@@ -19,7 +26,7 @@ export const nettoyerTelephone = (t) => {
 };
 export const telephoneValide = (t) => /^7[05678][0-9]{7}$/.test(t);
 
-export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, total, creneau }) {
+export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, total, creneau, codeRetrait: codeImpose }) {
   const { doc, collection, runTransaction, serverTimestamp, Timestamp } = fs;
   const id = doc(collection(db, "commandes_en_ligne")).id;
   const refCompteur = doc(db, "compteurs", compteurId(creneau.id, creneau.retraitAt));
@@ -37,6 +44,7 @@ export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, t
       if (numero > creneau.max)
         throw new ErreurCommande("COMPLET", "Ce créneau est complet. Choisis un autre horaire.");
       const code = creneau.code + numero;
+      const codeRetrait = codeImpose ?? codeSecret(); // codeImpose : seulement pour les tests des règles
       tx.set(refCompteur, { count: numero, derniere: id });
       tx.set(refClient, { derniere: serverTimestamp() });
       tx.set(refCommande, {
@@ -54,6 +62,7 @@ export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, t
         retraitAt: Timestamp.fromDate(creneau.retraitAt),
         numero,
         code,
+        codeRetrait,
       });
       return { id, code };
     });
