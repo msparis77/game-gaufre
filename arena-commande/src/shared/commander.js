@@ -26,7 +26,7 @@ export const nettoyerTelephone = (t) => {
 };
 export const telephoneValide = (t) => /^7[05678][0-9]{7}$/.test(t);
 
-export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, total, creneau, codeRetrait: codeImpose }) {
+export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, total, creneau, livraison, codeRetrait: codeImpose }) {
   const { doc, collection, runTransaction, serverTimestamp, Timestamp } = fs;
   const id = doc(collection(db, "commandes_en_ligne")).id;
   const refCompteur = doc(db, "compteurs", compteurId(creneau.id, creneau.retraitAt));
@@ -54,7 +54,7 @@ export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, t
         lignes,
         total,
         statut: "recue",
-        paiement: { mode: "retrait", statut: "a_payer" },
+        paiement: { mode: livraison ? "livraison" : "retrait", statut: "a_payer" },
         createdAt: serverTimestamp(),
         venteEnregistree: false,
         creneauId: creneau.id,
@@ -63,6 +63,8 @@ export async function passerCommande(fs, db, uid, { prenom, telephone, lignes, t
         numero,
         code,
         codeRetrait,
+        // Livraison : { zone, nom, adresse, frais } (frais en plus du total des articles)
+        ...(livraison ? { livraison: { zone: livraison.zone, nom: livraison.nom, adresse: livraison.adresse.trim().slice(0, 200), frais: livraison.frais } } : {}),
       });
       return { id, code };
     });

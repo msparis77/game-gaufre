@@ -61,3 +61,14 @@ export const CRENEAUX_DEPART = {
     c1000: { code: "F", minutes: 10 * 60, max: 25, actif: true },
   },
 };
+
+// Livraison : désactivée au départ. Le patron l'active et règle les zones
+// dans la caisse (🌐 → 🛵 Livraison).
+export const LIVRAISON_DEPART = {
+  actif: false,
+  minimum: 0,
+  zones: {
+    z1: { nom: "Guédiawaye", frais: 500, actif: true },
+  },
+};
+// Livreurs (config/livreurs, lisible seulement par la caisse) : [{ nom, tel }]

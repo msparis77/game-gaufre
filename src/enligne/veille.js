@@ -69,16 +69,18 @@ function donneesTicket(c) {
     type: "cuisine",
     storeName: "COMMANDE EN LIGNE " + c.code + secret,
     ticketNo: c.code,
-    cashier: `${c.prenom}${secret} · retrait ${heureRetrait(c)}`,
-    employeeName: `${c.prenom}${secret} · retrait ${heureRetrait(c)}`,
+    cashier: `${c.prenom}${secret} · ${c.livraison ? "LIVRAISON " + c.livraison.nom : "retrait"} ${heureRetrait(c)}`,
+    employeeName: `${c.prenom}${secret} · ${c.livraison ? "LIVRAISON " + c.livraison.nom : "retrait"} ${heureRetrait(c)}`,
     codeRetrait: c.codeRetrait || "",
     date: new Date().toLocaleString("fr-FR"),
     client: c.prenom,
     telephone: c.telephone,
     retrait: heureRetrait(c),
-    paiement: "À PAYER AU RETRAIT",
-    items: c.lignes.map((l) => ({ name: l.nom, qty: l.qte, price: l.prixUnitaire })),
-    total: c.total,
+    paiement: c.livraison ? "À PAYER AU LIVREUR" : "À PAYER AU RETRAIT",
+    livraison: c.livraison ? `${c.livraison.nom} · ${c.livraison.adresse}` : "",
+    items: [...c.lignes.map((l) => ({ name: l.nom, qty: l.qte, price: l.prixUnitaire })),
+      ...(c.livraison ? [{ name: "LIVRAISON " + c.livraison.nom, qty: 1, price: c.livraison.frais }] : [])],
+    total: c.total + (c.livraison ? c.livraison.frais : 0),
   };
 }
 
@@ -133,10 +135,74 @@ export function imprimerNavigateur(c) {
   const esc = (s) => String(s).replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[x]));
   w.document.write(`<html><head><title>${esc(t.ticketNo)}</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0;padding:8px}h1{text-align:center;font-size:40px;margin:4px 0}hr{border-top:1px dashed #000}td{padding:2px 0}.r{text-align:right}</style></head><body>
 <p style="text-align:center;margin:0">ARENA CAFÉ · COMMANDE EN LIGNE</p><h1>${esc(t.ticketNo)}</h1>${t.codeRetrait ? `<p style="text-align:center;margin:0;font-size:22px"><b>CODE ${esc(t.codeRetrait)}</b></p>` : ""}
-<p style="text-align:center;margin:0"><b>${esc(t.client)}</b> · ${esc(t.telephone)}<br/>Retrait <b>${esc(t.retrait)}</b></p><hr/>
+<p style="text-align:center;margin:0"><b>${esc(t.client)}</b> · ${esc(t.telephone)}<br/>${t.livraison ? "🛵 LIVRAISON" : "Retrait"} <b>${esc(t.retrait)}</b>${t.livraison ? `<br/><b>${esc(t.livraison)}</b>` : ""}</p><hr/>
 <table width="100%">${t.items.map((i) => `<tr><td>${i.qty} × ${esc(i.name)}</td><td class="r">${(i.qty * i.price).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
 <p><b>TOTAL ${t.total.toLocaleString("fr-FR")} F</b><br/>${t.paiement}</p></body></html>`);
   w.document.close(); w.focus(); w.print(); w.close();
+}
+
+// ── Bon de livraison (pour le livreur) ──
+// Toutes les infos du client : prénom, téléphone, adresse, articles, montant à
+// encaisser, et le code secret que le client doit lui donner.
+export function texteBonLivreur(c) {
+  const l = c.livraison || {};
+  const total = c.total + (l.frais || 0);
+  return [
+    `🛵 BON DE LIVRAISON ${c.code}${c.livreur ? " · " + c.livreur : ""}`,
+    `Client : ${c.prenom}`,
+    `Téléphone : +221 ${c.telephone}`,
+    `Adresse : ${l.nom || ""} · ${l.adresse || ""}`,
+    `Heure : ${heureRetrait(c)}`,
+    "",
+    ...c.lignes.map((x) => `${x.qte} × ${x.nom}`),
+    `Livraison : ${(l.frais || 0).toLocaleString("fr-FR")} F`,
+    "",
+    `À ENCAISSER : ${total.toLocaleString("fr-FR")} F`,
+    c.codeRetrait ? `Code secret à demander au client : ${c.codeRetrait}` : "",
+  ].filter((x, i, a) => x !== "" || a[i - 1] !== "").join("\n");
+}
+function donneesBonLivraison(c) {
+  const l = c.livraison || {};
+  const secret = c.codeRetrait ? ` · CODE ${c.codeRetrait}` : "";
+  return {
+    type: "livraison",
+    storeName: `BON LIVRAISON ${c.code}${secret}`,
+    ticketNo: c.code,
+    cashier: `${c.prenom} +221 ${c.telephone} · ${l.nom} : ${l.adresse}`,
+    employeeName: `${c.prenom} +221 ${c.telephone} · ${l.nom} : ${l.adresse}`,
+    codeRetrait: c.codeRetrait || "",
+    date: new Date().toLocaleString("fr-FR"),
+    client: c.prenom,
+    telephone: c.telephone,
+    adresse: `${l.nom} · ${l.adresse}`,
+    livreur: c.livreur || "",
+    paiement: "À ENCAISSER PAR LE LIVREUR",
+    items: [...c.lignes.map((x) => ({ name: x.nom, qty: x.qte, price: x.prixUnitaire })), { name: "LIVRAISON " + l.nom, qty: 1, price: l.frais || 0 }],
+    total: c.total + (l.frais || 0),
+  };
+}
+export function bonLivreurNavigateur(c) {
+  const t = donneesBonLivraison(c);
+  const w = window.open("", "_blank", "width=300,height=600");
+  if (!w) return;
+  const esc = (s) => String(s).replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[x]));
+  w.document.write(`<html><head><title>Livraison ${esc(t.ticketNo)}</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0;padding:8px}h1{text-align:center;font-size:36px;margin:4px 0}hr{border-top:1px dashed #000}td{padding:2px 0}.r{text-align:right}</style></head><body>
+<p style="text-align:center;margin:0">ARENA CAFÉ · BON DE LIVRAISON</p><h1>${esc(t.ticketNo)}</h1>${t.livreur ? `<p style="text-align:center;margin:0">Livreur : <b>${esc(t.livreur)}</b></p>` : ""}<hr/>
+<p style="margin:0">Client : <b>${esc(t.client)}</b><br/>Tél : <b>+221 ${esc(t.telephone)}</b><br/>Adresse : <b>${esc(t.adresse)}</b></p><hr/>
+<table width="100%">${t.items.map((i) => `<tr><td>${i.qty} × ${esc(i.name)}</td><td class="r">${(i.qty * i.price).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
+<p><b>À ENCAISSER : ${t.total.toLocaleString("fr-FR")} F</b></p>${t.codeRetrait ? `<p>Code secret à demander au client :<br/><b style="font-size:22px">${esc(t.codeRetrait)}</b></p>` : ""}</body></html>`);
+  w.document.close(); w.focus(); w.print(); w.close();
+}
+// Imprime le bon via le print bridge ; si l'imprimante ne répond pas, fenêtre du navigateur.
+export async function imprimerBonLivraison(c) {
+  try {
+    const r = await fetch(PRINT_BRIDGE_URL + "/print", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donneesBonLivraison(c)) });
+    if (!r.ok) throw new Error();
+    etat.derniereImpression = `✓ Bon de livraison ${c.code} imprimé`;
+  } catch (e) {
+    etat.derniereImpression = `❌ Bon de livraison ${c.code} non imprimé (print bridge injoignable ?)`;
+  }
+  prevenir();
 }
 
 // ── Écoute des commandes ──

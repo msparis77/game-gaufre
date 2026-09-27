@@ -90,3 +90,16 @@ h2{font-size:20px;font-weight:900;color:var(--vert);margin:20px 0 8px}
 .secret{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--jaune);color:var(--vert);border-radius:20px;padding:14px;margin:10px 0}
 .secret b{font-size:56px;line-height:1;font-weight:900;letter-spacing:.2em;margin:6px 0 6px .2em}
 .secret small{font-weight:600}
+.alerte{background:var(--vert);color:var(--creme)}
+.alerte-ok{text-align:center;font-weight:700;color:var(--vert);background:#fff;border-radius:12px;padding:10px;margin:10px 0}
+.prete{display:flex;flex-direction:column;gap:4px;text-align:center;background:#1faa59;color:#fff;border-radius:20px;padding:16px;margin:0 0 12px;animation:pulse 1.2s ease-in-out 3}
+.prete b{font-size:22px;font-weight:900}
+@keyframes pulse{50%{transform:scale(1.04)}}
+.champ textarea{display:block;width:100%;margin-top:4px;font:inherit;font-size:16px;padding:12px;border:2px solid #d9cfb8;border-radius:12px;background:var(--blanc);resize:vertical}
+.champ textarea:focus{outline:none;border-color:var(--vert)}
+.modes,.zones{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.modes button,.zones button{display:flex;flex-direction:column;align-items:center;border:2px solid var(--vert);background:var(--blanc);color:var(--vert);border-radius:12px;padding:10px 4px;min-height:60px}
+.modes button b{font-size:16px}
+.modes button small,.zones button small{font-size:12px}
+.modes button.on,.zones button.on{background:var(--vert);color:var(--creme)}
+.prete .appel{display:block;margin-top:8px;background:#fff;color:#1faa59;border-radius:12px;padding:10px;font-weight:800;text-decoration:none;font-size:17px}
