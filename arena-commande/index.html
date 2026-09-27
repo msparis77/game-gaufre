@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1C5C3A" />
+    <meta name="description" content="Commande ton petit-déjeuner Arena Café et récupère-le sans attendre." />
+    <title>Arena Café · Commande</title>
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="preload" as="image" href="/logo-256.webp" />
+    <style>
+      html,body{margin:0;background:#F6EFE0;color:#123822;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+      #app:empty::before{content:"Chargement du menu…";display:block;padding:48px 16px;text-align:center;font-weight:700;color:#1C5C3A}
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
