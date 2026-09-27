@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
 import * as fs from "firebase/firestore";
 import { passerCommande } from "../../arena-commande/src/shared/commander.js";
-import { MENU_DEPART, CRENEAUX_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
+import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { prochainsCreneaux } from "../../arena-commande/src/shared/creneaux.js";
 import { faireLigne } from "../../arena-commande/src/shared/prix.js";
 
@@ -26,11 +26,12 @@ const art = MENU_DEPART.articles.find((a) => a.id === "omelette_poulet");
 const ligne = faireLigne(MENU_DEPART, art, { formule: true, boissonId: "cafe_lait", fromage: true, sauce: "Mayo" }, 2);
 const commandeOk = (creneau) => ({ prenom: "Awa", telephone: "771234567", lignes: [ligne], total: ligne.prixUnitaire * 2, creneau });
 
-async function preparer(cfg = configTest()) {
+async function preparer(cfg = configTest(), livraison = null) {
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     await setDoc(doc(db, "config/menu"), MENU_DEPART);
     await setDoc(doc(db, "config/creneaux"), cfg);
+    if (livraison) await setDoc(doc(db, "config/livraison"), livraison);
   });
   return cfg;
 }
@@ -162,4 +163,52 @@ test("la caisse voit tout, change le statut, modifie le menu et les créneaux", 
   await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { total: 1 }));
   await assertSucceeds(setDoc(doc(caisse, "config/menu"), MENU_DEPART));
   await assertSucceeds(setDoc(doc(caisse, "config/creneaux"), cfg));
+});
+
+const LIV_ON = { ...LIVRAISON_DEPART, actif: true, minimum: 1000, zones: { ...LIVRAISON_DEPART.zones, z2: { nom: "Pikine", frais: 700, actif: false } } };
+const livOk = { zone: "z1", nom: "Guédiawaye", adresse: "Cité Sotiba, près de la mosquée", frais: 500 };
+
+test("livraison désactivée : commande en livraison refusée, retrait toujours possible", async () => {
+  const cfg = await preparer(configTest(), LIVRAISON_DEPART);
+  const c = creneauTest(cfg);
+  await assert.rejects(passerCommande(fs, env.authenticatedContext("e1").firestore(), "e1", { ...commandeOk(c), livraison: livOk }));
+  await assertSucceeds(passerCommande(fs, env.authenticatedContext("e2").firestore(), "e2", commandeOk(c)));
+  // Sans aucun réglage de livraison, le retrait marche aussi
+  await env.clearFirestore(); await preparer(cfg);
+  await assertSucceeds(passerCommande(fs, env.authenticatedContext("e3").firestore(), "e3", commandeOk(c)));
+});
+
+test("livraison activée : zone, frais, adresse et minimum vérifiés", async () => {
+  const cfg = await preparer(configTest(), LIV_ON);
+  const c = creneauTest(cfg);
+  const r = await passerCommande(fs, env.authenticatedContext("ok").firestore(), "ok", { ...commandeOk(c), livraison: livOk });
+  const d = (await getDoc(doc(env.authenticatedContext("ok").firestore(), "commandes_en_ligne", r.id))).data();
+  assert.deepEqual(d.paiement, { mode: "livraison", statut: "a_payer" });
+  assert.equal(d.livraison.frais, 500);
+  const mauvais = [
+    { ...livOk, frais: 0 },                                   // frais trichés
+    { ...livOk, zone: "z2", nom: "Pikine", frais: 700 },      // zone fermée
+    { ...livOk, zone: "zz" },                                 // zone inconnue
+    { ...livOk, adresse: "ici" },                             // adresse trop courte
+    { ...livOk, nom: "Autre" },                               // nom de zone faux
+  ];
+  for (const [i, l] of mauvais.entries())
+    await assert.rejects(passerCommande(fs, env.authenticatedContext("m" + i).firestore(), "m" + i, { ...commandeOk(c), livraison: l }));
+  // Sous le minimum de commande
+  const petit = faireLigne(MENU_DEPART, MENU_DEPART.articles.find((a) => a.id === "b_touba"), {}, 1);
+  await assert.rejects(passerCommande(fs, env.authenticatedContext("p").firestore(), "p", { ...commandeOk(c), lignes: [petit], total: petit.prixUnitaire, livraison: livOk }));
+});
+
+test("la caisse passe une livraison en route puis livrée, et règle la livraison", async () => {
+  const cfg = await preparer(configTest(), LIV_ON);
+  const r = await passerCommande(fs, env.authenticatedContext("e1").firestore(), "e1", { ...commandeOk(creneauTest(cfg)), livraison: livOk });
+  const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
+  await assertSucceeds(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { statut: "en_route", livreur: "Ibou", majAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { livreur: 12 }));
+  await assertSucceeds(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { statut: "livree", venteEnregistree: true }));
+  await assertFails(updateDoc(doc(caisse, "commandes_en_ligne", r.id), { livraison: { ...livOk, frais: 0 } }));
+  await assertSucceeds(setDoc(doc(caisse, "config/livraison"), LIV_ON));
+  const eleve = env.authenticatedContext("e9").firestore();
+  await assertSucceeds(getDoc(doc(eleve, "config/livraison")));
+  await assertFails(setDoc(doc(eleve, "config/livraison"), { ...LIV_ON, minimum: 0 }));
 });

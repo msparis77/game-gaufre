@@ -35,11 +35,14 @@ function sonner() {
 }
 
 export function alerterPrete(c) {
-  const titre = `✅ ${c.prenom}, ta commande est prête !`;
-  const texte = `Ta commande ${c.code} t'attend au comptoir de l'Arena Café, tu peux venir la retirer.` + (c.codeRetrait ? ` Ton code secret : ${c.codeRetrait}` : "");
+  const route = c.statut === "en_route";
+  const titre = route ? `🛵 ${c.prenom}, ta commande est en route !` : `✅ ${c.prenom}, ta commande est prête !`;
+  const texte = route
+    ? `${c.livreur ? c.livreur + " arrive" : "Le livreur arrive"} avec ta commande ${c.code}.` + (c.codeRetrait ? ` Donne-lui ton code secret : ${c.codeRetrait}` : "")
+    : `Ta commande ${c.code} t'attend au comptoir de l'Arena Café, tu peux venir la retirer.` + (c.codeRetrait ? ` Ton code secret : ${c.codeRetrait}` : "");
   sonner();
   try { navigator.vibrate && navigator.vibrate([400, 200, 400, 200, 800]); } catch (e) {}
-  document.title = "✅ Commande prête ! · Arena Café";
+  document.title = (route ? "🛵 Commande en route !" : "✅ Commande prête !") + " · Arena Café";
   if (!notificationsPossibles() || Notification.permission !== "granted") return;
   const options = { body: texte, icon: "/icon-192.png", tag: "prete-" + c.code, requireInteraction: true, vibrate: [400, 200, 400] };
   // Par le service worker d'abord (obligatoire sur Android), sinon directement.

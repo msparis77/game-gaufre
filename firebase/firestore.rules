@@ -23,10 +23,10 @@ service cloud.firestore {
     // Jour du retrait sous forme 20260928 (heure de Dakar = UTC).
     function jourCle(t) { return t.year() * 10000 + t.month() * 100 + t.day(); }
 
-    // ── Menu et créneaux : lecture publique, modification par la caisse ──
+    // ── Menu, créneaux et livraison : lecture publique, modification par la caisse ──
     match /config/{nom} {
-      allow read: if nom in ['menu', 'creneaux'];
-      allow write: if estCaisse() && nom in ['menu', 'creneaux'];
+      allow read: if nom in ['menu', 'creneaux', 'livraison'];
+      allow write: if estCaisse() && nom in ['menu', 'creneaux', 'livraison'];
     }
 
     // ── Compteur de commandes par créneau et par jour (ex. c0800_20260928) ──
@@ -70,8 +70,10 @@ service cloud.firestore {
       allow create: if connecte() && commandeValide(id);
       allow update: if estCaisse()
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt'])
-        && request.resource.data.statut in ['recue', 'preparation', 'prete', 'recuperee', 'annulee'];
+             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt', 'livreur'])
+        && request.resource.data.statut in ['recue', 'preparation', 'prete', 'recuperee',
+                                            'en_route', 'livree', 'annulee']
+        && (!('livreur' in request.resource.data) || request.resource.data.livreur is string);
       allow delete: if false;
     }
 
@@ -84,7 +86,7 @@ service cloud.firestore {
       let cli = getAfter(/databases/$(database)/documents/clients/$(request.auth.uid)).data;
       return d.keys().hasOnly(['uid', 'prenom', 'telephone', 'lignes', 'total', 'statut',
                                'paiement', 'createdAt', 'venteEnregistree', 'creneauId',
-                               'creneauCode', 'retraitAt', 'numero', 'code', 'codeRetrait'])
+                               'creneauCode', 'retraitAt', 'numero', 'code', 'codeRetrait', 'livraison'])
         && d.keys().hasAll(['uid', 'prenom', 'telephone', 'lignes', 'total', 'statut',
                             'paiement', 'createdAt', 'venteEnregistree', 'creneauId',
                             'creneauCode', 'retraitAt', 'numero', 'code'])
@@ -94,7 +96,9 @@ service cloud.firestore {
         && d.lignes is list && d.lignes.size() >= 1 && d.lignes.size() <= 20
         && d.total is int && d.total > 0 && d.total <= 100000
         && d.statut == 'recue'
-        && d.paiement == {'mode': 'retrait', 'statut': 'a_payer'}
+        // Retrait au comptoir, ou livraison si elle est activée dans la caisse
+        && ((!('livraison' in d) && d.paiement == {'mode': 'retrait', 'statut': 'a_payer'})
+            || ('livraison' in d && livraisonValide(d)))
         && d.createdAt == request.time
         && d.venteEnregistree == false
         // Créneau ouvert, actif, et fermé 15 min avant l'heure
@@ -116,6 +120,24 @@ service cloud.firestore {
         && (!('codeRetrait' in d) || (d.codeRetrait is string && d.codeRetrait.matches('^[0-9]{4}$')))
         // Anti-abus (voir /clients)
         && cli.derniere == request.time;
+    }
+
+    // Livraison : activée, zone ouverte, frais exacts de la zone, adresse remplie,
+    // minimum de commande atteint. Paiement à la livraison.
+    function livraisonValide(d) {
+      let cfg = get(/databases/$(database)/documents/config/livraison).data;
+      let l = d.livraison;
+      return cfg.actif == true
+        && d.paiement == {'mode': 'livraison', 'statut': 'a_payer'}
+        && l is map
+        && l.keys().hasOnly(['zone', 'nom', 'adresse', 'frais'])
+        && l.keys().hasAll(['zone', 'nom', 'adresse', 'frais'])
+        && l.zone is string && l.zone in cfg.zones
+        && cfg.zones[l.zone].actif == true
+        && l.nom == cfg.zones[l.zone].nom
+        && l.frais == cfg.zones[l.zone].frais
+        && l.adresse is string && l.adresse.size() >= 5 && l.adresse.size() <= 200
+        && d.total >= cfg.minimum;
     }
   }
 }

@@ -45,6 +45,14 @@ const STATUTS = [
   { id: "prete", nom: "Prête", detail: "Ta commande t'attend au comptoir !" },
   { id: "recuperee", nom: "Récupérée", detail: "Bon appétit !" },
 ];
+const STATUTS_LIVRAISON = [
+  { id: "recue", nom: "Reçue", detail: "La boutique a bien reçu ta commande." },
+  { id: "preparation", nom: "En préparation", detail: "On prépare ta commande." },
+  { id: "en_route", nom: "En route", detail: "Ton livreur arrive !" },
+  { id: "livree", nom: "Livrée", detail: "Bon appétit !" },
+];
+// Zones de livraison ouvertes, dans l'ordre (z1, z2…)
+const zonesOuvertes = (liv) => Object.entries(liv?.zones || {}).filter(([, z]) => z.actif).sort(([a], [b]) => a.localeCompare(b, "fr", { numeric: true })).map(([id, z]) => ({ id, ...z }));
 
 function Entete({ nbCommandes }) {
   return (
@@ -190,10 +198,15 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
 }
 
 // ─── Page panier + infos + créneau ───
-function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
+function PagePanier({ menu, config, livraisonCfg, panier, setPanier, ajouterCommande }) {
   const [prenom, setPrenom] = useState(() => lire("ac-prenom", ""));
   const [tel, setTel] = useState(() => lire("ac-tel", ""));
   const [creneauId, setCreneauId] = useState(null);
+  const zones = zonesOuvertes(livraisonCfg);
+  const livraisonPossible = !!livraisonCfg?.actif && zones.length > 0;
+  const [mode, setMode] = useState("retrait");
+  const [zoneId, setZoneId] = useState(() => lire("ac-zone", ""));
+  const [adresse, setAdresse] = useState(() => lire("ac-adresse", ""));
   const [places, setPlaces] = useState({});
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -215,6 +228,10 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
   const total = panier.reduce((s, l) => s + l.prixUnitaire * l.qte, 0);
   const telNet = nettoyerTelephone(tel);
   const creneau = creneaux.find((c) => c.id === creneauId);
+  const livrer = livraisonPossible && mode === "livraison";
+  const zone = livrer ? zones.find((z) => z.id === zoneId) : null;
+  const frais = zone ? zone.frais : 0;
+  const minimum = livraisonCfg?.minimum || 0;
   const changerQte = (i, d) => setPanier(panier.map((l, j) => (j === i ? { ...l, qte: l.qte + d } : l)).filter((l) => l.qte > 0));
 
   if (!panier.length)
@@ -224,13 +241,18 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
     setErreur("");
     if (!prenom.trim()) return setErreur("Écris ton prénom.");
     if (!telephoneValide(telNet)) return setErreur("Numéro de téléphone invalide (ex. 77 123 45 67).");
-    if (!creneau) return setErreur("Choisis une heure de retrait.");
+    if (livrer && !zone) return setErreur("Choisis ta zone de livraison.");
+    if (livrer && adresse.trim().length < 5) return setErreur("Écris ton adresse de livraison (quartier, rue, un repère).");
+    if (livrer && total < minimum) return setErreur(`Minimum ${fcfa(minimum)} de commande pour la livraison.`);
+    if (!creneau) return setErreur(livrer ? "Choisis une heure de livraison." : "Choisis une heure de retrait.");
     setEnvoi(true);
     try {
       ecrire("ac-prenom", prenom.trim()); ecrire("ac-tel", tel);
+      if (livrer) { ecrire("ac-zone", zone.id); ecrire("ac-adresse", adresse.trim()); }
       activerAlertes(); // son + notification pour « Prête » (profite du geste de l'élève)
       const u = await utilisateur();
-      const r = await passerCommande(fs, db, u.uid, { prenom, telephone: telNet, lignes: panier, total, creneau });
+      const r = await passerCommande(fs, db, u.uid, { prenom, telephone: telNet, lignes: panier, total, creneau,
+        livraison: livrer ? { zone: zone.id, nom: zone.nom, adresse, frais: zone.frais } : null });
       ajouterCommande(r);
       setPanier([]);
       aller("/suivi/" + r.id);
@@ -254,7 +276,8 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
           <div class="pl">{fcfa(l.prixUnitaire * l.qte)}</div>
         </div>
       ))}
-      <div class="total"><span>Total</span><b>{fcfa(total)}</b></div>
+      {livrer && zone && <div class="ligne"><div class="nomligne">🛵 Livraison · {zone.nom}</div><div class="pl">{fcfa(frais)}</div></div>}
+      <div class="total"><span>Total</span><b>{fcfa(total + frais)}</b></div>
       <a href="#/" class="lien">+ Ajouter autre chose</a>
 
       <h2>Tes infos</h2>
@@ -266,7 +289,24 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
           onInput={(e) => setTel(e.currentTarget.value)} />
       </label>
 
-      <h2>Heure de retrait</h2>
+      {livraisonPossible && <>
+        <h2>Retrait ou livraison ?</h2>
+        <div class="modes">
+          <button class={mode === "retrait" ? "on" : ""} onClick={() => setMode("retrait")}><b>🏃 Je viens chercher</b><small>au comptoir</small></button>
+          <button class={mode === "livraison" ? "on" : ""} onClick={() => setMode("livraison")}><b>🛵 Livraison</b><small>chez toi</small></button>
+        </div>
+        {livrer && <>
+          <div class="zones">
+            {zones.map((z) => <button key={z.id} class={zoneId === z.id ? "on" : ""} onClick={() => setZoneId(z.id)}><b>{z.nom}</b><small>+ {fcfa(z.frais)}</small></button>)}
+          </div>
+          <label class="champ">Adresse de livraison
+            <textarea value={adresse} maxLength={200} rows={2} placeholder="Quartier, rue, maison… et un repère (ex. près de la pharmacie)" onInput={(e) => setAdresse(e.currentTarget.value)} />
+          </label>
+          {minimum > 0 && <p class="aide">Minimum {fcfa(minimum)} de commande pour la livraison.</p>}
+        </>}
+      </>}
+
+      <h2>{livrer ? "Heure de livraison" : "Heure de retrait"}</h2>
       {!creneaux.length && <p class="bandeau">Aucun créneau ouvert pour le moment.</p>}
       <div class="creneaux">
         {creneaux.map((c) => {
@@ -284,11 +324,11 @@ function PagePanier({ menu, config, panier, setPanier, ajouterCommande }) {
       <p class="aide">Les commandes ferment {config?.delaiFermetureMin ?? 15} min avant chaque créneau.</p>
 
       <h2>Paiement</h2>
-      <div class="paiement">💵 Paiement sur place, au retrait de ta commande.</div>
+      <div class="paiement">{livrer ? "💵 Paiement au livreur, à la livraison." : "💵 Paiement sur place, au retrait de ta commande."}</div>
 
       {erreur && <div class="erreur" role="alert">{erreur}</div>}
       <button class="gros" disabled={envoi} onClick={valider}>
-        {envoi ? "Envoi…" : `Commander · ${fcfa(total)}`}
+        {envoi ? "Envoi…" : `Commander · ${fcfa(total + frais)}`}
       </button>
     </main>
   );
@@ -303,7 +343,7 @@ function PageSuivi({ id }) {
   // Sonnerie + vibration + notification quand la boutique passe la commande à « Prête »
   useEffect(() => {
     if (!c) return;
-    if (c.statut === "prete" && avant.current && avant.current !== "prete") alerterPrete(c);
+    if ((c.statut === "prete" || c.statut === "en_route") && avant.current && avant.current !== c.statut) alerterPrete(c);
     avant.current = c.statut;
   }, [c && c.statut]);
   useEffect(() => {
@@ -323,31 +363,38 @@ function PageSuivi({ id }) {
   if (c === false) return <main class="vide"><p>Commande introuvable.</p></main>;
   const at = c.retraitAt.toDate();
   const annulee = c.statut === "annulee";
-  const idx = STATUTS.findIndex((s) => s.id === c.statut);
+  const liv = c.livraison;
+  const etapes = liv ? STATUTS_LIVRAISON : STATUTS;
+  const idx = etapes.findIndex((s) => s.id === c.statut);
   return (
     <main class="suivi">
       {c.statut === "prete" && <div class="prete">
         <b>✅ {c.prenom}, ta commande est prête !</b>
         <span>Tu peux venir la retirer au comptoir{c.codeRetrait ? " avec ton code secret" : ""}.</span>
       </div>}
+      {c.statut === "en_route" && <div class="prete">
+        <b>🛵 {c.prenom}, ta commande est en route !</b>
+        <span>{c.livreur ? `${c.livreur} arrive` : "Le livreur arrive"}. Prépare ton code secret et {fcfa(c.total + (liv?.frais || 0))}.</span>
+      </div>}
       <p class="merci">Merci {c.prenom} !</p>
       <div class="numero">
         <small>Ton numéro de commande</small>
         <b>{c.code}</b>
-        <small>Retrait à <strong>{hhmm(at.getUTCHours() * 60 + at.getUTCMinutes())}</strong> · {at.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</small>
+        <small>{liv ? "Livraison vers" : "Retrait à"} <strong>{hhmm(at.getUTCHours() * 60 + at.getUTCMinutes())}</strong> · {at.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</small>
       </div>
       {c.codeRetrait && <div class="secret">
-        <small>🔑 Ton code secret de retrait</small>
+        <small>🔑 Ton code secret{liv ? "" : " de retrait"}</small>
         <b>{c.codeRetrait}</b>
-        <small>Donne ce code au comptoir pour récupérer ta commande. Ne le partage avec personne.</small>
+        <small>{liv ? "Donne ce code au livreur quand il te remet ta commande." : "Donne ce code au comptoir pour récupérer ta commande."} Ne le partage avec personne.</small>
       </div>}
       {(c.statut === "recue" || c.statut === "preparation") && (alerte
-        ? <p class="alerte-ok">🔔 Ton téléphone sonnera quand ta commande sera prête. Garde cette page ouverte.</p>
+        ? <p class="alerte-ok">🔔 Ton téléphone sonnera quand ta commande sera {liv ? "en route" : "prête"}. Garde cette page ouverte.</p>
         : <button class="gros alerte" onClick={async () => setAlerte(await activerAlertes())}>🔔 Me prévenir quand c'est prêt</button>)}
-      <p class="aide centre">Montre ton numéro {c.codeRetrait ? "et ton code secret " : ""}au comptoir. Garde cette page ouverte : elle se met à jour toute seule.</p>
+      {liv && <p class="aide centre">🛵 Livraison à <b>{liv.nom}</b> : {liv.adresse}</p>}
+      <p class="aide centre">{liv ? `Donne ton code secret au livreur${c.livreur ? " (" + c.livreur + ")" : ""} quand il arrive.` : `Montre ton numéro ${c.codeRetrait ? "et ton code secret " : ""}au comptoir.`} Garde cette page ouverte : elle se met à jour toute seule.</p>
       {annulee ? <div class="erreur">Cette commande a été annulée par la boutique.</div> : (
         <ol class="etapes">
-          {STATUTS.map((s, i) => (
+          {etapes.map((s, i) => (
             <li key={s.id} class={i < idx ? "fait" : i === idx ? "actuel" : ""}>
               <b>{s.nom}</b>{i === idx && <span>{s.detail}</span>}
             </li>
@@ -356,7 +403,8 @@ function PageSuivi({ id }) {
       )}
       <div class="recap">
         {c.lignes.map((l, i) => <div key={i} class="ligne"><span>{l.qte} × {l.nom}</span><span>{fcfa(l.prixUnitaire * l.qte)}</span></div>)}
-        <div class="total"><span>À payer au retrait</span><b>{fcfa(c.total)}</b></div>
+        {liv && <div class="ligne"><span>🛵 Livraison · {liv.nom}</span><span>{fcfa(liv.frais)}</span></div>}
+        <div class="total"><span>{liv ? "À payer au livreur" : "À payer au retrait"}</span><b>{fcfa(c.total + (liv?.frais || 0))}</b></div>
       </div>
       <a href="#/" class="lien">Retour au menu</a>
     </main>
@@ -381,6 +429,7 @@ function App() {
   const route = useRoute();
   const [menu, erreurMenu] = useDoc("config/menu", "ac-menu");
   const [config] = useDoc("config/creneaux", "ac-creneaux");
+  const [livraisonCfg] = useDoc("config/livraison", "ac-livraison");
   const [panier, setPanierBrut] = useState(() => lire("ac-panier", []));
   const [mesCommandes, setMesCommandes] = useState(() => lire("ac-mes-commandes", []));
   const setPanier = (p) => { setPanierBrut(p); ecrire("ac-panier", p); };
@@ -397,7 +446,7 @@ function App() {
   if (page === "suivi" && route[1]) contenu = <PageSuivi id={route[1]} />;
   else if (page === "commandes") contenu = <PageMesCommandes ids={mesCommandes} />;
   else if (!menu) contenu = <main class="vide"><p>{erreurMenu ? "Connexion impossible. Vérifie ta connexion internet." : "Chargement du menu…"}</p></main>;
-  else if (page === "panier") contenu = <PagePanier menu={menu} config={config} panier={panier} setPanier={setPanier} ajouterCommande={ajouterCommande} />;
+  else if (page === "panier") contenu = <PagePanier menu={menu} config={config} livraisonCfg={livraisonCfg} panier={panier} setPanier={setPanier} ajouterCommande={ajouterCommande} />;
   else contenu = <PageMenu menu={menu} panier={panier} setPanier={setPanier} ouvert={ouvert} />;
 
   return (
