@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from "react";
 import { demarrerVeille, abonner as abonnerVeille } from "./enligne/veille.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
 const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => abonnerVeille((e) => setN(e.commandes.filter((c) => c.statut === "recue").length)), []); return n; };
@@ -9,6 +9,9 @@ const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<0.001)return"0 "+unit
 const todayStr=()=>new Date().toISOString().split("T")[0];
 const timeStr=()=>new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 const uid=()=>`${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+// Parties PlayStation / PC : lignes "gaming" des ventes (une vente peut mélanger jeu + nourriture)
+const montantJeu=sale=>(sale.items||[]).filter(i=>i.cat==="gaming").reduce((s,i)=>s+i.price*(i.qty||1),0);
+const partiesDuJour=sales=>sales.flatMap(sale=>(sale.items||[]).filter(i=>i.cat==="gaming").map(i=>{const j=i.jeu||{};const m=/ (\d)J (\d+)min$/.exec(i.name||"");return{id:sale.id+"_"+i.id,name:j.nom||i.name,emoji:j.nom?i.emoji:"",players:j.joueurs||(m?Number(m[1]):""),mins:j.mins??(m?Number(m[2]):""),total:i.price*(i.qty||1),time:sale.time};}));
 const DEFAULT_GOAL=150000;
 const BILLETS=[10000,5000,2000,1000,500,200,100];
 const CHECKLIST=["Stock ingrédients saisi","Production planifiée","Caisse vérifiée","Gaufrier préchauffé","Crêpier préchauffé","Monnaie prête"];
@@ -26,7 +29,7 @@ const INIT_EXP_CATS=[{id:"c1",emoji:"⚡",label:"Électricité"},{id:"c2",emoji:
 const GUIDE_SECTIONS=[
   {id:"g1",emoji:"🔐",title:"Se connecter",color:"#FFD600",steps:[{icon:"1️⃣",text:"Sur l'écran de verrouillage, entrez votre code PIN à 4 chiffres."},{icon:"2️⃣",text:"Le PATRON a accès à tout. L'EMPLOYÉ peut encaisser et gérer le gaming."},{icon:"⚠️",text:"L'outil se verrouille automatiquement après 5 minutes d'inactivité."},{icon:"💡",text:"En cas d'oubli de PIN, demandez au patron de le modifier dans Bilan → Employés."}]},
   {id:"g2",emoji:"🛒",title:"Encaisser une vente",color:"#00E676",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🛒 Caisse."},{icon:"2️⃣",text:"Appuyez sur un produit pour l'ajouter au panier. Appuyez plusieurs fois pour augmenter la quantité."},{icon:"3️⃣",text:"Vérifiez le panier, puis appuyez sur ✓ Encaisser."},{icon:"🖨️",text:"Un TICKET s'affiche. Vous DEVEZ appuyer sur Imprimer avant de valider la vente."},{icon:"⚠️",text:"Ne jamais valider sans ticket ! Toute vente est enregistrée avec votre nom."}]},
-  {id:"g3",emoji:"🎮",title:"Gérer le Gaming",color:"#00B0FF",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🎮 Gaming."},{icon:"2️⃣",text:"Appuyez sur ▶ 1J (1 joueur) ou ▶ 2J (2 joueurs) sur la console concernée."},{icon:"3️⃣",text:"Le chronomètre démarre. La facturation est par tranche de 30 minutes."},{icon:"4️⃣",text:"Pour arrêter, appuyez sur ⏹ Stop & Encaisser. Le ticket s'imprime automatiquement."},{icon:"💡",text:"L'écran géant est plus cher. PS5 standard : 1 000F/30min."}]},
+  {id:"g3",emoji:"🎮",title:"Gérer le Gaming",color:"#00B0FF",steps:[{icon:"1️⃣",text:"Allez dans l'onglet 🛒 Encaissement, puis 🎮 PlayStation."},{icon:"2️⃣",text:"Appuyez sur ▶ 1J (1 joueur) ou ▶ 2J (2 joueurs) sur la console concernée."},{icon:"3️⃣",text:"Le chronomètre démarre. La facturation est par tranche de 30 minutes."},{icon:"4️⃣",text:"Pour arrêter, appuyez sur ⏹ Stop & Encaisser. La partie s'ajoute au panier, juste en dessous (vous pouvez y ajouter boissons et snacks), puis appuyez sur 🎫 Ticket & Payer."},{icon:"💡",text:"L'écran géant est plus cher. PS5 standard : 1 000F/30min."}]},
   {id:"g4",emoji:"📦",title:"Gérer les Stocks",color:"#FF6D00",steps:[{icon:"🌅",text:"Chaque matin, allez dans 📦 Stocks → Ingrédients. Saisissez les quantités en KG."},{icon:"🍳",text:"Quand vous fabriquez, allez dans Production. Entrez la quantité fabriquée. Les ingrédients se déduisent automatiquement."},{icon:"🔍",text:"Le soir, allez dans Vérification. Comptez physiquement et entrez les quantités. Si ça ne correspond pas → alerte automatique."},{icon:"⚠️",text:"Toute différence est enregistrée et envoyée au patron. Soyez honnêtes !"}]},
   {id:"g5",emoji:"📊",title:"Rapport du soir",color:"#BB86FC",steps:[{icon:"1️⃣",text:"En fin de journée, allez dans 📊 Bilan → Clôturer caisse."},{icon:"2️⃣",text:"Comptez tous les billets et pièces. Entrez les quantités par coupure."},{icon:"3️⃣",text:"Si l'écart est à 0 → parfait ! Si manque → le patron est alerté automatiquement."},{icon:"4️⃣",text:"Appuyez sur 📱 Rapport WhatsApp pour envoyer le résumé de la journée au patron."},{icon:"💡",text:"Le patron voit tout depuis Paris en temps réel. Travaillez toujours honnêtement."}]},
   {id:"g6",emoji:"🚫",title:"Ce qui est interdit",color:"#FF5252",steps:[{icon:"❌",text:"Vendre sans enregistrer dans la caisse. Toutes les ventes doivent passer par l'outil."},{icon:"❌",text:"Annuler une vente sans autorisation du patron (code PIN nécessaire)."},{icon:"❌",text:"Donner des produits sans encaisser. Même les 'cadeaux' doivent être enregistrés."},{icon:"❌",text:"Laisser une session gaming tourner sans encaisser à la fin."},{icon:"✅",text:"En cas de doute, appelez le patron AVANT d'agir."}]}
@@ -124,7 +127,6 @@ export default function App(){
   const [ticketNo,setTicketNo]=useState(1001);
   const [sales,setSales]=useState([]);
   const [sessions,setSessions]=useState({});
-  const [doneSess,setDoneSess]=useState([]);
   const [photoPrice,setPhotoPrice]=useState(50);
   const [photoCount,setPhotoCount]=useState(0);
   const [expenses,setExpenses]=useState([]);
@@ -195,7 +197,7 @@ export default function App(){
   useEffect(()=>{(async()=>{
         try{const k="gg3-"+currentStore.id+"-emps";let s=localStorage.getItem(k);let e=s?JSON.parse(s):await fbGet(k);if(e){setEmps(e);empRef.current=e;}else{setEmps(INIT_EMPS);empRef.current=INIT_EMPS;}}catch(e){}
     try{const k2="gg3-"+currentStore.id+"-prods";let s=localStorage.getItem(k2);let d=s?JSON.parse(s):await fbGet(k2);if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing)setIngredients(d.ing);if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.ec&&Array.isArray(d.ec)&&d.ec.length>0)setExpCats(d.ec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setExpCats(INIT_EXP_CATS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
-    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions({});if(d.done)setDoneSess(d.done);if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setDoneSess([]);setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
+    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions(d.sessions||{});if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let s=localStorage.getItem(k4);let d=s?JSON.parse(s):await fbGet(k4);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
   })();},[currentStore.id]);
@@ -206,7 +208,7 @@ export default function App(){
   const saveProdsMerge=upd=>{try{const k2="gg3-"+currentStore.id+"-prods";let c={};try{const s=localStorage.getItem(k2);if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem(k2,JSON.stringify(nd));fbSave(k2,nd);}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user,currentStore.id]);
-  const loadGlobalView=async()=>{setGlobalLoading(true);try{const ds=todayStr();const rows=await Promise.all(STORES.map(async st=>{const[day,prods]=await Promise.all([fbGet("gg3-"+st.id+"-day-"+ds),fbGet("gg3-"+st.id+"-prods")]);const sal=(day&&day.sales)||[];const exp=(day&&day.expenses)||[];const pc=(day&&day.pc)||0;const pp=(prods&&prods.pp)||50;const ca=sal.reduce((s,x)=>s+x.total,0)+pc*pp;const food=sal.filter(x=>x.items[0]?.cat!=="gaming").reduce((s,x)=>s+x.total,0);const gaming=sal.filter(x=>x.items[0]?.cat==="gaming").reduce((s,x)=>s+x.total,0);const dep=exp.reduce((s,x)=>s+x.amount,0);return{id:st.id,name:st.name,emoji:st.emoji,ca,food,gaming,dep,net:ca-dep,ventes:sal.length};}));setGlobalData(rows);}catch(e){showToast("Erreur chargement",S.red);}setGlobalLoading(false);};
+  const loadGlobalView=async()=>{setGlobalLoading(true);try{const ds=todayStr();const rows=await Promise.all(STORES.map(async st=>{const[day,prods]=await Promise.all([fbGet("gg3-"+st.id+"-day-"+ds),fbGet("gg3-"+st.id+"-prods")]);const sal=(day&&day.sales)||[];const exp=(day&&day.expenses)||[];const pc=(day&&day.pc)||0;const pp=(prods&&prods.pp)||50;const ca=sal.reduce((s,x)=>s+x.total,0)+pc*pp;const gaming=sal.reduce((s,x)=>s+montantJeu(x),0);const food=sal.reduce((s,x)=>s+x.total,0)-gaming;const dep=exp.reduce((s,x)=>s+x.amount,0);return{id:st.id,name:st.name,emoji:st.emoji,ca,food,gaming,dep,net:ca-dep,ventes:sal.length};}));setGlobalData(rows);}catch(e){showToast("Erreur chargement",S.red);}setGlobalLoading(false);};
 
   // AUTH
   const tryLogin=code=>{const emp=empRef.current.find(e=>e.pin===code);if(emp){setUser(emp);setTab("home");setPinErr(false);}else{setPinErr(true);setTimeout(()=>setPinErr(false),1200);}};
@@ -225,8 +227,9 @@ export default function App(){
   const ingRem=id=>Math.max(0,(ingStock[id]?.opening||0)+ingPurchased(id)-ingUsed(id));
   const ingAlert=id=>{const p=ingPhys[id];if(p==null)return null;const t=ingRem(id);const diff=t-p;return diff!==0?{diff,t,p}:null;};
   const totalCA=sales.reduce((s,sale)=>s+sale.total,0)+photoCount*photoPrice;
-  const totalGaming=doneSess.reduce((s,d)=>s+d.total,0);
-  const totalFood=sales.filter(s=>s.items[0]?.cat!=="gaming").reduce((s,sale)=>s+sale.total,0);
+  const doneSess=useMemo(()=>partiesDuJour(sales),[sales]);
+  const totalGaming=sales.reduce((s,sale)=>s+montantJeu(sale),0);
+  const totalFood=sales.reduce((s,sale)=>s+sale.total-montantJeu(sale),0);
   const totalExpenses=expenses.reduce((s,e)=>s+e.amount,0);
   const netProfit=totalCA-totalExpenses;
   const recipeCost=rec=>rec?rec.ingredients.reduce((s,ri)=>{const ing=ingredients.find(i=>i.id===ri.id);return s+(ing?ri.qty*ing.unitCost:0);},0):0;
@@ -260,6 +263,9 @@ export default function App(){
   };
   // COMMANDES EN LIGNE : veille en arrière-plan + vente ajoutée quand la commande est récupérée
   useEffect(()=>{demarrerVeille();},[]);
+  // Le panier survit à un rechargement de la page (une partie arrêtée mais pas encore payée n'est pas perdue)
+  useEffect(()=>{try{const c=JSON.parse(localStorage.getItem("gg3-panier")||"[]");if(Array.isArray(c)&&c.length)setCart(c);}catch(e){}},[]);
+  useEffect(()=>{try{localStorage.setItem("gg3-panier",JSON.stringify(cart));}catch(e){}},[cart]);
   const webEnAttente=useVeilleBadge();
   const enregistrerVenteEnLigne=(cmd,verif)=>{
     const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne"};
@@ -321,8 +327,12 @@ export default function App(){
   // GAMING
   const elapsed=start=>{const s=Math.floor((Date.now()-start)/1000);return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;};
   const liveCost=(ses,st)=>{const slots=Math.ceil((Date.now()-ses.start)/60000/30)||1;return slots*(ses.players===2?st.rate2:st.rate1);};
-  const startSess=(sid,players)=>{touch();setSessions(prev=>({...prev,[sid]:{start:Date.now(),players}}));};
-  const stopSess=sid=>{touch();const ses=sessions[sid];if(!ses)return;const st=stations.find(s=>s.id===sid);const mins=(Date.now()-ses.start)/60000;const slots=Math.ceil(mins/30)||1;const total=slots*(ses.players===2?st.rate2:st.rate1);const sale={id:uid(),items:[{id:sid,name:`${st.emoji}${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji}],total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo};const newTno=ticketNo+1;setSessions(prev=>{const n={...prev};delete n[sid];return n;});setDoneSess(prev=>[...prev,{id:uid(),sid,name:st.name,emoji:st.emoji,mins:Math.round(mins),players:ses.players,total,time:timeStr()}]);setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});setTicketNo(newTno);saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)}`);showToast(`${st.name} — ${fmt(total)}`);};
+  const startSess=(sid,players)=>{touch();setSessions(prev=>{const n={...prev,[sid]:{start:Date.now(),players}};saveDay({sessions:n});return n;});addAudit("SESSION START",`${stations.find(s=>s.id===sid)?.name||sid} ${players}J`);};
+  const stopSess=sid=>{touch();const ses=sessions[sid];if(!ses)return;const st=stations.find(s=>s.id===sid);if(!st)return;const mins=(Date.now()-ses.start)/60000;const slots=Math.ceil(mins/30)||1;const total=slots*(ses.players===2?st.rate2:st.rate1);
+    // La partie part dans le panier de la Caisse : elle est encaissée avec ticket, comme le reste
+    const ligne={id:"jeu_"+uid(),name:`${st.name} ${ses.players}J ${Math.round(mins)}min`,price:total,qty:1,cat:"gaming",emoji:st.emoji,jeu:{sid,nom:st.name,joueurs:ses.players,mins:Math.round(mins),fin:timeStr()}};
+    setCart(prev=>[...prev,ligne]);setSessions(prev=>{const n={...prev};delete n[sid];saveDay({sessions:n});return n;});
+    addAudit("SESSION END",`${st.name} ${Math.round(mins)}min ${fmt(total)} → panier`);setTab("caisse");setCTab("jeux");showToast(`${st.name} ajoutée au panier — ${fmt(total)}`);};
   const addPhoto=n=>{touch();setPhotoCount(prev=>{const np=Math.max(0,prev+n);saveDay({pc:np});return np;});if(n>0){addAudit("PHOTOCOPIE",`${n}p`);showToast(`📄 ${n}p — ${fmt(n*photoPrice)}`);}};
 
   // SMART EMOJI SUGGESTION
@@ -381,7 +391,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
   const totalPlanUnits=Object.values(planQty).reduce((s,v)=>s+(Number(v)||0),0);
 
   // STYLES
-  const T=a=>({flex:1,padding:"9px 2px",background:a?S.gold:"transparent",color:a?S.bg:S.muted,border:"none",cursor:"pointer",fontSize:9,fontWeight:700,letterSpacing:.3,textTransform:"uppercase",fontFamily:"monospace",transition:"all .15s",whiteSpace:"nowrap"});
+  const T=a=>({flex:"1 0 auto",minWidth:68,padding:"8px 6px 7px",background:a?S.gold:"transparent",color:a?S.bg:S.text,border:"none",borderRadius:10,cursor:"pointer",fontWeight:700,transition:"all .15s",whiteSpace:"nowrap",display:"flex",flexDirection:"column",alignItems:"center",gap:3});
   const Btn=(col=S.gold,txt=S.bg)=>({background:col,color:txt,border:"none",borderRadius:8,padding:"10px 14px",fontWeight:700,cursor:"pointer",fontSize:13});
   const Sub=a=>({flex:1,padding:"7px 4px",background:a?S.card3:"transparent",color:a?S.text:S.muted,border:`1px solid ${a?S.border:"transparent"}`,borderRadius:8,cursor:"pointer",fontSize:10,fontWeight:600,textAlign:"center"});
   const Inp=(w="100%")=>({width:w,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:8,padding:"9px 12px",fontSize:14,outline:"none",boxSizing:"border-box"});
@@ -429,9 +439,12 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
       </div>
 
       {/* TABS */}
-      <div style={{display:"flex",background:S.card,borderBottom:`1px solid ${S.border}`,overflowX:"auto",scrollbarWidth:"none"}}>
-        {[["home","🏠"],["caisse","🛒"],["web",webEnAttente>0?`🌐${webEnAttente}`:"🌐"],["gaming","🎮"],["stocks","📦"],["planning","🧮"],["recettes","📖"],...(isPatron?[["ia","🤖"]]:[]),["bilan","📊"],...(isPatron?[["global","🏢"]]:[]),["aide","❓"],["audit","🔍"]].map(([id,l])=>(
-          <button key={id} style={{...T(tab===id),fontSize:id==="aide"?14:9}} onClick={()=>{setTab(id);touch();}}>{l}</button>
+      <div style={{display:"flex",flexWrap:"wrap",gap:4,padding:"6px 6px",background:S.card,borderBottom:`1px solid ${S.border}`}}>
+        {[["home","🏠","Accueil"],["caisse","🛒","Encaissement",Object.keys(sessions).length],["web","🌐","En ligne",webEnAttente],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
+          <button key={id} style={T(tab===id)} onClick={()=>{setTab(id);touch();}}>
+            <span style={{fontSize:24,lineHeight:1,position:"relative"}}>{ic}{badge>0&&<span style={{position:"absolute",top:-6,right:-12,background:S.red,color:"#fff",fontSize:11,fontWeight:800,borderRadius:10,padding:"1px 5px"}}>{badge}</span>}</span>
+            <span style={{fontSize:12}}>{nom}</span>
+          </button>
         ))}
       </div>
 
@@ -451,7 +464,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           {insightLoading?<div style={{color:S.muted,fontSize:12,textAlign:"center",padding:8}}>⏳ Analyse...</div>:aiInsight?<div style={{fontSize:12,color:"#ddd",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{aiInsight}</div>:<div style={{fontSize:12,color:S.muted}}>Appuyez Actualiser pour une analyse personnalisée de votre journée.</div>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {[{l:"CA DU JOUR",v:fmt(totalCA),c:S.green,sub:`${goalPct}% obj.`},...(isManager?[{l:"BÉNÉFICE NET",v:fmt(netProfit),c:netProfit>=0?S.green:S.red,sub:`Dép. ${fmt(totalExpenses)}`}]:[]),{l:"FOOD",v:fmt(totalFood),c:S.gold,sub:`${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes`},{l:"GAMING",v:fmt(totalGaming),c:S.blue,sub:`${doneSess.length} sessions`}].map(c=>(<div key={c.l} style={Card()}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:16,fontWeight:800,color:c.c}}>{c.v}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{c.sub}</div></div>))}
+          {[{l:"CA DU JOUR",v:fmt(totalCA),c:S.green,sub:`${goalPct}% obj.`},...(isManager?[{l:"BÉNÉFICE NET",v:fmt(netProfit),c:netProfit>=0?S.green:S.red,sub:`Dép. ${fmt(totalExpenses)}`}]:[]),{l:"FOOD",v:fmt(totalFood),c:S.gold,sub:`${sales.filter(s=>s.total>montantJeu(s)).length} ventes`},{l:"GAMING",v:fmt(totalGaming),c:S.blue,sub:`${doneSess.length} sessions`}].map(c=>(<div key={c.l} style={Card()}><div style={{fontSize:9,color:S.muted,letterSpacing:1,marginBottom:4}}>{c.l}</div><div style={{fontSize:16,fontWeight:800,color:c.c}}>{c.v}</div><div style={{fontSize:10,color:S.muted,marginTop:2}}>{c.sub}</div></div>))}
         </div>
         {isManager&&<>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
@@ -469,15 +482,32 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
         </div>
         {(lossAlerts.length>0||ingAlerts.length>0)&&<div style={{...Card(S.red),cursor:"pointer"}} onClick={()=>setTab("stocks")}><div style={{color:S.red,fontWeight:700,fontSize:12,marginBottom:6}}>🚨 {lossAlerts.length+ingAlerts.length} ALERTE(S)</div>{lossAlerts.map(p=><div key={p.id} style={{fontSize:11,color:"#ffaaaa",marginBottom:2}}>{p.emoji} {p.name}: {lossQty(p.id)} manquant(s) — {fmt(lossQty(p.id)*p.price)}</div>)}</div>}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[{t:"caisse",i:"🛒",l:"Caisse",c:S.gold,s:`Ticket #${ticketNo}`},{t:"gaming",i:"🎮",l:"Gaming",c:S.green,s:Object.keys(sessions).length>0?`${Object.keys(sessions).length} en cours`:"Libre"},{t:"aide",i:"❓",l:"Guide Employé",c:S.teal,s:"Comment utiliser"},...(isPatron?[{t:"ia",i:"🤖",l:"Assistant IA",c:S.purple,s:"Conseils & alertes"}]:[{t:"stocks",i:"📦",l:"Stocks",c:S.purple,s:"Ingrédients"}])].map(r=>(
-            <button key={r.t} onClick={()=>setTab(r.t)} style={{...Card(r.c),cursor:"pointer",textAlign:"center",padding:"14px 10px",border:`2px solid ${r.c}`}}><div style={{fontSize:26}}>{r.i}</div><div style={{fontSize:12,fontWeight:700,color:r.c,marginTop:4}}>{r.l}</div><div style={{fontSize:10,color:S.muted}}>{r.s}</div></button>
+          {[{t:"caisse",i:"🛒",l:"Encaissement",c:S.gold,s:`Ticket #${ticketNo}`},{t:"jeux",i:"🎮",l:"PlayStation",c:S.green,s:Object.keys(sessions).length>0?`${Object.keys(sessions).length} en cours`:"Libre"},{t:"aide",i:"❓",l:"Guide Employé",c:S.teal,s:"Comment utiliser"},...(isPatron?[{t:"ia",i:"🤖",l:"Assistant IA",c:S.purple,s:"Conseils & alertes"}]:[{t:"stocks",i:"📦",l:"Stocks",c:S.purple,s:"Ingrédients"}])].map(r=>(
+            <button key={r.t} onClick={()=>{if(r.t==="jeux"){setCTab("jeux");setTab("caisse");}else setTab(r.t);}} style={{...Card(r.c),cursor:"pointer",textAlign:"center",padding:"14px 10px",border:`2px solid ${r.c}`}}><div style={{fontSize:26}}>{r.i}</div><div style={{fontSize:12,fontWeight:700,color:r.c,marginTop:4}}>{r.l}</div><div style={{fontSize:10,color:S.muted}}>{r.s}</div></button>
           ))}
         </div>
       </div>}
 
       {/* ══ CAISSE ══ */}
       {tab==="caisse"&&<div style={{padding:14}}>
-        <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button></div>
+        <div style={{display:"flex",gap:8,marginBottom:12}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>☕ Boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>🥞 Snacks</button><button style={Sub(cTab==="jeux")} onClick={()=>setCTab("jeux")}>🎮 PlayStation{Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:""}</button></div>
+        {cTab==="jeux"?<>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
+            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
+              <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
+              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
+              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
+              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
+              {isManager&&<div style={{display:"flex",gap:4,marginTop:6}}>
+                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>✏️ Modifier</button>
+                <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR CONSOLE",st.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>🗑 Supprimer</button>
+              </div>}
+            </div>);})}
+        </div>
+        {isManager&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / un poste</button>}
+        </>:<>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
           {(cTab==="boissons"?boissons:snacks).map(p=>(
             <div key={p.id}>
@@ -496,38 +526,24 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           ))}
         </div>
         {isManager&&<button onClick={()=>setAddProdCat(cTab)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"8px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:12,marginBottom:8}}>＋ Ajouter {cTab==="boissons"?"une boisson":"un snack"}</button>}
+        </>}
         {cart.length>0?<div style={Card()}>
           <div style={{fontWeight:700,color:S.gold,marginBottom:10,fontSize:12,letterSpacing:1}}>🛒 PANIER — Ticket #{ticketNo}</div>
-          {cart.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:15}}>{item.emoji}</span><div style={{flex:1,fontSize:12}}>{item.name}</div><button onClick={()=>updQty(item.id,-1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>−</button><span style={{fontSize:14,fontWeight:700,minWidth:20,textAlign:"center"}}>{item.qty}</span><button onClick={()=>updQty(item.id,+1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>+</button><div style={{minWidth:68,textAlign:"right",fontSize:12,fontWeight:700}}>{fmt(item.price*item.qty)}</div><button onClick={()=>updQty(item.id,-99)} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:16}}>✕</button></div>)}
+          {cart.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:15}}>{item.emoji}</span><div style={{flex:1,fontSize:12}}>{item.name}</div><button onClick={()=>updQty(item.id,-1)} style={{background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>−</button><span style={{fontSize:14,fontWeight:700,minWidth:20,textAlign:"center"}}>{item.qty}</span><button disabled={item.cat==="gaming"} onClick={()=>updQty(item.id,+1)} style={{opacity:item.cat==="gaming"?.3:1,background:S.card3,border:`1px solid ${S.border}`,color:S.text,width:30,height:30,borderRadius:8,cursor:"pointer",fontSize:16}}>+</button><div style={{minWidth:68,textAlign:"right",fontSize:12,fontWeight:700}}>{fmt(item.price*item.qty)}</div><button onClick={()=>updQty(item.id,-99)} style={{background:"transparent",border:"none",color:S.muted,cursor:"pointer",fontSize:16}}>✕</button></div>)}
           <div style={{borderTop:`1px solid ${S.border}`,marginTop:10,paddingTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{fontSize:16,fontWeight:800}}>TOTAL <span style={{color:S.green}}>{fmt(cartTotal)}</span></div>
             <div style={{display:"flex",gap:8}}><button onClick={()=>setCart([])} style={{...Btn(S.card3,S.red),border:`1px solid ${S.red}`,fontSize:12}}>✕</button><button onClick={requestTicket} style={{...Btn(S.teal),fontSize:13,padding:"10px 14px"}}>🎫 Ticket & Payer</button></div>
           </div>
           <div style={{fontSize:10,color:S.muted,textAlign:"center",marginTop:6}}>⚠️ Le ticket doit être imprimé avant validation</div>
         </div>:<div style={{...Card(),textAlign:"center",color:S.muted,fontSize:13,padding:24}}><div style={{fontSize:36,marginBottom:8}}>🛒</div>Appuie sur un produit</div>}
+        {cTab==="jeux"&&<>
+        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {isManager?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
+        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
+        </>}
       </div>}
 
       {/* ══ GAMING ══ */}
       {tab==="web"&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><CommandesEnLigne S={S} Btn={Btn} Inp={Inp} Card={Card} Sub={Sub} requirePatron={requirePatron} showToast={showToast} enregistrerVente={enregistrerVenteEnLigne}/></Suspense>}
-      {tab==="gaming"&&<div style={{padding:14}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          {stations.map(st=>{const ses=sessions[st.id];const active=!!ses;return(
-            <div key={st.id} style={{background:active?"#051505":S.card,border:`2px solid ${active?S.green:S.border}`,borderRadius:12,padding:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:20}}>{st.emoji}</span>{active&&<div style={{background:S.green,color:S.bg,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10}}>EN JEU</div>}</div>
-              <div style={{fontSize:11,fontWeight:700,color:active?S.green:S.text,marginBottom:2}}>{st.name}</div>
-              <div style={{fontSize:10,color:S.muted,marginBottom:8}}>1J {fmt(st.rate1)} • 2J {fmt(st.rate2)}/30min</div>
-              {active?<><div style={{fontFamily:"monospace",fontSize:26,fontWeight:800,color:S.green}}>{elapsed(ses.start)}</div><div style={{fontSize:11,color:S.muted,margin:"2px 0 10px"}}>{ses.players}J • {fmt(liveCost(ses,st))}</div><button onClick={()=>stopSess(st.id)} style={{...Btn(S.red),width:"100%",fontSize:12,padding:"10px"}}>⏹ Stop & Encaisser</button></>
-              :<div style={{display:"flex",gap:6}}><button onClick={()=>startSess(st.id,1)} style={{...Btn(S.green),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 1J</button><button onClick={()=>startSess(st.id,2)} style={{...Btn(S.blue),flex:1,fontSize:11,padding:"9px 4px"}}>▶ 2J</button></div>}
-              {isManager&&<div style={{display:"flex",gap:4,marginTop:6}}>
-                <button onClick={()=>setEditStation({...st})} style={{flex:1,background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>✏️ Modifier</button>
-                <button onClick={()=>{if(!window.confirm("Supprimer "+st.name+"?"))return;const ns=stations.filter(x=>x.id!==st.id);setStations(ns);saveProds(boissons,snacks,ingredients,recipes,ns,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR CONSOLE",st.name);showToast("✓ Supprimé",S.red);}} style={{flex:1,background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 0",cursor:"pointer",fontSize:10}}>🗑 Supprimer</button>
-              </div>}
-            </div>);})}
-        </div>
-        {isManager&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / un poste</button>}
-        <div style={Card()}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}><div><div style={{fontSize:14,fontWeight:700}}>🖨️ Photocopies</div><div style={{fontSize:11,color:S.muted,marginTop:3,display:"flex",alignItems:"center",gap:6}}>Prix: {isManager?<input type="number" value={photoPrice} onChange={e=>{const v=Number(e.target.value)||50;setPhotoPrice(v);saveProds(boissons,snacks,ingredients,recipes,v,dailyGoal,ticketNo);}} style={{width:55,background:S.card2,border:`1px solid ${S.border}`,color:S.text,borderRadius:6,padding:"3px 6px",fontSize:12,outline:"none"}}/>:<strong style={{color:S.gold}}>{photoPrice}</strong>} F</div></div><div style={{display:"flex",gap:8,alignItems:"center"}}><button onClick={()=>addPhoto(-1)} style={{...Btn(S.card3,S.text),border:`1px solid ${S.border}`,width:36,height:36,padding:0,fontSize:20}}>−</button><span style={{fontSize:22,fontWeight:800,minWidth:36,textAlign:"center"}}>{photoCount}</span><button onClick={()=>addPhoto(1)} style={{...Btn(S.gold),width:36,height:36,padding:0,fontSize:20}}>+</button><div style={{fontSize:14,fontWeight:800,color:S.green,minWidth:72,textAlign:"right"}}>{fmt(photoCount*photoPrice)}</div></div></div></div>
-        {doneSess.length>0&&<div style={Card()}><div style={{fontWeight:700,color:S.gold,marginBottom:8,fontSize:11,letterSpacing:1}}>SESSIONS DU JOUR</div>{[...doneSess].reverse().slice(0,6).map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${S.border}`,fontSize:11}}><div><span style={{color:S.muted}}>{d.time} </span>{d.emoji}{d.name} {d.players}J {d.mins}min</div><div style={{color:S.green,fontWeight:800}}>{fmt(d.total)}</div></div>)}</div>}
-      </div>}
 
       {/* ══ STOCKS ══ */}
       {/* ══ STOCKS ══ */}
@@ -1086,7 +1102,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
         <div style={{background:S.card,borderRadius:16,padding:20,width:"100%",maxWidth:400,border:`2px solid #25D366`}}>
           <div style={{fontWeight:800,fontSize:15,color:"#25D366",marginBottom:12}}>📱 RAPPORT WHATSAPP</div>
           <div style={{background:S.card2,borderRadius:10,padding:14,fontSize:11,color:"#ccc",lineHeight:1.8,maxHeight:280,overflowY:"auto",whiteSpace:"pre-wrap",fontFamily:"monospace"}}>
-            {`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 Objectif: ${goalPct}%\n\n🥞 Food: ${fmt(totalFood)} (${sales.filter(s=>s.items[0]?.cat!=="gaming").length} ventes)\n🎮 Gaming: ${fmt(totalGaming)} (${doneSess.length} sessions)\n🎫 Tickets émis: ${ticketNo-1001}\n💸 Dépenses: ${fmt(totalExpenses)}\n\n${top5.length?`⭐ Top:\n${top5.map(p=>`• ${p.emoji}${p.name}: ${p.sold}×`).join("\n")}\n\n`:""}${lossAlerts.length?`🚨 PERTES:\n${lossAlerts.map(p=>`• ${p.emoji}${p.name}: ${lossQty(p.id)} manquant(s) = ${fmt(lossQty(p.id)*p.price)}`).join("\n")}\n\n`:"✅ Stock OK\n\n"}🔒 ${timeStr()} — ${user.name}`}
+            {`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 Objectif: ${goalPct}%\n\n🥞 Food: ${fmt(totalFood)} (${sales.filter(s=>s.total>montantJeu(s)).length} ventes)\n🎮 Gaming: ${fmt(totalGaming)} (${doneSess.length} sessions)\n🎫 Tickets émis: ${ticketNo-1001}\n💸 Dépenses: ${fmt(totalExpenses)}\n\n${top5.length?`⭐ Top:\n${top5.map(p=>`• ${p.emoji}${p.name}: ${p.sold}×`).join("\n")}\n\n`:""}${lossAlerts.length?`🚨 PERTES:\n${lossAlerts.map(p=>`• ${p.emoji}${p.name}: ${lossQty(p.id)} manquant(s) = ${fmt(lossQty(p.id)*p.price)}`).join("\n")}\n\n`:"✅ Stock OK\n\n"}🔒 ${timeStr()} — ${user.name}`}
           </div>
           <div style={{display:"flex",gap:10,marginTop:14}}><button onClick={()=>setWhatsModal(false)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:8,padding:"10px",cursor:"pointer",fontSize:13,flex:1}}>Fermer</button><button onClick={()=>{try{navigator.clipboard.writeText(`📊 ${currentStore.name}\n${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}\n\n💰 CA: ${fmt(totalCA)} | Net: ${fmt(netProfit)}\n🎯 ${goalPct}%\n\nFood: ${fmt(totalFood)} | Gaming: ${fmt(totalGaming)}\n🎫 ${ticketNo-1001} tickets\nDépenses: ${fmt(totalExpenses)}\n\n${lossAlerts.length?`🚨 PERTES: ${lossAlerts.map(p=>`${p.name}: ${lossQty(p.id)} manquant(s)`).join(", ")}\n`:"✅ Stock OK\n"}\n🔒 ${timeStr()} — ${user.name}`);}catch(e){}showToast("✓ Copié","#25D366");}} style={{...Btn("#25D366"),flex:1}}>📋 Copier</button></div>
         </div>
