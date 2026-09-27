@@ -24,7 +24,8 @@ export function prixUnitaire(menu, article, choix = {}) {
 export function nomLigne(menu, article, choix = {}) {
   if (!article) return "?";
   if (estBoisson(article)) return article.nom;
-  let n = article.nom;
+  // « Formule » en tête, pour que le client, la caisse et la cuisine le voient tout de suite
+  let n = (choix.formule ? "Formule " : "") + article.nom;
   if (article.omelette && choix.fromage) n += " Fromage";
   if (choix.formule) {
     const b = menu.options.boissonsFormule.find((x) => x.id === choix.boissonId);
