@@ -269,9 +269,13 @@ export function demarrerVeille() {
 // v3 : nouvelle carte des boissons (CARTE_BOISSONS) : les boissons connues prennent
 //      nom, prix, description et famille de la carte, les nouvelles sont ajoutées,
 //      les boissons ajoutées à la main dans la caisse restent.
+// v4 : « Omelette Poulet » devient « Œuf au plat Poulet » à 1200, omelette saucisson à 1200 ;
+//      jus d'orange (300) et Presséa orange (400) sont deux boissons séparées ;
+//      chocolat au lait dans la formule à +350 (chocolat au lait à 500) ;
+//      pas de poulet dans le sandwich saucisson pimentaise.
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 3) return null;
+  if (!m || v >= 4) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -293,7 +297,14 @@ export function migrerMenu(m) {
   const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
   const reste = n.articles.filter((a) => !ids.has(a.id));
   n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
-  n.version = 3;
+  n.articles.forEach((a) => {
+    if (a.id === "omelette_poulet") Object.assign(a, { nom: "Sandwich Œuf au plat Poulet", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200 });
+    if (a.id === "omelette_saucisson") a.prixFormule = 1200;
+    if (a.id === "saucisson_pimentaise" && typeof a.description === "string")
+      a.description = a.description.replace(/,\s*poulet\b/i, "");
+  });
+  (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
+  n.version = 4;
   return n;
 }
 async function mettreAJourMenu() {

@@ -22,9 +22,10 @@ export const CARTE_BOISSONS = [
   { id: "b_bissap_blanc", famille: "jus_locaux", nom: "Bissap blanc", description: "Hibiscus blanc", prix: 300, emoji: "🌸" },
   { id: "b_tamarin", famille: "jus_locaux", nom: "Tamarin", description: "Dakhar", prix: 300, emoji: "🟤" },
   { id: "b_bouye", famille: "jus_locaux", nom: "Bouye", description: "Pain de singe (baobab)", prix: 300, emoji: "🌳" },
+  { id: "b_jus_orange", famille: "jus_locaux", nom: "Jus d'orange", description: "Orange pressée", prix: 300, emoji: "🍊" },
   { id: "b_pressea_ananas_coco", famille: "jus_pressea", nom: "Presséa ananas coco", description: "Ananas, noix de coco", prix: 400, emoji: "🍍" },
   { id: "b_pressea_goyave", famille: "jus_pressea", nom: "Presséa goyave", description: "", prix: 400, emoji: "🍈" },
-  { id: "b_jus_orange", famille: "jus_pressea", nom: "Presséa orange", description: "", prix: 400, emoji: "🍊" },
+  { id: "b_pressea_orange", famille: "jus_pressea", nom: "Presséa orange", description: "", prix: 400, emoji: "🍊" },
   { id: "b_coca", famille: "sodas", nom: "Coca-Cola", description: "", prix: 500, emoji: "🥤" },
   { id: "b_fanta", famille: "sodas", nom: "Fanta", description: "", prix: 500, emoji: "🥤" },
   { id: "b_sprite", famille: "sodas", nom: "Sprite", description: "", prix: 500, emoji: "🥤" },
@@ -32,7 +33,7 @@ export const CARTE_BOISSONS = [
 ];
 
 export const MENU_DEPART = {
-  version: 3,
+  version: 4,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
@@ -52,7 +53,7 @@ export const MENU_DEPART = {
       { id: "maxi_the", nom: "Maxi thé", sup: 150 },
       { id: "jus_orange", nom: "Jus d'orange", sup: 150 },
       { id: "cafe_lait", nom: "Café au lait", sup: 250 },
-      { id: "choco_lait", nom: "Chocolat au lait", sup: 250 },
+      { id: "choco_lait", nom: "Chocolat au lait", sup: 350 },
     ],
     sauces: ["Mayo", "Ketchup", "Sauce piquante"],
     // Pain au choix pour chaque sandwich (sauf ceux marqués sansChoixPain, ex. Océan)
@@ -62,11 +63,11 @@ export const MENU_DEPART = {
     { id: "essentiel", categorie: "sandwichs", nom: "Sandwich Essentiel", nomWolof: "Ñebbe", description: "Haricots mijotés, oignons, sauce maison", prixFormule: 500, omelette: false, emoji: "🫘", photo: "", dispo: true },
     { id: "gourmand", categorie: "sandwichs", nom: "Sandwich Gourmand", nomWolof: "Neex", description: "Beurre, pâte chocolat-noisette", prixFormule: 700, omelette: false, emoji: "🍫", photo: "", dispo: true },
     { id: "ocean", categorie: "sandwichs", nom: "Sandwich Océan", nomWolof: "Géej", description: "Thon, pommes de terre, oignons, mayo", prixFormule: 850, omelette: false, sansChoixPain: true, emoji: "🐟", photo: "", dispo: true },
-    { id: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Saucisson de bœuf pimentaise", nomWolof: "", description: "Saucisson de bœuf, pommes de terre, petits pois, poulet, sauce pimentée", prixFormule: 1150, omelette: false, emoji: "🌶️", photo: "", dispo: true },
+    { id: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Saucisson de bœuf pimentaise", nomWolof: "", description: "Saucisson de bœuf, pommes de terre, petits pois, sauce pimentée", prixFormule: 1150, omelette: false, emoji: "🌶️", photo: "", dispo: true },
     { id: "omelette_nature", categorie: "omelettes", nom: "Sandwich Omelette Nature", nomWolof: "", description: "Omelette, oignons", prixFormule: 850, omelette: true, emoji: "🍳", photo: "", dispo: true },
     { id: "omelette_pdt", categorie: "omelettes", nom: "Sandwich Omelette Pommes de terre", nomWolof: "", description: "Omelette, pommes de terre", prixFormule: 950, omelette: true, emoji: "🥔", photo: "", dispo: true },
-    { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Omelette Poulet", nomWolof: "", description: "Poulet, oignons, pommes de terre", prixFormule: 1100, omelette: true, emoji: "🍗", photo: "", dispo: true },
-    { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1100, omelette: true, emoji: "🌭", photo: "", dispo: true },
+    { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Œuf au plat Poulet", nomWolof: "", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🍗", photo: "", dispo: true },
+    { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🌭", photo: "", dispo: true },
     { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
     ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
   ],
