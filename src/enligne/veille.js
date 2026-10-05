@@ -269,7 +269,9 @@ export function demarrerVeille() {
 // v3 : nouvelle carte des boissons (CARTE_BOISSONS) : les boissons connues prennent
 //      nom, prix, description et famille de la carte, les nouvelles sont ajoutées,
 //      les boissons ajoutées à la main dans la caisse restent.
-// v4 : « Omelette Poulet » devient « Œuf au plat Poulet » à 1200, omelette saucisson à 1200.
+// v4 : « Omelette Poulet » devient « Œuf au plat Poulet » à 1200, omelette saucisson à 1200 ;
+//      jus d'orange (300) et Presséa orange (400) sont deux boissons séparées ;
+//      chocolat au lait dans la formule à +350 (chocolat au lait à 500).
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
   if (!m || v >= 4) return null;
@@ -286,20 +288,19 @@ export function migrerMenu(m) {
         a[k] = a[k].replace(/Niébé mijoté/g, "Haricots mijotés").replace(/Niébé/g, "Haricots").replace(/niébé/g, "haricots");
     });
   }
-  if (v < 3) {
-    // Boissons de la carte dans l'ordre de l'affiche, puis celles ajoutées à la main.
-    const carte = CARTE_BOISSONS.map((b) => {
-      const a = n.articles.find((x) => x.id === b.id);
-      return a ? { ...a, ...b, categorie: "boissons" } : { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true };
-    });
-    const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
-    const reste = n.articles.filter((a) => !ids.has(a.id));
-    n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
-  }
+  // Boissons de la carte dans l'ordre de l'affiche, puis celles ajoutées à la main.
+  const carte = CARTE_BOISSONS.map((b) => {
+    const a = n.articles.find((x) => x.id === b.id);
+    return a ? { ...a, ...b, categorie: "boissons" } : { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true };
+  });
+  const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
+  const reste = n.articles.filter((a) => !ids.has(a.id));
+  n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
   n.articles.forEach((a) => {
     if (a.id === "omelette_poulet") Object.assign(a, { nom: "Sandwich Œuf au plat Poulet", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200 });
     if (a.id === "omelette_saucisson") a.prixFormule = 1200;
   });
+  (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
   n.version = 4;
   return n;
 }
