@@ -271,7 +271,8 @@ export function demarrerVeille() {
 //      les boissons ajoutées à la main dans la caisse restent.
 // v4 : « Omelette Poulet » devient « Œuf au plat Poulet » à 1200, omelette saucisson à 1200 ;
 //      jus d'orange (300) et Presséa orange (400) sont deux boissons séparées ;
-//      chocolat au lait dans la formule à +350 (chocolat au lait à 500).
+//      chocolat au lait dans la formule à +350 (chocolat au lait à 500) ;
+//      pas de poulet dans le sandwich saucisson pimentaise.
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
   if (!m || v >= 4) return null;
@@ -299,6 +300,8 @@ export function migrerMenu(m) {
   n.articles.forEach((a) => {
     if (a.id === "omelette_poulet") Object.assign(a, { nom: "Sandwich Œuf au plat Poulet", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200 });
     if (a.id === "omelette_saucisson") a.prixFormule = 1200;
+    if (a.id === "saucisson_pimentaise" && typeof a.description === "string")
+      a.description = a.description.replace(/,\s*poulet\b/i, "");
   });
   (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
   n.version = 4;
