@@ -2,8 +2,37 @@
 // Il est copié une seule fois dans Firestore (config/menu) depuis la caisse,
 // puis modifié uniquement depuis la caisse. Ce fichier ne sert plus ensuite.
 
+// Carte des boissons (affiche A3 d'octobre 2026), prix en FCFA.
+// La caisse l'ajoute une seule fois au menu en ligne (migration v3 dans src/enligne/veille.js).
+export const CARTE_BOISSONS = [
+  { id: "b_touba", famille: "cafes", nom: "Café Touba", description: "Le café épicé sénégalais", prix: 100, emoji: "☕" },
+  { id: "b_maxi_touba", famille: "cafes", nom: "Maxi café Touba", description: "Grand format", prix: 250, emoji: "☕" },
+  { id: "b_cafe_citron", famille: "cafes", nom: "Café citron", description: "Café, citron", prix: 200, emoji: "🍋" },
+  { id: "b_cafe_lait", famille: "cafes", nom: "Café au lait", description: "Café, lait chaud", prix: 400, emoji: "☕" },
+  { id: "b_choco_lait", famille: "cafes", nom: "Chocolat au lait", description: "Chocolat chaud", prix: 500, emoji: "🍫" },
+  { id: "b_the", famille: "thes", nom: "Thé", description: "Petit verre", prix: 100, emoji: "🍵" },
+  { id: "b_maxi_the", famille: "thes", nom: "Maxi thé", description: "Grand format", prix: 250, emoji: "🍵" },
+  { id: "b_attaya", famille: "thes", nom: "Attaya", description: "Thé vert à la menthe, à la sénégalaise", prix: 100, emoji: "🫖" },
+  { id: "b_wahss_gingembre", famille: "thes", nom: "Wahss gingembre", description: "Gingembre, citron, menthe", prix: 200, emoji: "🍋" },
+  { id: "b_wahss_bouye", famille: "thes", nom: "Wahss bouye", description: "Au bouye (pain de singe)", prix: 250, emoji: "🌳" },
+  { id: "b_cappuccino", famille: "gourmand", nom: "Cappuccino chantilly", description: "Café, lait mousseux, chantilly", prix: 1200, emoji: "☕" },
+  { id: "b_cafe_frappe", famille: "gourmand", nom: "Café frappé", description: "Café glacé, chantilly", prix: 1200, emoji: "🧋" },
+  { id: "b_lait_framboise", famille: "gourmand", nom: "Lait framboise frappé", description: "Lait framboise glacé, chantilly", prix: 1500, emoji: "🍓" },
+  { id: "b_bissap", famille: "jus_locaux", nom: "Bissap", description: "Fleur d'hibiscus", prix: 300, emoji: "🌺" },
+  { id: "b_bissap_blanc", famille: "jus_locaux", nom: "Bissap blanc", description: "Hibiscus blanc", prix: 300, emoji: "🌸" },
+  { id: "b_tamarin", famille: "jus_locaux", nom: "Tamarin", description: "Dakhar", prix: 300, emoji: "🟤" },
+  { id: "b_bouye", famille: "jus_locaux", nom: "Bouye", description: "Pain de singe (baobab)", prix: 300, emoji: "🌳" },
+  { id: "b_pressea_ananas_coco", famille: "jus_pressea", nom: "Presséa ananas coco", description: "Ananas, noix de coco", prix: 400, emoji: "🍍" },
+  { id: "b_pressea_goyave", famille: "jus_pressea", nom: "Presséa goyave", description: "", prix: 400, emoji: "🍈" },
+  { id: "b_jus_orange", famille: "jus_pressea", nom: "Presséa orange", description: "", prix: 400, emoji: "🍊" },
+  { id: "b_coca", famille: "sodas", nom: "Coca-Cola", description: "", prix: 500, emoji: "🥤" },
+  { id: "b_fanta", famille: "sodas", nom: "Fanta", description: "", prix: 500, emoji: "🥤" },
+  { id: "b_sprite", famille: "sodas", nom: "Sprite", description: "", prix: 500, emoji: "🥤" },
+  { id: "b_energy", famille: "sodas", nom: "Cocktail energy drink", description: "", prix: 800, emoji: "⚡" },
+];
+
 export const MENU_DEPART = {
-  version: 2,
+  version: 3,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
@@ -39,13 +68,7 @@ export const MENU_DEPART = {
     { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Omelette Poulet", nomWolof: "", description: "Poulet, oignons, pommes de terre", prixFormule: 1100, omelette: true, emoji: "🍗", photo: "", dispo: true },
     { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1100, omelette: true, emoji: "🌭", photo: "", dispo: true },
     { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
-    { id: "b_touba", categorie: "boissons", nom: "Café Touba", nomWolof: "", description: "", prix: 100, emoji: "☕", photo: "", dispo: true },
-    { id: "b_maxi_touba", categorie: "boissons", nom: "Maxi café Touba", nomWolof: "", description: "", prix: 250, emoji: "☕", photo: "", dispo: true },
-    { id: "b_the", categorie: "boissons", nom: "Thé", nomWolof: "", description: "", prix: 100, emoji: "🍵", photo: "", dispo: true },
-    { id: "b_maxi_the", categorie: "boissons", nom: "Maxi thé", nomWolof: "", description: "", prix: 250, emoji: "🍵", photo: "", dispo: true },
-    { id: "b_cafe_lait", categorie: "boissons", nom: "Café au lait", nomWolof: "", description: "", prix: 400, emoji: "☕", photo: "", dispo: true },
-    { id: "b_choco_lait", categorie: "boissons", nom: "Chocolat au lait", nomWolof: "", description: "Chocolat chaud", prix: 400, emoji: "☕", photo: "", dispo: true },
-    { id: "b_jus_orange", categorie: "boissons", nom: "Jus d'orange", nomWolof: "", description: "", prix: 300, emoji: "🍊", photo: "", dispo: true },
+    ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
   ],
 };
 
