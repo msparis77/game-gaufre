@@ -273,9 +273,10 @@ export function demarrerVeille() {
 //      jus d'orange (300) et Presséa orange (400) sont deux boissons séparées ;
 //      chocolat au lait dans la formule à +350 (chocolat au lait à 500) ;
 //      pas de poulet dans le sandwich saucisson pimentaise.
+// v5 : Cocktail energy drink à 1000 (la carte des boissons est réappliquée).
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 4) return null;
+  if (!m || v >= 5) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -304,7 +305,7 @@ export function migrerMenu(m) {
       a.description = a.description.replace(/,\s*poulet\b/i, "");
   });
   (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
-  n.version = 4;
+  n.version = 5;
   return n;
 }
 async function mettreAJourMenu() {

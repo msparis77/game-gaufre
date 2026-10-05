@@ -29,11 +29,11 @@ export const CARTE_BOISSONS = [
   { id: "b_coca", famille: "sodas", nom: "Coca-Cola", description: "", prix: 500, emoji: "🥤" },
   { id: "b_fanta", famille: "sodas", nom: "Fanta", description: "", prix: 500, emoji: "🥤" },
   { id: "b_sprite", famille: "sodas", nom: "Sprite", description: "", prix: 500, emoji: "🥤" },
-  { id: "b_energy", famille: "sodas", nom: "Cocktail energy drink", description: "", prix: 800, emoji: "⚡" },
+  { id: "b_energy", famille: "sodas", nom: "Cocktail energy drink", description: "", prix: 1000, emoji: "⚡" },
 ];
 
 export const MENU_DEPART = {
-  version: 4,
+  version: 5,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
