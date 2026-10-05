@@ -32,7 +32,7 @@ export const CARTE_BOISSONS = [
 ];
 
 export const MENU_DEPART = {
-  version: 3,
+  version: 4,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
@@ -65,8 +65,8 @@ export const MENU_DEPART = {
     { id: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Saucisson de bœuf pimentaise", nomWolof: "", description: "Saucisson de bœuf, pommes de terre, petits pois, poulet, sauce pimentée", prixFormule: 1150, omelette: false, emoji: "🌶️", photo: "", dispo: true },
     { id: "omelette_nature", categorie: "omelettes", nom: "Sandwich Omelette Nature", nomWolof: "", description: "Omelette, oignons", prixFormule: 850, omelette: true, emoji: "🍳", photo: "", dispo: true },
     { id: "omelette_pdt", categorie: "omelettes", nom: "Sandwich Omelette Pommes de terre", nomWolof: "", description: "Omelette, pommes de terre", prixFormule: 950, omelette: true, emoji: "🥔", photo: "", dispo: true },
-    { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Omelette Poulet", nomWolof: "", description: "Poulet, oignons, pommes de terre", prixFormule: 1100, omelette: true, emoji: "🍗", photo: "", dispo: true },
-    { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1100, omelette: true, emoji: "🌭", photo: "", dispo: true },
+    { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Œuf au plat Poulet", nomWolof: "", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🍗", photo: "", dispo: true },
+    { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🌭", photo: "", dispo: true },
     { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
     ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
   ],
