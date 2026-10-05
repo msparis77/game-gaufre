@@ -6,6 +6,7 @@
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, surConnexion, firebaseConfigure } from "./firebaseCaisse.js";
 import { hhmm } from "../../arena-commande/src/shared/creneaux.js";
+import { CARTE_BOISSONS } from "../../arena-commande/src/shared/menuDepart.js";
 
 export const PRINT_BRIDGE_URL = (import.meta.env.VITE_PRINT_BRIDGE_URL || "http://localhost:3001").replace(/\/+$/, "");
 const CLE_AUTO = "gg3-web-autoprint";
@@ -265,19 +266,34 @@ export function demarrerVeille() {
 // fois par la caisse connectée (le site ne peut pas modifier le menu) :
 // v2 : « Niébé » → « Haricots », catégories « Formules sandwich » / « Formules omelette »,
 //      pain au choix (baguette / pain local brioché) sauf pour le sandwich Océan (thon).
+// v3 : nouvelle carte des boissons (CARTE_BOISSONS) : les boissons connues prennent
+//      nom, prix, description et famille de la carte, les nouvelles sont ajoutées,
+//      les boissons ajoutées à la main dans la caisse restent.
 export function migrerMenu(m) {
-  if (!m || (m.version || 1) >= 2) return null;
+  const v = (m && m.version) || 1;
+  if (!m || v >= 3) return null;
   const n = JSON.parse(JSON.stringify(m));
-  n.version = 2;
-  const noms = { "Sandwichs": "Formules sandwich", "Sandwichs omelette": "Formules omelette" };
-  (n.categories || []).forEach((c) => { if (noms[c.nom]) c.nom = noms[c.nom]; });
   n.options = n.options || {};
-  if (!n.options.pains) n.options.pains = ["Baguette", "Pain local brioché"];
-  (n.articles || []).forEach((a) => {
-    if (a.id === "ocean") a.sansChoixPain = true;
-    for (const k of ["nom", "description"]) if (typeof a[k] === "string")
-      a[k] = a[k].replace(/Niébé mijoté/g, "Haricots mijotés").replace(/Niébé/g, "Haricots").replace(/niébé/g, "haricots");
+  n.articles = n.articles || [];
+  if (v < 2) {
+    const noms = { "Sandwichs": "Formules sandwich", "Sandwichs omelette": "Formules omelette" };
+    (n.categories || []).forEach((c) => { if (noms[c.nom]) c.nom = noms[c.nom]; });
+    if (!n.options.pains) n.options.pains = ["Baguette", "Pain local brioché"];
+    n.articles.forEach((a) => {
+      if (a.id === "ocean") a.sansChoixPain = true;
+      for (const k of ["nom", "description"]) if (typeof a[k] === "string")
+        a[k] = a[k].replace(/Niébé mijoté/g, "Haricots mijotés").replace(/Niébé/g, "Haricots").replace(/niébé/g, "haricots");
+    });
+  }
+  // Boissons de la carte dans l'ordre de l'affiche, puis celles ajoutées à la main.
+  const carte = CARTE_BOISSONS.map((b) => {
+    const a = n.articles.find((x) => x.id === b.id);
+    return a ? { ...a, ...b, categorie: "boissons" } : { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true };
   });
+  const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
+  const reste = n.articles.filter((a) => !ids.has(a.id));
+  n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
+  n.version = 3;
   return n;
 }
 async function mettreAJourMenu() {
