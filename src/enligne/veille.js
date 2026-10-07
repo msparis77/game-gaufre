@@ -275,7 +275,7 @@ export function demarrerVeille() {
 //      pas de poulet dans le sandwich saucisson pimentaise.
 // v5 : Cocktail energy drink à 1000 (la carte des boissons est réappliquée).
 // v6 : carte crêpes, gaufres, beignets et glaces (CATEGORIES_CREPES, CARTE_CREPES), prix unique.
-// v7 : formules crêpe/gaufre Nutella + jus local, crêpe lait concentré, crêpe saucisson fromage
+// v7 : formules crêpe/gaufre Nutella + jus local, beignets + jus, formule gaming (caisse seulement), crêpe lait concentré, crêpe saucisson fromage
 //      (seuls les articles crêpes manquants sont ajoutés, rien d'autre n'est réappliqué).
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;

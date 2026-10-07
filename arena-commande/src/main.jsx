@@ -78,7 +78,7 @@ function Photo({ article, grande }) {
 function PageMenu({ menu, panier, setPanier, ouvert }) {
   const [cat, setCat] = useState(menu.categories[0]?.id);
   const [choisi, setChoisi] = useState(null);
-  const articles = menu.articles.filter((a) => a.dispo !== false);
+  const articles = menu.articles.filter((a) => a.dispo !== false && !a.caisseSeulement);
   return (
     <main>
       {!ouvert && <div class="bandeau">Les commandes sont fermées pour le moment. Tu peux regarder le menu.</div>}

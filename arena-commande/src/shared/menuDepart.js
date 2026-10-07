@@ -36,7 +36,7 @@ export const CARTE_BOISSONS = [
 // La caisse l'ajoute une seule fois au menu en ligne (migration v6 dans src/enligne/veille.js).
 // Catégories marquées prixUnique : pas de formule, pas de pain, ajout direct au panier.
 export const CATEGORIES_CREPES = [
-  { id: "formules_crepes", nom: "Formules crêpe & gaufre", emoji: "🥤", prixUnique: true },
+  { id: "formules_crepes", nom: "Formules sucrées", emoji: "🥤", prixUnique: true },
   { id: "crepes_sucrees", nom: "Crêpes sucrées", emoji: "🥞", prixUnique: true },
   { id: "gaufres", nom: "Gaufres", emoji: "🧇", prixUnique: true },
   { id: "crepes_salees", nom: "Crêpes salées", emoji: "🧀", prixUnique: true },
@@ -46,6 +46,9 @@ export const CARTE_CREPES = [
   // choixJus : le client choisit son jus local (« jus local » dans le nom est remplacé par le jus choisi).
   { id: "c_formule_crepe_nutella", categorie: "formules_crepes", nom: "Formule crêpe Nutella + jus local", description: "Crêpe Nutella et un jus local au choix", prix: 1700, choixJus: true, emoji: "🍫" },
   { id: "c_formule_gaufre_nutella", categorie: "formules_crepes", nom: "Formule gaufre Nutella + jus local", description: "Gaufre Nutella et un jus local au choix", prix: 1700, choixJus: true, emoji: "🧇" },
+  { id: "c_formule_beignets", categorie: "formules_crepes", nom: "Formule beignets + jus local", description: "Beignets bubble Nutella et un jus local au choix", prix: 800, choixJus: true, emoji: "🍩" },
+  // caisseSeulement : vendu au café uniquement, pas sur le site des lycéens.
+  { id: "c_formule_gaming", categorie: "formules_crepes", nom: "Formule gaming 1 h PS + crêpe Nutella + jus local", description: "1 heure de PlayStation, crêpe Nutella et un jus local au choix", prix: 3500, choixJus: true, caisseSeulement: true, emoji: "🎮" },
   { id: "c_crepe_sucre", categorie: "crepes_sucrees", nom: "Crêpe sucre", description: "", prix: 1000, emoji: "🍬" },
   { id: "c_crepe_nutella", categorie: "crepes_sucrees", nom: "Crêpe Nutella", description: "", prix: 1500, emoji: "🍫" },
   { id: "c_crepe_nutella_banane", categorie: "crepes_sucrees", nom: "Crêpe Nutella banane", description: "", prix: 1800, emoji: "🍌" },
