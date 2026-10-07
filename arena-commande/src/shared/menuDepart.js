@@ -46,7 +46,7 @@ export const CARTE_CREPES = [
   // choixJus : le client choisit son jus local (« jus local » dans le nom est remplacé par le jus choisi).
   { id: "c_formule_crepe_nutella", categorie: "formules_crepes", nom: "Formule crêpe Nutella + jus local", description: "Crêpe Nutella et un jus local au choix", prix: 1700, choixJus: true, emoji: "🍫" },
   { id: "c_formule_gaufre_nutella", categorie: "formules_crepes", nom: "Formule gaufre Nutella + jus local", description: "Gaufre Nutella et un jus local au choix", prix: 1700, choixJus: true, emoji: "🧇" },
-  { id: "c_formule_beignets", categorie: "formules_crepes", nom: "Formule beignets + jus local", description: "Beignets bubble Nutella et un jus local au choix", prix: 800, choixJus: true, emoji: "🍩" },
+  { id: "c_formule_beignets", categorie: "formules_crepes", nom: "Formule beignets + jus local", description: "Beignets bubble Nutella et un jus local au choix", prix: 1000, choixJus: true, emoji: "🍩" },
   // caisseSeulement : vendu au café uniquement, pas sur le site des lycéens.
   { id: "c_formule_gaming", categorie: "formules_crepes", nom: "Formule gaming 1 h PS + crêpe Nutella + jus local", description: "1 heure de PlayStation, crêpe Nutella et un jus local au choix", prix: 3500, choixJus: true, caisseSeulement: true, emoji: "🎮" },
   { id: "c_crepe_sucre", categorie: "crepes_sucrees", nom: "Crêpe sucre", description: "", prix: 1000, emoji: "🍬" },
@@ -70,9 +70,9 @@ export const CARTE_CREPES = [
   { id: "c_crepe_poulet_oeuf", categorie: "crepes_salees", nom: "Crêpe poulet fromage œuf", description: "Poulet, fromage, œuf", prix: 2500, emoji: "🍗" },
   { id: "c_crepe_saucisson", categorie: "crepes_salees", nom: "Crêpe saucisson fromage", description: "Saucisson, fromage", prix: 2500, emoji: "🌭" },
   { id: "c_crepe_saucisson_oeuf", categorie: "crepes_salees", nom: "Crêpe saucisson fromage œuf", description: "Saucisson, fromage, œuf", prix: 3000, emoji: "🌭" },
-  { id: "c_beignets_nutella", categorie: "douceurs", nom: "Beignets bubble Nutella", description: "", prix: 500, emoji: "🍩" },
-  { id: "c_sorbet_bissap", categorie: "douceurs", nom: "Sorbet bissap chantilly", description: "Sorbet bissap, chantilly", prix: 500, emoji: "🌺" },
-  { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet pastèque chantilly", description: "Sorbet pastèque, chantilly", prix: 500, emoji: "🍉" },
+  { id: "c_beignets_nutella", categorie: "douceurs", nom: "Beignets bubble Nutella", description: "", prix: 800, emoji: "🍩" },
+  { id: "c_sorbet_bissap", categorie: "douceurs", nom: "Sorbet bissap chantilly", description: "Sorbet bissap, chantilly", prix: 800, emoji: "🌺" },
+  { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet pastèque chantilly", description: "Sorbet pastèque, chantilly", prix: 800, emoji: "🍉" },
 ];
 
 export const MENU_DEPART = {
