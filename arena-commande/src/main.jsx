@@ -2,7 +2,7 @@ import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
-import { fcfa, faireLigne, prixUnitaire, estBoisson, prixSimple, aChoixPain, painsDuMenu } from "./shared/prix.js";
+import { fcfa, faireLigne, prixUnitaire, estBoisson, prixSimple, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
@@ -78,7 +78,7 @@ function Photo({ article, grande }) {
 function PageMenu({ menu, panier, setPanier, ouvert }) {
   const [cat, setCat] = useState(menu.categories[0]?.id);
   const [choisi, setChoisi] = useState(null);
-  const articles = menu.articles.filter((a) => a.dispo !== false);
+  const articles = menu.articles.filter((a) => a.dispo !== false && !a.caisseSeulement);
   return (
     <main>
       {!ouvert && <div class="bandeau">Les commandes sont fermées pour le moment. Tu peux regarder le menu.</div>}
@@ -129,12 +129,14 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
   const [fromage, setFromage] = useState(false);
   const [sauce, setSauce] = useState("");
   const [pain, setPain] = useState("");
+  const [jus, setJus] = useState("");
   const [qte, setQte] = useState(1);
-  const choix = { formule, boissonId, fromage, sauce, pain };
+  const choix = { formule, boissonId, fromage, sauce, pain, jus };
   const pu = prixUnitaire(menu, article, choix);
   const choixPain = aChoixPain(menu, article);
   const manquePain = choixPain && !pain;
   const manqueSauce = article.omelette && !sauce;
+  const manqueJus = aChoixJus(article) && !jus;
   return (
     <div class="voile" onClick={fermer}>
       <div class="fiche" role="dialog" aria-label={article.nom} onClick={(e) => e.stopPropagation()}>
@@ -143,6 +145,18 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
         <h3>{article.nom}</h3>
         {article.nomWolof && <div class="wolof">{article.nomWolof}</div>}
         {article.description && <p class="desc">{article.description}</p>}
+
+        {aChoixJus(article) && (
+          <div class="groupe">
+            <div class="label">Ton jus local <em>(obligatoire)</em></div>
+            {jusDuMenu(menu).map((j) => (
+              <label key={j} class="radio">
+                <input type="radio" name="jus" checked={jus === j} onChange={() => setJus(j)} />
+                <span>{j}</span><b>inclus</b>
+              </label>
+            ))}
+          </div>
+        )}
 
         {!boisson && (
           <>
@@ -202,9 +216,9 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
           <b>{qte}</b>
           <button onClick={() => setQte(Math.min(10, qte + 1))} aria-label="Plus">+</button>
         </div>
-        <button class="gros" disabled={manquePain || manqueSauce || pu == null}
+        <button class="gros" disabled={manquePain || manqueSauce || manqueJus || pu == null}
           onClick={() => ajouter(faireLigne(menu, article, choix, qte))}>
-          {manquePain ? "Choisis ton pain" : manqueSauce ? "Choisis ta sauce" : `Ajouter · ${fcfa(pu * qte)}`}
+          {manquePain ? "Choisis ton pain" : manqueJus ? "Choisis ton jus" : manqueSauce ? "Choisis ta sauce" : `Ajouter · ${fcfa(pu * qte)}`}
         </button>
       </div>
     </div>

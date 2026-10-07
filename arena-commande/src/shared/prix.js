@@ -9,7 +9,11 @@ export const prixSimple = (a) => !!a && a.prixFormule == null && typeof a.prix =
 export const painsDuMenu = (menu) => (menu && menu.options && menu.options.pains) || [];
 export const aChoixPain = (menu, a) => !!a && !prixSimple(a) && !a.sansChoixPain && painsDuMenu(menu).length > 0;
 
-// choix = { formule: bool, boissonId, fromage: bool, sauce }
+// Formules crêpe/gaufre : jus local au choix (les jus locaux disponibles du menu)
+export const aChoixJus = (a) => !!a && !!a.choixJus;
+export const jusDuMenu = (menu) => ((menu && menu.articles) || []).filter((a) => a.famille === "jus_locaux" && a.dispo !== false).map((a) => a.nom);
+
+// choix = { formule: bool, boissonId, fromage: bool, sauce, pain, jus }
 export function prixUnitaire(menu, article, choix = {}) {
   if (!article) return null;
   if (prixSimple(article)) return article.prix;
@@ -28,7 +32,11 @@ export function prixUnitaire(menu, article, choix = {}) {
 
 export function nomLigne(menu, article, choix = {}) {
   if (!article) return "?";
-  if (prixSimple(article)) return article.nom;
+  if (prixSimple(article)) {
+    if (!aChoixJus(article)) return article.nom;
+    const jus = choix.jus || "jus ?";
+    return /jus local$/i.test(article.nom) ? article.nom.replace(/jus local$/i, jus) : article.nom + " · " + jus;
+  }
   // « Formule » en tête, pour que le client, la caisse et la cuisine le voient tout de suite
   let n = (choix.formule ? "Formule " : "") + article.nom;
   if (article.omelette && choix.fromage) n += " Fromage";
@@ -54,6 +62,7 @@ export function faireLigne(menu, article, choix, qte) {
     fromage: !!(article.omelette && choix.fromage),
     sauce: article.omelette ? choix.sauce || "" : "",
     pain: aChoixPain(menu, article) ? choix.pain || "" : "",
+    jus: aChoixJus(article) ? choix.jus || "" : "",
     qte,
     prixUnitaire: prixUnitaire(menu, article, choix),
   };

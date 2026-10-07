@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebaseCaisse.js";
-import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu } from "../../arena-commande/src/shared/prix.js";
+import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu } from "../../arena-commande/src/shared/prix.js";
 import { MENU_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
@@ -25,7 +25,7 @@ function useMenuSite() {
 
 // Ligne de panier : même id pour les mêmes choix, pour que la quantité s'additionne.
 function ligne(menu, a, choix) {
-  const cle = [a.id, choix.formule ? "f_" + choix.boissonId : "seul", choix.fromage ? "fromage" : "", choix.sauce || "", aChoixPain(menu, a) ? choix.pain || "" : ""].join("|");
+  const cle = [a.id, choix.formule ? "f_" + choix.boissonId : "seul", choix.fromage ? "fromage" : "", choix.sauce || "", aChoixPain(menu, a) ? choix.pain || "" : "", aChoixJus(a) ? choix.jus || "" : ""].join("|");
   return { id: "menu:" + cle, name: nomLigne(menu, a, choix), price: prixUnitaire(menu, a, choix), cat: "menu", emoji: a.emoji || "🥖" };
 }
 
@@ -53,13 +53,26 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
   // Crêpes, gaufres, glaces… : prix unique, ajout direct au panier (onglet 🧇).
   if (vue === "crepes") {
     const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons");
-    return <>{catsSimples.map((cat) => {
+    const artJus = choix && choix.article;
+    return <>{artJus && <div role="dialog" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setChoix(null)}>
+      <div style={{ background: S.card, borderRadius: "16px 16px 0 0", padding: 16, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", border: `1px solid ${S.gold}` }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ fontSize: 17, fontWeight: 800 }}>{artJus.emoji} {artJus.nom} · {fcfa(artJus.prix)}</div>
+          <button onClick={() => setChoix(null)} style={{ background: "transparent", border: "none", color: S.muted, fontSize: 22, cursor: "pointer" }}>✕</button>
+        </div>
+        <div style={{ fontSize: 12, color: S.muted, marginBottom: 6 }}>Jus local (touche pour ajouter au panier)</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+          {jusDuMenu(menu).map((j) => (
+            <button key={j} style={{ ...puce(false), padding: 14 }} onClick={() => { ajouter(ligne(menu, artJus, { jus: j })); setChoix(null); }}>{j}</button>))}
+        </div>
+      </div>
+    </div>}{catsSimples.map((cat) => {
       const liste = dispo.filter((a) => a.categorie === cat.id && prixSimple(a));
       if (!liste.length) return null;
       return <div key={cat.id}>
         <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()}</div>
         <div style={grille}>{liste.map((a) => (
-          <button key={a.id} style={tuile} onClick={() => ajouter(ligne(menu, a, {}))}>
+          <button key={a.id} style={tuile} onClick={() => aChoixJus(a) ? setChoix({ article: a }) : ajouter(ligne(menu, a, {}))}>
             <div style={{ fontSize: 26 }}>{a.emoji || "🧇"}</div>
             <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom}</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: S.gold }}>{fcfa(a.prix)}</div>
