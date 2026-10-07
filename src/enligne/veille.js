@@ -276,8 +276,8 @@ export function demarrerVeille() {
 // v5 : Cocktail energy drink à 1000 (la carte des boissons est réappliquée).
 // v6 : carte crêpes, gaufres, beignets et glaces (CATEGORIES_CREPES, CARTE_CREPES), prix unique.
 // v7 : formules crêpe/gaufre Nutella + jus local, beignets + jus, formule gaming (caisse seulement), crêpe lait concentré, crêpe saucisson fromage
-//      crêpe/gaufre Nutella banane à 2000, Nutella banane chantilly à 2500 (remplace la gaufre
-//      Nutella chantilly) ; les autres articles crêpes déjà là ne sont pas touchés.
+//      crêpe/gaufre Nutella chantilly à 1800, Nutella banane à 2000, Nutella banane chantilly
+//      à 2500 ; les autres articles crêpes déjà là ne sont pas touchés.
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
   if (!m || v >= 7) return null;
@@ -320,8 +320,8 @@ export function migrerMenu(m) {
     const i = n.categories.findIndex((x) => suivantes.includes(x.id));
     n.categories.splice(i < 0 ? n.categories.length : i, 0, { ...c });
   });
-  n.articles = n.articles.filter((a) => a.id !== "c_gaufre_nutella_chantilly");
   n.articles.forEach((a) => {
+    if (a.id === "c_gaufre_nutella_chantilly") a.prix = 1800;
     if (a.id === "c_crepe_nutella_banane" || a.id === "c_gaufre_nutella_banane") a.prix = 2000;
   });
   for (const c of CARTE_CREPES) {
