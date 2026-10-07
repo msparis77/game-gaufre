@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebaseCaisse.js";
-import { estBoisson, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu } from "../../arena-commande/src/shared/prix.js";
+import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu } from "../../arena-commande/src/shared/prix.js";
 import { MENU_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
@@ -50,6 +50,24 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
     </div>)}</>;
   }
 
+  // Crêpes, gaufres, glaces… : prix unique, ajout direct au panier (onglet 🧇).
+  if (vue === "crepes") {
+    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons");
+    return <>{catsSimples.map((cat) => {
+      const liste = dispo.filter((a) => a.categorie === cat.id && prixSimple(a));
+      if (!liste.length) return null;
+      return <div key={cat.id}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()}</div>
+        <div style={grille}>{liste.map((a) => (
+          <button key={a.id} style={tuile} onClick={() => ajouter(ligne(menu, a, {}))}>
+            <div style={{ fontSize: 26 }}>{a.emoji || "🧇"}</div>
+            <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: S.gold }}>{fcfa(a.prix)}</div>
+          </button>))}</div>
+      </div>;
+    })}</>;
+  }
+
   const cats = (menu.categories || []).filter((c) => c.id !== "boissons");
   const c = choix;
   const art = c && c.article;
@@ -60,7 +78,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
 
   return <>
     {cats.map((cat) => {
-      const liste = dispo.filter((a) => a.categorie === cat.id);
+      const liste = dispo.filter((a) => a.categorie === cat.id && !prixSimple(a));
       if (!liste.length) return null;
       return <div key={cat.id}>
         <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()} · <span style={{ color: S.gold }}>FORMULE = SANDWICH + BOISSON</span></div>

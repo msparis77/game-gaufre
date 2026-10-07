@@ -2,7 +2,7 @@ import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
-import { fcfa, faireLigne, prixUnitaire, estBoisson, aChoixPain, painsDuMenu } from "./shared/prix.js";
+import { fcfa, faireLigne, prixUnitaire, estBoisson, prixSimple, aChoixPain, painsDuMenu } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
@@ -96,7 +96,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
         return (
           <section key={c.id} id={"cat-" + c.id} class="section">
             <h2>{c.emoji} {c.nom}</h2>
-            {c.id !== "boissons" && <p class="formule-info"><span class="tag-formule">🥤 FORMULE</span> = sandwich + boisson (café Touba ou thé inclus). Sandwich seul : {menu.options.remiseSansBoisson} F de moins.</p>}
+            {liste.some((a) => !prixSimple(a)) && <p class="formule-info"><span class="tag-formule">🥤 FORMULE</span> = sandwich + boisson (café Touba ou thé inclus). Sandwich seul : {menu.options.remiseSansBoisson} F de moins.</p>}
             {liste.map((a) => (
               <button key={a.id} class="carte" onClick={() => setChoisi(a)}>
                 <Photo article={a} />
@@ -105,7 +105,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
                   {a.nomWolof && <div class="wolof">{a.nomWolof}</div>}
                   {a.description && <div class="desc">{a.description}</div>}
                   <div class="prix">
-                    {estBoisson(a) ? fcfa(a.prix) : <><span class="tag-formule">🥤 FORMULE</span> {fcfa(a.prixFormule)} <span>· seul {fcfa(a.prixFormule - menu.options.remiseSansBoisson)}</span></>}
+                    {prixSimple(a) ? fcfa(a.prix) : <><span class="tag-formule">🥤 FORMULE</span> {fcfa(a.prixFormule)} <span>· seul {fcfa(a.prixFormule - menu.options.remiseSansBoisson)}</span></>}
                   </div>
                 </div>
                 <span class="plus" aria-hidden="true">+</span>
@@ -123,7 +123,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
 // ─── Fenêtre de choix d'un article ───
 function FicheArticle({ menu, article, fermer, ajouter }) {
   const o = menu.options;
-  const boisson = estBoisson(article);
+  const boisson = prixSimple(article);
   const [formule, setFormule] = useState(true);
   const [boissonId, setBoissonId] = useState(o.boissonsFormule[0]?.id);
   const [fromage, setFromage] = useState(false);

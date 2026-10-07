@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { doc, onSnapshot, setDoc, updateDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { db, firebaseConfigure, connecterCaisse, deconnecterCaisse, EMAIL_CAISSE } from "./firebaseCaisse.js";
 import { abonner, imprimer, imprimerNavigateur, imprimerBonLivraison, bonLivreurNavigateur, texteBonLivreur, reglerSon, reglerImpressionAuto, debloquerSon, heureRetrait, PRINT_BRIDGE_URL } from "./veille.js";
-import { verifierCommande, fcfa } from "../../arena-commande/src/shared/prix.js";
+import { verifierCommande, fcfa, prixSimple } from "../../arena-commande/src/shared/prix.js";
 import { hhmm, versMinutes } from "../../arena-commande/src/shared/creneaux.js";
 import { nettoyerTelephone, telephoneValide } from "../../arena-commande/src/shared/commander.js";
 import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
@@ -246,7 +246,7 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
     {m.categories.map((cat) => <div key={cat.id} style={Card()}>
       <div style={{ fontWeight: 800, color: S.gold, marginBottom: 8 }}>{cat.emoji} {cat.nom}</div>
       {m.articles.filter((a) => a.categorie === cat.id).map((a) => {
-        const boisson = cat.id === "boissons";
+        const boisson = cat.id === "boissons" || prixSimple(a); // prix unique, sans formule
         return <div key={a.id} style={{ borderTop: `1px solid ${S.border}`, padding: "8px 0" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
             <input value={a.emoji || ""} onChange={(e) => majArticle(a.id, "emoji", e.target.value)} style={{ ...Inp(44), textAlign: "center", padding: 6 }} />
@@ -255,13 +255,13 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
           {!boisson && <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
             <input value={a.nomWolof || ""} onChange={(e) => majArticle(a.id, "nomWolof", e.target.value)} placeholder="Nom wolof" style={Inp()} />
           </div>}
-          {!boisson && <input value={a.description || ""} onChange={(e) => majArticle(a.id, "description", e.target.value)} placeholder="Description" style={{ ...Inp(), marginBottom: 6 }} />}
+          {cat.id !== "boissons" && <input value={a.description || ""} onChange={(e) => majArticle(a.id, "description", e.target.value)} placeholder="Description" style={{ ...Inp(), marginBottom: 6 }} />}
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 11, color: S.muted }}>{boisson ? "Prix" : "Prix formule"}</span>
             <input type="number" value={boisson ? a.prix : a.prixFormule} onChange={(e) => majArticle(a.id, boisson ? "prix" : "prixFormule", nombre(e.target.value))} style={Inp(90)} />
             {!boisson && <span style={{ fontSize: 11, color: S.muted }}>seul : {fcfa(a.prixFormule - m.options.remiseSansBoisson)}</span>}
-            {cat.id !== "boissons" && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!!a.omelette} onChange={(e) => majArticle(a.id, "omelette", e.target.checked)} /> omelette (sauce + fromage)</label>}
-            {cat.id !== "boissons" && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!a.sansChoixPain} onChange={(e) => majArticle(a.id, "sansChoixPain", !e.target.checked)} /> choix du pain</label>}
+            {!boisson && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!!a.omelette} onChange={(e) => majArticle(a.id, "omelette", e.target.checked)} /> omelette (sauce + fromage)</label>}
+            {!boisson && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!a.sansChoixPain} onChange={(e) => majArticle(a.id, "sansChoixPain", !e.target.checked)} /> choix du pain</label>}
             <label style={{ fontSize: 11, color: a.dispo !== false ? S.green : S.red }}><input type="checkbox" checked={a.dispo !== false} onChange={(e) => majArticle(a.id, "dispo", e.target.checked)} /> dispo</label>
             <button onClick={() => window.confirm(`Supprimer « ${a.nom} » ?`) && maj((n) => { n.articles = n.articles.filter((x) => x.id !== a.id); })} style={{ ...Btn(S.card3, S.red), padding: "4px 8px", fontSize: 11 }}>Supprimer</button>
           </div>
@@ -270,6 +270,8 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
       })}
       <button onClick={() => maj((n) => n.articles.push(cat.id === "boissons"
         ? { id: nouvelId("b"), categorie: cat.id, nom: "Nouvelle boisson", nomWolof: "", description: "", prix: 100, emoji: "🥤", photo: "", dispo: false }
+        : cat.prixUnique
+        ? { id: nouvelId("c"), categorie: cat.id, nom: "Nouvel article", nomWolof: "", description: "", prix: 1000, emoji: "🧇", photo: "", dispo: false }
         : { id: nouvelId("a"), categorie: cat.id, nom: "Nouveau sandwich", nomWolof: "", description: "", prixFormule: 500, omelette: cat.id === "omelettes", emoji: "🥪", photo: "", dispo: false }))}
         style={{ ...Btn(S.card3, S.text), width: "100%", marginTop: 6, fontSize: 12 }}>+ Ajouter</button>
     </div>)}
