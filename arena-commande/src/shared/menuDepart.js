@@ -36,15 +36,20 @@ export const CARTE_BOISSONS = [
 // La caisse l'ajoute une seule fois au menu en ligne (migration v6 dans src/enligne/veille.js).
 // Catégories marquées prixUnique : pas de formule, pas de pain, ajout direct au panier.
 export const CATEGORIES_CREPES = [
+  { id: "formules_crepes", nom: "Formules crêpe & gaufre", emoji: "🥤", prixUnique: true },
   { id: "crepes_sucrees", nom: "Crêpes sucrées", emoji: "🥞", prixUnique: true },
   { id: "gaufres", nom: "Gaufres", emoji: "🧇", prixUnique: true },
   { id: "crepes_salees", nom: "Crêpes salées", emoji: "🧀", prixUnique: true },
   { id: "douceurs", nom: "Beignets & glaces", emoji: "🍨", prixUnique: true },
 ];
 export const CARTE_CREPES = [
+  // choixJus : le client choisit son jus local (« jus local » dans le nom est remplacé par le jus choisi).
+  { id: "c_formule_crepe_nutella", categorie: "formules_crepes", nom: "Formule crêpe Nutella + jus local", description: "Crêpe Nutella et un jus local au choix", prix: 1700, choixJus: true, emoji: "🍫" },
+  { id: "c_formule_gaufre_nutella", categorie: "formules_crepes", nom: "Formule gaufre Nutella + jus local", description: "Gaufre Nutella et un jus local au choix", prix: 1700, choixJus: true, emoji: "🧇" },
   { id: "c_crepe_sucre", categorie: "crepes_sucrees", nom: "Crêpe sucre", description: "", prix: 1000, emoji: "🍬" },
   { id: "c_crepe_nutella", categorie: "crepes_sucrees", nom: "Crêpe Nutella", description: "", prix: 1500, emoji: "🍫" },
   { id: "c_crepe_nutella_banane", categorie: "crepes_sucrees", nom: "Crêpe Nutella banane", description: "", prix: 1800, emoji: "🍌" },
+  { id: "c_crepe_lait_concentre", categorie: "crepes_sucrees", nom: "Crêpe lait concentré", description: "Lait concentré sucré", prix: 1000, emoji: "🥛" },
   { id: "c_gaufre_sucre", categorie: "gaufres", nom: "Gaufre sucre", description: "", prix: 1000, emoji: "🍬" },
   { id: "c_gaufre_nutella", categorie: "gaufres", nom: "Gaufre Nutella", description: "", prix: 1500, emoji: "🍫" },
   { id: "c_gaufre_nutella_banane", categorie: "gaufres", nom: "Gaufre Nutella banane", description: "", prix: 1800, emoji: "🍌" },
@@ -57,13 +62,15 @@ export const CARTE_CREPES = [
   { id: "c_crepe_viande_oeuf", categorie: "crepes_salees", nom: "Crêpe viande hachée fromage œuf", description: "Viande hachée, fromage, œuf", prix: 3000, emoji: "🥩" },
   { id: "c_crepe_poulet", categorie: "crepes_salees", nom: "Crêpe poulet fromage", description: "Poulet, fromage", prix: 2000, emoji: "🍗" },
   { id: "c_crepe_poulet_oeuf", categorie: "crepes_salees", nom: "Crêpe poulet fromage œuf", description: "Poulet, fromage, œuf", prix: 2500, emoji: "🍗" },
+  { id: "c_crepe_saucisson", categorie: "crepes_salees", nom: "Crêpe saucisson fromage", description: "Saucisson, fromage", prix: 2500, emoji: "🌭" },
+  { id: "c_crepe_saucisson_oeuf", categorie: "crepes_salees", nom: "Crêpe saucisson fromage œuf", description: "Saucisson, fromage, œuf", prix: 3000, emoji: "🌭" },
   { id: "c_beignets_nutella", categorie: "douceurs", nom: "Beignets bubble Nutella", description: "", prix: 500, emoji: "🍩" },
   { id: "c_sorbet_bissap", categorie: "douceurs", nom: "Sorbet bissap chantilly", description: "Sorbet bissap, chantilly", prix: 500, emoji: "🌺" },
   { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet pastèque chantilly", description: "Sorbet pastèque, chantilly", prix: 500, emoji: "🍉" },
 ];
 
 export const MENU_DEPART = {
-  version: 6,
+  version: 7,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },

@@ -275,9 +275,11 @@ export function demarrerVeille() {
 //      pas de poulet dans le sandwich saucisson pimentaise.
 // v5 : Cocktail energy drink à 1000 (la carte des boissons est réappliquée).
 // v6 : carte crêpes, gaufres, beignets et glaces (CATEGORIES_CREPES, CARTE_CREPES), prix unique.
+// v7 : formules crêpe/gaufre Nutella + jus local, crêpe lait concentré, crêpe saucisson fromage
+//      (seuls les articles crêpes manquants sont ajoutés, rien d'autre n'est réappliqué).
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 6) return null;
+  if (!m || v >= 7) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -291,38 +293,41 @@ export function migrerMenu(m) {
         a[k] = a[k].replace(/Niébé mijoté/g, "Haricots mijotés").replace(/Niébé/g, "Haricots").replace(/niébé/g, "haricots");
     });
   }
-  // Boissons de la carte dans l'ordre de l'affiche, puis celles ajoutées à la main.
-  const carte = CARTE_BOISSONS.map((b) => {
-    const a = n.articles.find((x) => x.id === b.id);
-    return a ? { ...a, ...b, categorie: "boissons" } : { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true };
-  });
-  const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
-  const reste = n.articles.filter((a) => !ids.has(a.id));
-  n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
-  // Catégories crêpes avant les boissons, puis les articles (ajoutés ou mis à jour par id).
+  if (v < 6) {
+    // Boissons de la carte dans l'ordre de l'affiche, puis celles ajoutées à la main.
+    const carte = CARTE_BOISSONS.map((b) => {
+      const a = n.articles.find((x) => x.id === b.id);
+      return a ? { ...a, ...b, categorie: "boissons" } : { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true };
+    });
+    const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
+    const reste = n.articles.filter((a) => !ids.has(a.id));
+    n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
+    n.articles.forEach((a) => {
+      if (a.id === "omelette_poulet") Object.assign(a, { nom: "Sandwich Œuf au plat Poulet", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200 });
+      if (a.id === "omelette_saucisson") a.prixFormule = 1200;
+      if (a.id === "saucisson_pimentaise" && typeof a.description === "string")
+        a.description = a.description.replace(/,\s*poulet\b/i, "");
+    });
+    (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
+  }
+  // Crêpes : catégories et articles manquants ajoutés (ceux déjà là ne sont pas touchés,
+  // pour garder les prix modifiés dans la caisse). Chaque article va après ceux de sa catégorie.
   n.categories = n.categories || [];
-  for (const c of CATEGORIES_CREPES) {
-    const i = n.categories.findIndex((x) => x.id === c.id);
-    if (i >= 0) { n.categories[i] = { ...n.categories[i], ...c }; continue; }
-    const iBoissons = n.categories.findIndex((x) => x.id === "boissons");
-    n.categories.splice(iBoissons < 0 ? n.categories.length : iBoissons, 0, { ...c });
-  }
-  for (const c of CARTE_CREPES) {
-    const i = n.articles.findIndex((x) => x.id === c.id);
-    if (i >= 0) n.articles[i] = { ...n.articles[i], ...c };
-    else {
-      const iBoisson = n.articles.findIndex((x) => x.categorie === "boissons");
-      n.articles.splice(iBoisson < 0 ? n.articles.length : iBoisson, 0, { ...c, nomWolof: "", photo: "", dispo: true });
-    }
-  }
-  n.articles.forEach((a) => {
-    if (a.id === "omelette_poulet") Object.assign(a, { nom: "Sandwich Œuf au plat Poulet", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200 });
-    if (a.id === "omelette_saucisson") a.prixFormule = 1200;
-    if (a.id === "saucisson_pimentaise" && typeof a.description === "string")
-      a.description = a.description.replace(/,\s*poulet\b/i, "");
+  CATEGORIES_CREPES.forEach((c, k) => {
+    if (n.categories.some((x) => x.id === c.id)) return;
+    const suivantes = CATEGORIES_CREPES.slice(k + 1).map((x) => x.id).concat("boissons");
+    const i = n.categories.findIndex((x) => suivantes.includes(x.id));
+    n.categories.splice(i < 0 ? n.categories.length : i, 0, { ...c });
   });
-  (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
-  n.version = 6;
+  for (const c of CARTE_CREPES) {
+    if (n.articles.some((x) => x.id === c.id)) continue;
+    let i = -1;
+    n.articles.forEach((x, k) => { if (x.categorie === c.categorie) i = k; });
+    if (i >= 0) i += 1;
+    else i = n.articles.findIndex((x) => x.categorie === "boissons");
+    n.articles.splice(i < 0 ? n.articles.length : i, 0, { ...c, nomWolof: "", photo: "", dispo: true });
+  }
+  n.version = 7;
   return n;
 }
 async function mettreAJourMenu() {
