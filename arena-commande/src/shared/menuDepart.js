@@ -32,12 +32,43 @@ export const CARTE_BOISSONS = [
   { id: "b_energy", famille: "sodas", nom: "Cocktail energy drink", description: "", prix: 1000, emoji: "⚡" },
 ];
 
+// Carte crêpes, gaufres, beignets et glaces (affiche A3 d'octobre 2026), prix unique en FCFA.
+// La caisse l'ajoute une seule fois au menu en ligne (migration v6 dans src/enligne/veille.js).
+// Catégories marquées prixUnique : pas de formule, pas de pain, ajout direct au panier.
+export const CATEGORIES_CREPES = [
+  { id: "crepes_sucrees", nom: "Crêpes sucrées", emoji: "🥞", prixUnique: true },
+  { id: "gaufres", nom: "Gaufres", emoji: "🧇", prixUnique: true },
+  { id: "crepes_salees", nom: "Crêpes salées", emoji: "🧀", prixUnique: true },
+  { id: "douceurs", nom: "Beignets & glaces", emoji: "🍨", prixUnique: true },
+];
+export const CARTE_CREPES = [
+  { id: "c_crepe_sucre", categorie: "crepes_sucrees", nom: "Crêpe sucre", description: "", prix: 1000, emoji: "🍬" },
+  { id: "c_crepe_nutella", categorie: "crepes_sucrees", nom: "Crêpe Nutella", description: "", prix: 1500, emoji: "🍫" },
+  { id: "c_crepe_nutella_banane", categorie: "crepes_sucrees", nom: "Crêpe Nutella banane", description: "", prix: 1800, emoji: "🍌" },
+  { id: "c_gaufre_sucre", categorie: "gaufres", nom: "Gaufre sucre", description: "", prix: 1000, emoji: "🍬" },
+  { id: "c_gaufre_nutella", categorie: "gaufres", nom: "Gaufre Nutella", description: "", prix: 1500, emoji: "🍫" },
+  { id: "c_gaufre_nutella_banane", categorie: "gaufres", nom: "Gaufre Nutella banane", description: "", prix: 1800, emoji: "🍌" },
+  { id: "c_gaufre_nutella_chantilly", categorie: "gaufres", nom: "Gaufre Nutella chantilly", description: "", prix: 2000, emoji: "🍦" },
+  { id: "c_crepe_jambon", categorie: "crepes_salees", nom: "Crêpe jambon fromage", description: "Jambon, fromage", prix: 2000, emoji: "🥓" },
+  { id: "c_crepe_jambon_oeuf", categorie: "crepes_salees", nom: "Crêpe jambon fromage œuf", description: "Jambon, fromage, œuf", prix: 2500, emoji: "🥓" },
+  { id: "c_crepe_thon", categorie: "crepes_salees", nom: "Crêpe thon fromage", description: "Thon, fromage", prix: 2000, emoji: "🐟" },
+  { id: "c_crepe_thon_oeuf", categorie: "crepes_salees", nom: "Crêpe thon fromage œuf", description: "Thon, fromage, œuf", prix: 2500, emoji: "🐟" },
+  { id: "c_crepe_viande", categorie: "crepes_salees", nom: "Crêpe viande hachée fromage", description: "Viande hachée, fromage", prix: 2500, emoji: "🥩" },
+  { id: "c_crepe_viande_oeuf", categorie: "crepes_salees", nom: "Crêpe viande hachée fromage œuf", description: "Viande hachée, fromage, œuf", prix: 3000, emoji: "🥩" },
+  { id: "c_crepe_poulet", categorie: "crepes_salees", nom: "Crêpe poulet fromage", description: "Poulet, fromage", prix: 2000, emoji: "🍗" },
+  { id: "c_crepe_poulet_oeuf", categorie: "crepes_salees", nom: "Crêpe poulet fromage œuf", description: "Poulet, fromage, œuf", prix: 2500, emoji: "🍗" },
+  { id: "c_beignets_nutella", categorie: "douceurs", nom: "Beignets bubble Nutella", description: "", prix: 500, emoji: "🍩" },
+  { id: "c_sorbet_bissap", categorie: "douceurs", nom: "Sorbet bissap chantilly", description: "Sorbet bissap, chantilly", prix: 500, emoji: "🌺" },
+  { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet pastèque chantilly", description: "Sorbet pastèque, chantilly", prix: 500, emoji: "🍉" },
+];
+
 export const MENU_DEPART = {
-  version: 5,
+  version: 6,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
     { id: "omelettes", nom: "Formules omelette", emoji: "🍳" },
+    ...CATEGORIES_CREPES,
     { id: "boissons", nom: "Boissons", emoji: "☕" },
   ],
   options: {
@@ -69,6 +100,7 @@ export const MENU_DEPART = {
     { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Œuf au plat Poulet", nomWolof: "", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🍗", photo: "", dispo: true },
     { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🌭", photo: "", dispo: true },
     { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
+    ...CARTE_CREPES.map((c) => ({ ...c, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
   ],
 };

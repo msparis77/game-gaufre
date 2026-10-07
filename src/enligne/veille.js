@@ -6,7 +6,7 @@
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, surConnexion, firebaseConfigure } from "./firebaseCaisse.js";
 import { hhmm } from "../../arena-commande/src/shared/creneaux.js";
-import { CARTE_BOISSONS } from "../../arena-commande/src/shared/menuDepart.js";
+import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES } from "../../arena-commande/src/shared/menuDepart.js";
 
 export const PRINT_BRIDGE_URL = (import.meta.env.VITE_PRINT_BRIDGE_URL || "http://localhost:3001").replace(/\/+$/, "");
 const CLE_AUTO = "gg3-web-autoprint";
@@ -274,9 +274,10 @@ export function demarrerVeille() {
 //      chocolat au lait dans la formule à +350 (chocolat au lait à 500) ;
 //      pas de poulet dans le sandwich saucisson pimentaise.
 // v5 : Cocktail energy drink à 1000 (la carte des boissons est réappliquée).
+// v6 : carte crêpes, gaufres, beignets et glaces (CATEGORIES_CREPES, CARTE_CREPES), prix unique.
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 5) return null;
+  if (!m || v >= 6) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -298,6 +299,22 @@ export function migrerMenu(m) {
   const ids = new Set(CARTE_BOISSONS.map((b) => b.id));
   const reste = n.articles.filter((a) => !ids.has(a.id));
   n.articles = [...reste.filter((a) => a.categorie !== "boissons"), ...carte, ...reste.filter((a) => a.categorie === "boissons")];
+  // Catégories crêpes avant les boissons, puis les articles (ajoutés ou mis à jour par id).
+  n.categories = n.categories || [];
+  for (const c of CATEGORIES_CREPES) {
+    const i = n.categories.findIndex((x) => x.id === c.id);
+    if (i >= 0) { n.categories[i] = { ...n.categories[i], ...c }; continue; }
+    const iBoissons = n.categories.findIndex((x) => x.id === "boissons");
+    n.categories.splice(iBoissons < 0 ? n.categories.length : iBoissons, 0, { ...c });
+  }
+  for (const c of CARTE_CREPES) {
+    const i = n.articles.findIndex((x) => x.id === c.id);
+    if (i >= 0) n.articles[i] = { ...n.articles[i], ...c };
+    else {
+      const iBoisson = n.articles.findIndex((x) => x.categorie === "boissons");
+      n.articles.splice(iBoisson < 0 ? n.articles.length : iBoisson, 0, { ...c, nomWolof: "", photo: "", dispo: true });
+    }
+  }
   n.articles.forEach((a) => {
     if (a.id === "omelette_poulet") Object.assign(a, { nom: "Sandwich Œuf au plat Poulet", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200 });
     if (a.id === "omelette_saucisson") a.prixFormule = 1200;
@@ -305,7 +322,7 @@ export function migrerMenu(m) {
       a.description = a.description.replace(/,\s*poulet\b/i, "");
   });
   (n.options.boissonsFormule || []).forEach((b) => { if (b.id === "choco_lait") b.sup = 350; });
-  n.version = 5;
+  n.version = 6;
   return n;
 }
 async function mettreAJourMenu() {

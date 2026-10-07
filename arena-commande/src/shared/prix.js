@@ -3,14 +3,16 @@
 // envoyé par le téléphone n'est jamais pris pour argent comptant.
 
 export const estBoisson = (a) => a && a.categorie === "boissons";
+// Article à prix unique (boissons, crêpes, gaufres, glaces…) : champ `prix`, pas de formule.
+export const prixSimple = (a) => !!a && a.prixFormule == null && typeof a.prix === "number";
 // Choix du pain (baguette / pain local brioché) : tous les sandwichs sauf ceux marqués sansChoixPain
 export const painsDuMenu = (menu) => (menu && menu.options && menu.options.pains) || [];
-export const aChoixPain = (menu, a) => !!a && !estBoisson(a) && !a.sansChoixPain && painsDuMenu(menu).length > 0;
+export const aChoixPain = (menu, a) => !!a && !prixSimple(a) && !a.sansChoixPain && painsDuMenu(menu).length > 0;
 
 // choix = { formule: bool, boissonId, fromage: bool, sauce }
 export function prixUnitaire(menu, article, choix = {}) {
   if (!article) return null;
-  if (estBoisson(article)) return article.prix;
+  if (prixSimple(article)) return article.prix;
   const o = menu.options;
   let p = article.prixFormule;
   if (choix.formule) {
@@ -26,7 +28,7 @@ export function prixUnitaire(menu, article, choix = {}) {
 
 export function nomLigne(menu, article, choix = {}) {
   if (!article) return "?";
-  if (estBoisson(article)) return article.nom;
+  if (prixSimple(article)) return article.nom;
   // « Formule » en tête, pour que le client, la caisse et la cuisine le voient tout de suite
   let n = (choix.formule ? "Formule " : "") + article.nom;
   if (article.omelette && choix.fromage) n += " Fromage";
@@ -43,7 +45,7 @@ export function nomLigne(menu, article, choix = {}) {
 
 // Construit une ligne de commande (format stocké dans Firestore).
 export function faireLigne(menu, article, choix, qte) {
-  const formule = !estBoisson(article) && !!choix.formule;
+  const formule = !prixSimple(article) && !!choix.formule;
   return {
     articleId: article.id,
     nom: nomLigne(menu, article, choix),
