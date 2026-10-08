@@ -16,7 +16,7 @@ export const INGREDIENTS_REFERENCE = [
   { nom: "Crème liquide", unit: "L", emoji: "🍶", unitCost: 4500, alias: ["Crème", "Crème chantilly", "Chantilly"] },
   { nom: "Lait concentré sucré", unit: "kg", emoji: "🥫", unitCost: 3000, alias: ["Lait concentré"] },
   { nom: "Jambon de bœuf", unit: "kg", emoji: "🥓", unitCost: 5890, alias: ["Jambon"] },
-  { nom: "Saucisson", unit: "kg", emoji: "🌭", unitCost: 0 },
+  { nom: "Saucisson", unit: "kg", emoji: "🌭", unitCost: 1500 },
   { nom: "Viande hachée", unit: "kg", emoji: "🥩", unitCost: 6000 },
   { nom: "Mayonnaise", unit: "kg", emoji: "🥚", unitCost: 2780 },
   { nom: "Ketchup", unit: "pcs", emoji: "🍅", unitCost: 0 },
@@ -51,6 +51,7 @@ export const PRIX_A_JOUR = [
   { v: 2, noms: ["Huile tournesol", "Huile"], unitCost: 1750 },
   { v: 2, noms: ["Maïzena"], unitCost: 3580 },
   { v: 2, noms: ["Viande hachée"], unitCost: 6000 },
+  { v: 2, noms: ["Saucisson"], unitCost: 1500 },
   { v: 2, noms: ["Thon"], unitCost: 5113 }, // boîte de 800 g à 4 090 F (ticket Auchan)
 ];
 
