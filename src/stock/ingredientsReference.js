@@ -51,6 +51,7 @@ export const PRIX_A_JOUR = [
   { v: 2, noms: ["Huile tournesol", "Huile"], unitCost: 1750 },
   { v: 2, noms: ["Maïzena"], unitCost: 3580 },
   { v: 2, noms: ["Viande hachée"], unitCost: 6000 },
+  { v: 2, noms: ["Thon"], unitCost: 5113 }, // boîte de 800 g à 4 090 F (ticket Auchan)
 ];
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
