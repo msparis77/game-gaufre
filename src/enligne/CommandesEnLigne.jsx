@@ -426,6 +426,13 @@ function EditeurCreneaux({ S, Btn, Inp, Card, creneaux, showToast }) {
       showToast("✓ Créneaux enregistrés");
     } catch (e) { showToast("❌ " + (e.code || e.message), S.red); }
   };
+  // Un créneau par heure de 6h à minuit : 19 créneaux, lettres A à S.
+  // Minuit s'écrit 00h00 (les règles Firestore comparent l'heure du jour du retrait).
+  const remplirJournee = () => {
+    if (!window.confirm("Remplacer tous les créneaux par un créneau par heure, de 6h à minuit ?")) return;
+    setListe(Array.from({ length: 19 }, (_, i) => { const h = (6 + i) % 24; return { id: "c" + String(h).padStart(2, "0") + "00", heure: hhmm(h * 60), code: "ABCDEFGHIJKLMNOPQRS"[i], max: 20, actif: true }; }));
+    showToast("Créneaux préparés : touche « Enregistrer » pour valider");
+  };
   const lettreLibre = () => "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").find((l) => !liste.some((c) => String(c.code).toUpperCase() === l)) || "Z";
 
   return <>
@@ -444,6 +451,7 @@ function EditeurCreneaux({ S, Btn, Inp, Card, creneaux, showToast }) {
         <button onClick={() => setListe(liste.filter((_, j) => j !== i))} style={{ ...Btn(S.card3, S.red), padding: "4px 8px", marginLeft: "auto" }}>✕</button>
       </div>)}
       <button onClick={() => setListe([...liste, { id: nouvelId("c"), heure: "10h30", code: lettreLibre(), max: 20, actif: true }])} style={{ ...Btn(S.card3, S.text), width: "100%", fontSize: 12 }}>+ Ajouter un créneau</button>
+      <button onClick={remplirJournee} style={{ ...Btn(S.card3, S.gold), width: "100%", fontSize: 12, marginTop: 6 }}>⚡ Remplacer par : toutes les heures de 6h à minuit</button>
       <Ligne S={S} label="Fermeture des commandes avant le créneau (minutes)"><input type="number" value={delai} onChange={(e) => setDelai(e.target.value)} style={Inp(70)} /></Ligne>
     </div>
     <button onClick={enregistrer} style={{ ...Btn(S.green, S.bg), width: "100%" }}>💾 Enregistrer les créneaux</button>
