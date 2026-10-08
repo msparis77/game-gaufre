@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, laz
 import { demarrerVeille, abonner as abonnerVeille } from "./enligne/veille.js";
 import { completerIngredients } from "./stock/ingredientsReference.js";
 import { completerRecettes, coutRecette } from "./stock/recettesFiches.js";
+import { tableauCouts } from "./stock/coutRevient.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
 const MenuCaisse=lazy(()=>import("./enligne/MenuCaisse.jsx"));
 const CoutRevient=lazy(()=>import("./stock/CoutRevient.jsx"));
@@ -365,15 +366,18 @@ export default function App(){
     const hist7=last7.map(d=>`${d.label}: CA ${fmt(d.ca)} net ${fmt(d.net)}`).join("; ");
     return `Tu es l'assistant IA de Game & Gaufre, cyber café restaurant à ${currentStore.name}, Dakar, Sénégal. Réponds toujours en français, concis, avec chiffres en FCFA.\n\nDONNÉES TEMPS RÉEL:\nCA: ${fmt(totalCA)} | Objectif: ${goalPct}% | Net: ${fmt(netProfit)}\nFood: ${fmt(totalFood)} | Gaming: ${fmt(totalGaming)} | Dépenses: ${fmt(totalExpenses)}\nVentes: ${sales.length} | Sessions: ${doneSess.length}\nTop: ${top5.map(p=>`${p.name} ${p.sold}×`).join(", ")}\nPERTES: ${lossLines||"Aucune"}\nHISTO 7J: ${hist7}\nRECETTES: ${recLines}\nINGRÉDIENTS: ${ingredients.map(i=>`${i.name}:${fmtQ(ingRem(i.id),i.unit)} restant`).join("; ")}
 ACHATS DU JOUR: ${fmt(totalPurchasesCost)}
-COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMargin)}`;
+COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMargin)}
+PRIX D'ACHAT (Stocks): ${ingredients.filter(i=>i.unitCost).map(i=>`${i.name} ${i.unitCost} F/${i.unit}`).join("; ")}
+COÛT DE REVIENT PAR PRODUIT (vente / coût / marge / part du coût): ${(()=>{let m=null;try{m=JSON.parse(localStorage.getItem("gg3-menu-site")||"null");}catch(e){}return m?tableauCouts(m,ingredients,recipes).map(l=>l.cout==null?`${l.nom} ${l.vente} F (recette à faire)`:`${l.nom} ${l.vente} / ${l.cout} / ${l.marge} F / ${l.pct}%${l.manque.length?" (incomplet: "+l.manque.join(", ")+")":""}`).join("; "):"menu non chargé";})()}
+RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : coût ≤ 30-35 % du prix pour les plats et boissons préparées, ≤ 50 % pour les boissons revendues telles quelles. Prix conseillé = coût ÷ part visée, arrondi aux 50 F, en restant abordable pour des lycéens. Quand une donnée manque, dis-le au lieu d'inventer.`;
   };
   const sendAiMessage=async()=>{
     if(!aiInput.trim()||aiLoading)return;
     const msg=aiInput.trim();setAiInput("");
     const nm=[...aiMessages,{role:"user",content:msg}];setAiMessages(nm);setAiLoading(true);
     const ctx=buildCtx();
-    const hist=nm.slice(-8).map(m=>({role:m.role,content:m.content}));
-    try{const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,system:ctx,messages:hist})});const d=await r.json();const reply=d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
+    const hist=nm.slice(-8).map(m=>({role:m.role,content:m.content}));while(hist.length&&hist[0].role!=="user")hist.shift(); // l'API refuse un historique qui commence par l'assistant
+    try{const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,system:ctx,messages:hist})});const d=await r.json().catch(()=>({}));const err=!r.ok?"❌ L'assistant ne répond pas ("+(d.error?.message||d.error||("erreur "+r.status))+").":"";const reply=err||d.content?.map(c=>c.text||"").join("")||"Désolé, réessayez.";setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);}
     catch(e){setAiMessages(prev=>[...prev,{role:"assistant",content:"❌ Erreur de connexion."}]);}
     setAiLoading(false);
     setTimeout(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},100);
@@ -725,7 +729,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
         </div>
         <div style={{display:"flex",gap:8}}><button onClick={startVoice} style={{...Btn(listening?S.red:S.card2,listening?"#fff":S.muted),padding:"10px 14px",fontSize:16,border:listening?"none":`1px solid ${S.border}`}}>{listening?"🔴":"🎤"}</button><input value={aiInput} onChange={e=>setAiInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendAiMessage()} placeholder="Posez votre question..." style={{...Inp(),fontSize:13}}/><button onClick={sendAiMessage} disabled={aiLoading||!aiInput.trim()} style={{...Btn(S.purple,"#fff"),padding:"10px 14px",fontSize:18,opacity:aiLoading||!aiInput.trim()?0.5:1}}>▶</button></div>
         <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
-          {["🔍 Analyse les pertes","🛒 Courses pour 100 crêpes","💡 Comment augmenter le CA","📈 Meilleur produit à pousser"].map(q=><button key={q} onClick={()=>setAiInput(q)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:20,padding:"5px 10px",cursor:"pointer",fontSize:10}}>{q}</button>)}
+          {["💰 Produits les moins rentables","🧮 Prix conseillé pour être rentable","🔍 Analyse les pertes","🛒 Courses pour 100 crêpes","💡 Comment augmenter le CA","📈 Meilleur produit à pousser"].map(q=><button key={q} onClick={()=>setAiInput(q)} style={{background:S.card2,border:`1px solid ${S.border}`,color:S.muted,borderRadius:20,padding:"5px 10px",cursor:"pointer",fontSize:10}}>{q}</button>)}
         </div>
       </div>}
 
