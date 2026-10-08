@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from "react";
 import { demarrerVeille, abonner as abonnerVeille } from "./enligne/veille.js";
 import { completerIngredients } from "./stock/ingredientsReference.js";
+import { completerRecettes, coutRecette } from "./stock/recettesFiches.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
 const MenuCaisse=lazy(()=>import("./enligne/MenuCaisse.jsx"));
 const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => abonnerVeille((e) => setN(e.commandes.filter((c) => c.statut === "recue").length)), []); return n; };
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
-const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<0.001)return"0 "+unit;if(qty<1)return(qty*1000).toFixed(0)+" "+(unit==="kg"?"g":"ml");return qty.toFixed(3).replace(/\.?0+$/,"")+" "+unit;}return qty%1===0?qty+" "+unit:qty.toFixed(1)+" "+unit;};
+const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<=0)return"0 "+unit;if(qty<0.001)return(qty*1000).toFixed(1)+" "+(unit==="kg"?"g":"ml");if(qty<1)return(qty*1000).toFixed(0)+" "+(unit==="kg"?"g":"ml");return qty.toFixed(3).replace(/\.?0+$/,"")+" "+unit;}return qty%1===0?qty+" "+unit:qty.toFixed(1)+" "+unit;};
 const todayStr=()=>new Date().toISOString().split("T")[0];
 const timeStr=()=>new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 const uid=()=>`${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
@@ -198,7 +199,7 @@ export default function App(){
 
   useEffect(()=>{(async()=>{
         try{const k="gg3-"+currentStore.id+"-emps";let s=localStorage.getItem(k);let e=s?JSON.parse(s):await fbGet(k);if(e){setEmps(e);empRef.current=e;}else{setEmps(INIT_EMPS);empRef.current=INIT_EMPS;}}catch(e){}
-    try{const k2="gg3-"+currentStore.id+"-prods";let s=localStorage.getItem(k2);let d=s?JSON.parse(s):await fbGet(k2);if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing){const ni=completerIngredients(d.ing);setIngredients(ni||d.ing);if(ni){const nd={...d,ing:ni};try{localStorage.setItem(k2,JSON.stringify(nd));}catch(e){}fbSave(k2,nd);}}if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.ec&&Array.isArray(d.ec)&&d.ec.length>0)setExpCats(d.ec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setExpCats(INIT_EXP_CATS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
+    try{const k2="gg3-"+currentStore.id+"-prods";let s=localStorage.getItem(k2);let d=s?JSON.parse(s):await fbGet(k2);if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing){const ni=completerIngredients(d.ing);const ing2=ni||d.ing;setIngredients(ing2);const nr=d.rec?completerRecettes(d.rec,ing2):null;if(ni||nr){const nd={...d,ing:ing2,...(nr?{rec:nr}:{})};try{localStorage.setItem(k2,JSON.stringify(nd));}catch(e){}fbSave(k2,nd);}if(d.rec)setRecipes(nr||d.rec);}else if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.ec&&Array.isArray(d.ec)&&d.ec.length>0)setExpCats(d.ec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setExpCats(INIT_EXP_CATS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
     try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions(d.sessions||{});if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let s=localStorage.getItem(k4);let d=s?JSON.parse(s):await fbGet(k4);if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
@@ -676,10 +677,11 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
             {recipes.filter(r=>r.category===cat).map(rec=>(
               <div key={rec.id} style={{background:S.card2,borderRadius:10,padding:12,marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:22}}>{rec.emoji}</span><span style={{fontSize:13,fontWeight:700}}>{rec.name}</span></div>{(()=>{const c=coutRecette(rec,ingredients);return<div style={{flex:1,textAlign:"right",marginRight:8}}><div style={{fontSize:13,fontWeight:800,color:S.gold}}>{fmt(c.cout)}</div><div style={{fontSize:10,color:S.muted}}>{rec.prixVente?`la portion · vendu ${fmt(rec.prixVente)} · ${Math.round(c.cout*100/rec.prixVente)} %`:"la portion"}</div></div>;})()}
                   {isManager&&<div style={{display:"flex",gap:4}}><button onClick={()=>setEditRec({...rec})} style={{background:S.card3,border:`1px solid ${S.blue}`,color:S.blue,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>✏️</button><button onClick={()=>{if(!window.confirm("Supprimer "+rec.name+"?"))return;const nr=recipes.filter(x=>x.id!==rec.id);setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,stations,photoPrice,dailyGoal,ticketNo);addAudit("SUPPR REC",rec.name);showToast("✓ Supprimé",S.red);}} style={{background:S.card3,border:`1px solid ${S.red}`,color:S.red,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12}}>🗑</button></div>}
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{rec.ingredients.map((ri,i)=>{const ing=ingredients.find(x=>x.id===ri.id);return ing?<div key={i} style={{background:S.card,borderRadius:6,padding:"3px 8px",fontSize:11,color:"#ccc"}}>{fmtQ(ri.qty,ing.unit)} {ing.name}</div>:null;})}</div>
+                {(()=>{const m=coutRecette(rec,ingredients).manquants;return m.length?<div style={{fontSize:10,color:S.orange,marginTop:6}}>⚠️ Prix manquant (Stocks) : {m.join(", ")}</div>:null;})()}
               </div>
             ))}
           </div>
