@@ -42,7 +42,8 @@ export const INGREDIENTS_REFERENCE = [
   { v: 3, nom: "Pommes de terre", unit: "kg", emoji: "🥔", unitCost: 420, alias: ["PDT", "Pomme de terre"] },
   { v: 3, nom: "Couscous", unit: "kg", emoji: "🍲", unitCost: 850 },
   { v: 3, nom: "Gingembre", unit: "kg", emoji: "🫚", unitCost: 2500 },
-  { v: 3, nom: "Vermicelle", unit: "pcs", emoji: "🍜", unitCost: 0 },
+  { v: 3, nom: "Vermicelle", unit: "kg", emoji: "🍜", unitCost: 970 },
+  { v: 3, nom: "Jus Presséa", unit: "pcs", emoji: "🍊", unitCost: 302, alias: ["Presséa", "Pressea"] },
   { v: 3, nom: "Fanta", unit: "pcs", emoji: "🥤", unitCost: 281 },
   { v: 3, nom: "Sprite", unit: "pcs", emoji: "🥤", unitCost: 281 },
 ];
@@ -64,6 +65,7 @@ export const PRIX_A_JOUR = [
   { v: 2, noms: ["Eau gazeuse"], unitCost: 340 },
   { v: 2, noms: ["Thon"], unitCost: 5113 }, // boîte de 800 g à 4 090 F (ticket Auchan)
   // v3 : achats en gros (sucre 50 kg à 27 250 F, Chocopain 5 kg à 9 000 F, mayonnaise 5 kg à 7 500 F, casier de 24 à 6 750 F)
+  { v: 3, noms: ["Huile tournesol", "Huile"], unitCost: 925 }, // bidon de 20 L à 18 500 F
   { v: 3, noms: ["Sucre"], unitCost: 545 },
   { v: 3, noms: ["Nutella", "Chocopain"], unitCost: 1800 },
   { v: 3, noms: ["Mayonnaise"], unitCost: 1500 },
@@ -80,7 +82,8 @@ export function completerIngredients(ingredients) {
   if (deja >= VERSION_REFERENCE) return null;
   let change = false;
   const misAJour = ingredients.map((i) => {
-    const p = i && PRIX_A_JOUR.find((x) => (x.v || 1) > deja && x.noms.some((n) => cle(n) === cle(i.name)));
+    // Si un produit a plusieurs prix, on garde le plus récent (version la plus haute).
+    const p = i && PRIX_A_JOUR.filter((x) => (x.v || 1) > deja && x.noms.some((n) => cle(n) === cle(i.name))).pop();
     if (!p || (i.unitCost === p.unitCost && (!p.unit || i.unit === p.unit))) return i;
     change = true;
     return { ...i, unitCost: p.unitCost, ...(p.unit ? { unit: p.unit } : {}), refV: VERSION_REFERENCE };
