@@ -44,6 +44,9 @@ export const INGREDIENTS_REFERENCE = [
   { v: 3, nom: "Gingembre", unit: "kg", emoji: "🫚", unitCost: 2500 },
   { v: 3, nom: "Vermicelle", unit: "kg", emoji: "🍜", unitCost: 970 },
   { v: 3, nom: "Jus Presséa", unit: "pcs", emoji: "🍊", unitCost: 302, alias: ["Presséa", "Pressea"] },
+  { v: 3, nom: "Haricots", unit: "kg", emoji: "🫘", unitCost: 950, alias: ["Niébé", "Haricot"] },
+  { v: 3, nom: "Macaronis", unit: "kg", emoji: "🍝", unitCost: 660, alias: ["Macaroni", "Pâtes"] },
+  { v: 3, nom: "Cuisse de poulet", unit: "kg", emoji: "🍗", unitCost: 2000, alias: ["Cuisses de poulet"] },
   { v: 3, nom: "Fanta", unit: "pcs", emoji: "🥤", unitCost: 281 },
   { v: 3, nom: "Sprite", unit: "pcs", emoji: "🥤", unitCost: 281 },
 ];
