@@ -13,7 +13,13 @@ export const aChoixPain = (menu, a) => !!a && !prixSimple(a) && !a.sansChoixPain
 export const aChoixJus = (a) => !!a && !!a.choixJus;
 export const jusDuMenu = (menu) => ((menu && menu.articles) || []).filter((a) => a.famille === "jus_locaux" && a.dispo !== false).map((a) => a.nom);
 
-// choix = { formule: bool, boissonId, fromage: bool, sauce, pain, jus }
+// Formules poulet : `accompagnements` = nombre d'accompagnements à choisir (options.accompagnements)
+export const nbAccomps = (a) => (a && a.accompagnements) || 0;
+export const accompsDuMenu = (menu) => (menu && menu.options && menu.options.accompagnements) || [];
+// Supplément du pain choisi (ex. pain local +50), 0 pour la baguette
+export const supPain = (menu, pain) => ((menu && menu.options && menu.options.supplementsPain) || {})[pain] || 0;
+
+// choix = { formule: bool, boissonId, fromage: bool, sauce, pain, jus, accomps: [] }
 export function prixUnitaire(menu, article, choix = {}) {
   if (!article) return null;
   if (prixSimple(article)) return article.prix;
@@ -26,20 +32,23 @@ export function prixUnitaire(menu, article, choix = {}) {
   } else {
     p -= o.remiseSansBoisson;
   }
-  if (article.omelette && choix.fromage) p += o.supplementFromage;
+  // Fromage possible sur tous les sandwichs (+300)
+  if (choix.fromage) p += o.supplementFromage;
+  if (aChoixPain(menu, article) && choix.pain) p += supPain(menu, choix.pain);
   return p;
 }
 
 export function nomLigne(menu, article, choix = {}) {
   if (!article) return "?";
   if (prixSimple(article)) {
+    if (nbAccomps(article)) return article.nom + " · " + ((choix.accomps || []).join(", ") || "accompagnement ?");
     if (!aChoixJus(article)) return article.nom;
     const jus = choix.jus || "jus ?";
     return /jus local$/i.test(article.nom) ? article.nom.replace(/jus local$/i, jus) : article.nom + " · " + jus;
   }
   // « Formule » en tête, pour que le client, la caisse et la cuisine le voient tout de suite
   let n = (choix.formule ? "Formule " : "") + article.nom;
-  if (article.omelette && choix.fromage) n += " Fromage";
+  if (choix.fromage) n += " Fromage";
   if (choix.formule) {
     const b = menu.options.boissonsFormule.find((x) => x.id === choix.boissonId);
     n += " + " + (b ? b.nom : "boisson");
@@ -59,10 +68,11 @@ export function faireLigne(menu, article, choix, qte) {
     nom: nomLigne(menu, article, choix),
     formule,
     boissonId: formule ? choix.boissonId : "",
-    fromage: !!(article.omelette && choix.fromage),
+    fromage: !prixSimple(article) && !!choix.fromage,
     sauce: article.omelette ? choix.sauce || "" : "",
     pain: aChoixPain(menu, article) ? choix.pain || "" : "",
     jus: aChoixJus(article) ? choix.jus || "" : "",
+    accomps: nbAccomps(article) ? (choix.accomps || []).slice(0, nbAccomps(article)) : [],
     qte,
     prixUnitaire: prixUnitaire(menu, article, choix),
   };

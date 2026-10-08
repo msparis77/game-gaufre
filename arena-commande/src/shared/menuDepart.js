@@ -22,6 +22,7 @@ export const CARTE_BOISSONS = [
   { id: "b_bissap_blanc", famille: "jus_locaux", nom: "Bissap blanc", description: "Hibiscus blanc", prix: 300, emoji: "🌸" },
   { id: "b_tamarin", famille: "jus_locaux", nom: "Tamarin", description: "Dakhar", prix: 300, emoji: "🟤" },
   { id: "b_bouye", famille: "jus_locaux", nom: "Bouye", description: "Pain de singe (baobab)", prix: 300, emoji: "🌳" },
+  { id: "b_ditakh", famille: "jus_locaux", nom: "Ditakh", description: "Jus de ditakh", prix: 300, emoji: "🟢" },
   { id: "b_jus_orange", famille: "jus_locaux", nom: "Jus d'orange", description: "Orange pressée", prix: 300, emoji: "🍊" },
   { id: "b_pressea_ananas_coco", famille: "jus_pressea", nom: "Presséa ananas coco", description: "Ananas, noix de coco", prix: 400, emoji: "🍍" },
   { id: "b_pressea_goyave", famille: "jus_pressea", nom: "Presséa goyave", description: "", prix: 400, emoji: "🍈" },
@@ -75,19 +76,41 @@ export const CARTE_CREPES = [
   { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet pastèque chantilly", description: "Sorbet pastèque, chantilly", prix: 800, emoji: "🍉" },
 ];
 
+// Sandwichs ajoutés sur la carte du petit-déjeuner (octobre 2026), migration v8.
+export const SANDWICHS_AJOUTES = [
+  { id: "thon", apres: "essentiel", categorie: "sandwichs", nom: "Sandwich Thon", nomWolof: "", description: "Pain thon", prixFormule: 500, omelette: false, emoji: "🐟" },
+  { id: "poulet_mayo", apres: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Poulet mayonnaise", nomWolof: "", description: "Poulet, œuf au plat, pommes de terre, mayonnaise", prixFormule: 1000, omelette: false, emoji: "🥪" },
+  { id: "merguez_frites", apres: "poulet_mayo", categorie: "sandwichs", nom: "Sandwich Merguez frites", nomWolof: "", description: "Merguez, frites", prixFormule: 1000, omelette: false, emoji: "🌭" },
+];
+
+// Carte du poulet braisé (affiche A3 d'octobre 2026), migration v8.
+// `plats` : onglet 🍗 Poulet de la caisse. `accompagnements` : nombre d'accompagnements à choisir.
+export const CATEGORIES_POULET = [
+  { id: "poulet", nom: "Poulet braisé", emoji: "🍗", prixUnique: true, plats: true },
+];
+export const ACCOMPAGNEMENTS = ["Vermicelle", "Riz rouge", "Riz blanc", "Couscous", "Attiéké", "Pommes de terre", "Légumes du moment", "Macaroni au fromage"];
+export const CARTE_POULET = [
+  { id: "p_quart", categorie: "poulet", nom: "Formule quart de poulet", description: "¼ de poulet braisé, 1 accompagnement au choix, sauce oignon & piment", prix: 2500, accompagnements: 1, emoji: "🍗" },
+  { id: "p_demi", categorie: "poulet", nom: "Formule demi-poulet", description: "½ poulet braisé, 2 accompagnements au choix, sauce oignon & piment", prix: 5000, accompagnements: 2, emoji: "🍗" },
+  { id: "p_entier", categorie: "poulet", nom: "Formule poulet entier", description: "1 poulet entier braisé, 3 accompagnements au choix, sauce oignon & piment", prix: 10000, accompagnements: 3, emoji: "🍗" },
+  { id: "p_accompagnement", categorie: "poulet", nom: "Accompagnement", description: "Seul ou en plus de ta formule", prix: 700, accompagnements: 1, emoji: "🍚" },
+  { id: "p_pain", categorie: "poulet", nom: "Pain", description: "En plus", prix: 100, emoji: "🥖" },
+];
+
 export const MENU_DEPART = {
-  version: 7,
+  version: 8,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
     { id: "omelettes", nom: "Formules omelette", emoji: "🍳" },
     ...CATEGORIES_CREPES,
+    ...CATEGORIES_POULET,
     { id: "boissons", nom: "Boissons", emoji: "☕" },
   ],
   options: {
     // Sandwich seul = prix formule - remiseSansBoisson
     remiseSansBoisson: 50,
-    // Version fromage des omelettes
+    // Version fromage (tous les sandwichs)
     supplementFromage: 300,
     // Boisson comprise dans la formule (sup = supplément)
     boissonsFormule: [
@@ -102,18 +125,26 @@ export const MENU_DEPART = {
     sauces: ["Mayo", "Ketchup", "Sauce piquante"],
     // Pain au choix pour chaque sandwich (sauf ceux marqués sansChoixPain, ex. Océan)
     pains: ["Baguette", "Pain local brioché"],
+    // Supplément selon le pain choisi
+    supplementsPain: { "Pain local brioché": 50 },
+    // Accompagnements au choix des formules poulet
+    accompagnements: ACCOMPAGNEMENTS,
   },
   articles: [
     { id: "essentiel", categorie: "sandwichs", nom: "Sandwich Essentiel", nomWolof: "Ñebbe", description: "Haricots mijotés, oignons, sauce maison", prixFormule: 500, omelette: false, emoji: "🫘", photo: "", dispo: true },
+    { id: "thon", categorie: "sandwichs", nom: "Sandwich Thon", nomWolof: "", description: "Pain thon", prixFormule: 500, omelette: false, emoji: "🐟", photo: "", dispo: true },
     { id: "gourmand", categorie: "sandwichs", nom: "Sandwich Gourmand", nomWolof: "Neex", description: "Beurre, pâte chocolat-noisette", prixFormule: 700, omelette: false, emoji: "🍫", photo: "", dispo: true },
     { id: "ocean", categorie: "sandwichs", nom: "Sandwich Océan", nomWolof: "Géej", description: "Thon, pommes de terre, oignons, mayo", prixFormule: 850, omelette: false, sansChoixPain: true, emoji: "🐟", photo: "", dispo: true },
     { id: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Saucisson de bœuf pimentaise", nomWolof: "", description: "Saucisson de bœuf, pommes de terre, petits pois, sauce pimentée", prixFormule: 1150, omelette: false, emoji: "🌶️", photo: "", dispo: true },
+    { id: "poulet_mayo", categorie: "sandwichs", nom: "Sandwich Poulet mayonnaise", nomWolof: "", description: "Poulet, œuf au plat, pommes de terre, mayonnaise", prixFormule: 1000, omelette: false, emoji: "🥪", photo: "", dispo: true },
+    { id: "merguez_frites", categorie: "sandwichs", nom: "Sandwich Merguez frites", nomWolof: "", description: "Merguez, frites", prixFormule: 1000, omelette: false, emoji: "🌭", photo: "", dispo: true },
     { id: "omelette_nature", categorie: "omelettes", nom: "Sandwich Omelette Nature", nomWolof: "", description: "Omelette, oignons", prixFormule: 850, omelette: true, emoji: "🍳", photo: "", dispo: true },
     { id: "omelette_pdt", categorie: "omelettes", nom: "Sandwich Omelette Pommes de terre", nomWolof: "", description: "Omelette, pommes de terre", prixFormule: 950, omelette: true, emoji: "🥔", photo: "", dispo: true },
     { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Œuf au plat Poulet", nomWolof: "", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🍗", photo: "", dispo: true },
     { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🌭", photo: "", dispo: true },
     { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
     ...CARTE_CREPES.map((c) => ({ ...c, nomWolof: "", photo: "", dispo: true })),
+    ...CARTE_POULET.map((p) => ({ ...p, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
   ],
 };
