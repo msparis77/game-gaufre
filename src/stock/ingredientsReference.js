@@ -1,7 +1,7 @@
 // Produits achetés à référencer dans Stocks → Ingrédients (ticket Auchan + prix donnés par Moussa, 2026-10-08).
 // On ajoute seulement ceux qui manquent, sans quantité ; prix 0 = à remplir plus tard.
 // Un produit déjà présent (même nom ou alias) n'est pas dupliqué ; seuls ceux de PRIX_A_JOUR reçoivent le nouveau prix.
-export const VERSION_REFERENCE = 2;
+export const VERSION_REFERENCE = 3;
 
 export const INGREDIENTS_REFERENCE = [
   // Cuisine
@@ -36,6 +36,20 @@ export const INGREDIENTS_REFERENCE = [
   { nom: "Jus Juko ananas (pack)", unit: "pcs", emoji: "🧃", unitCost: 1000 },
   { nom: "Jus bouye bissap", unit: "pcs", emoji: "🧃", unitCost: 490 },
   { nom: "Jus bissap ananas", unit: "pcs", emoji: "🧃", unitCost: 490 },
+  // v3 : liste d'achats en gros de Moussa (2026-10-08)
+  { v: 3, nom: "Riz parfumé", unit: "kg", emoji: "🍚", unitCost: 420 },
+  { v: 3, nom: "Oignons", unit: "kg", emoji: "🧅", unitCost: 580, alias: ["Oignon"] },
+  { v: 3, nom: "Pommes de terre", unit: "kg", emoji: "🥔", unitCost: 420, alias: ["PDT", "Pomme de terre"] },
+  { v: 3, nom: "Couscous", unit: "kg", emoji: "🍲", unitCost: 850 },
+  { v: 3, nom: "Gingembre", unit: "kg", emoji: "🫚", unitCost: 2500 },
+  { v: 3, nom: "Vermicelle", unit: "kg", emoji: "🍜", unitCost: 970 },
+  { v: 3, nom: "Jus Presséa", unit: "pcs", emoji: "🍊", unitCost: 302, alias: ["Presséa", "Pressea"] },
+  { v: 3, nom: "Haricots", unit: "kg", emoji: "🫘", unitCost: 950, alias: ["Niébé", "Haricot"] },
+  { v: 3, nom: "Macaronis", unit: "kg", emoji: "🍝", unitCost: 660, alias: ["Macaroni", "Pâtes"] },
+  { v: 3, nom: "Cuisse de poulet", unit: "kg", emoji: "🍗", unitCost: 2000, alias: ["Cuisses de poulet"] },
+  { v: 3, nom: "Gobelet (café / thé)", unit: "pcs", emoji: "🥤", unitCost: 4.5, alias: ["Gobelet"] },
+  { v: 3, nom: "Fanta", unit: "pcs", emoji: "🥤", unitCost: 281 },
+  { v: 3, nom: "Sprite", unit: "pcs", emoji: "🥤", unitCost: 281 },
 ];
 
 // Nouveaux prix pour des produits déjà dans la caisse (validés par Moussa le 2026-10-08).
@@ -54,6 +68,12 @@ export const PRIX_A_JOUR = [
   { v: 2, noms: ["Saucisson"], unitCost: 1500 },
   { v: 2, noms: ["Eau gazeuse"], unitCost: 340 },
   { v: 2, noms: ["Thon"], unitCost: 5113 }, // boîte de 800 g à 4 090 F (ticket Auchan)
+  // v3 : achats en gros (sucre 50 kg à 27 250 F, Chocopain 5 kg à 9 000 F, mayonnaise 5 kg à 7 500 F, casier de 24 à 6 750 F)
+  { v: 3, noms: ["Huile tournesol", "Huile"], unitCost: 925 }, // bidon de 20 L à 18 500 F
+  { v: 3, noms: ["Sucre"], unitCost: 545 },
+  { v: 3, noms: ["Nutella", "Chocopain"], unitCost: 1800 },
+  { v: 3, noms: ["Mayonnaise"], unitCost: 1500 },
+  { v: 3, noms: ["Coca", "Coca-Cola"], unitCost: 281 },
 ];
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
@@ -66,13 +86,14 @@ export function completerIngredients(ingredients) {
   if (deja >= VERSION_REFERENCE) return null;
   let change = false;
   const misAJour = ingredients.map((i) => {
-    const p = i && PRIX_A_JOUR.find((x) => (x.v || 1) > deja && x.noms.some((n) => cle(n) === cle(i.name)));
+    // Si un produit a plusieurs prix, on garde le plus récent (version la plus haute).
+    const p = i && PRIX_A_JOUR.filter((x) => (x.v || 1) > deja && x.noms.some((n) => cle(n) === cle(i.name))).pop();
     if (!p || (i.unitCost === p.unitCost && (!p.unit || i.unit === p.unit))) return i;
     change = true;
     return { ...i, unitCost: p.unitCost, ...(p.unit ? { unit: p.unit } : {}), refV: VERSION_REFERENCE };
   });
   const connus = new Set(ingredients.map((i) => cle(i && i.name)));
-  const ajouts = deja >= 1 ? [] : INGREDIENTS_REFERENCE.filter((r) => ![r.nom, ...(r.alias || [])].some((n) => connus.has(cle(n)))).map((r) => ({
+  const ajouts = INGREDIENTS_REFERENCE.filter((r) => (r.v || 1) > deja && ![r.nom, ...(r.alias || [])].some((n) => connus.has(cle(n)))).map((r) => ({
     id: "iref_" + cle(r.nom),
     name: r.nom,
     unit: r.unit,

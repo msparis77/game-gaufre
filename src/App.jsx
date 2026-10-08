@@ -4,6 +4,7 @@ import { completerIngredients } from "./stock/ingredientsReference.js";
 import { completerRecettes, coutRecette } from "./stock/recettesFiches.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
 const MenuCaisse=lazy(()=>import("./enligne/MenuCaisse.jsx"));
+const CoutRevient=lazy(()=>import("./stock/CoutRevient.jsx"));
 const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => abonnerVeille((e) => setN(e.commandes.filter((c) => c.statut === "recue").length)), []); return n; };
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
@@ -444,7 +445,7 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
 
       {/* TABS */}
       <div style={{display:"flex",flexWrap:"wrap",gap:4,padding:"6px 6px",background:S.card,borderBottom:`1px solid ${S.border}`}}>
-        {[["home","🏠","Accueil"],["caisse","🛒","Encaissement",Object.keys(sessions).length],["web","🌐","En ligne",webEnAttente],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
+        {[["home","🏠","Accueil"],["caisse","🛒","Encaissement",Object.keys(sessions).length],["web","🌐","En ligne",webEnAttente],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["couts","💰","Coûts"]]:[]),...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
           <button key={id} style={T(tab===id)} onClick={()=>{setTab(id);touch();}}>
             <span style={{fontSize:24,lineHeight:1,position:"relative"}}>{ic}{badge>0&&<span style={{position:"absolute",top:-6,right:-12,background:S.red,color:"#fff",fontSize:11,fontWeight:800,borderRadius:10,padding:"1px 5px"}}>{badge}</span>}</span>
             <span style={{fontSize:12}}>{nom}</span>
@@ -692,6 +693,8 @@ COÛT MATIÈRES CONSOMMÉES: ${fmt(cogsConsumed)} | MARGE RÉELLE: ${fmt(grossMa
           <button onClick={async()=>{if(!aiRecInput.trim())return;setAiRecLoading(true);const txt=await callAI('Réponds UNIQUEMENT en JSON valide: {"name":"...","emoji":"...","category":"...","snackId":"","ingredients":[{"id":"i1","qty":0.000}]}. Utilise les IDs: i1=Farine,i2=Lait,i3=Beurre,i4=Sucre,i5=Oeufs,i6=Confiture,i7=Nutella,i8=Poulet,i9=Fromage,i10=Thon,i11=Pain,i12=Levure. Quantités en kg par unité.',`Recette pour: "${aiRecInput}"`);try{const p=JSON.parse(txt.replace(/```json|```/g,"").trim());if(p.name){const nr=[...recipes,{...p,id:`r${uid()}`}];setRecipes(nr);saveProds(boissons,snacks,ingredients,nr,stations,photoPrice,dailyGoal,ticketNo);setAiRecInput("");showToast("✓ Recette IA ajoutée !");}}catch(e){showToast("IA: réessayez avec plus de détails",S.orange);}setAiRecLoading(false);}} disabled={aiRecLoading||!aiRecInput.trim()} style={{...Btn(S.purple,"#fff"),width:"100%",marginTop:10,fontSize:12,opacity:aiRecLoading||!aiRecInput.trim()?0.5:1}}>{aiRecLoading?"⏳ Génération...":"🤖 Générer"}</button>
         </div>
       </div>}
+
+      {tab==="couts"&&isPatron&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><CoutRevient S={S} Card={Card} fmt={fmt} ingredients={ingredients} recipes={recipes}/></Suspense>}
 
       {/* ══ IA ══ */}
       {tab==="ia"&&isPatron&&<div style={{padding:14,display:"flex",flexDirection:"column",minHeight:"calc(100vh - 160px)"}}>

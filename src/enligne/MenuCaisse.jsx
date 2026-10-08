@@ -9,7 +9,7 @@ import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/share
 // Même menu, mêmes prix que le site : on le modifie une seule fois dans 🌐 → Menu & prix.
 const CACHE = "gg3-menu-site";
 
-function useMenuSite() {
+export function useMenuSite() {
   const [menu, setMenu] = useState(() => {
     try { const m = JSON.parse(localStorage.getItem(CACHE) || "null"); if (m && m.articles) return m; } catch (e) {}
     return MENU_DEPART;
