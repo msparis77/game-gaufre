@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebaseCaisse.js";
-import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu } from "../../arena-commande/src/shared/prix.js";
+import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu, nbAccomps, accompsDuMenu, supPain } from "../../arena-commande/src/shared/prix.js";
 import { MENU_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
@@ -25,7 +25,7 @@ export function useMenuSite() {
 
 // Ligne de panier : même id pour les mêmes choix, pour que la quantité s'additionne.
 function ligne(menu, a, choix) {
-  const cle = [a.id, choix.formule ? "f_" + choix.boissonId : "seul", choix.fromage ? "fromage" : "", choix.sauce || "", aChoixPain(menu, a) ? choix.pain || "" : "", aChoixJus(a) ? choix.jus || "" : ""].join("|");
+  const cle = [a.id, choix.formule ? "f_" + choix.boissonId : "seul", choix.fromage ? "fromage" : "", choix.sauce || "", aChoixPain(menu, a) ? choix.pain || "" : "", aChoixJus(a) ? choix.jus || "" : "", (choix.accomps || []).join("+")].join("|");
   return { id: "menu:" + cle, name: nomLigne(menu, a, choix), price: prixUnitaire(menu, a, choix), cat: "menu", emoji: a.emoji || "🥖" };
 }
 
@@ -50,9 +50,48 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
     </div>)}</>;
   }
 
+  // Poulet braisé (onglet 🍗) : formules avec accompagnements au choix.
+  if (vue === "poulet") {
+    const cats = (menu.categories || []).filter((c) => c.plats);
+    const art = choix && choix.article;
+    const n = nbAccomps(art);
+    const acc = (choix && choix.accomps) || [];
+    const ok = art && acc.length === n && acc.every(Boolean);
+    const choisir = (i, x) => { const a = [...acc]; a[i] = x; setChoix({ ...choix, accomps: a }); };
+    return <>{art && <div role="dialog" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setChoix(null)}>
+      <div style={{ background: S.card, borderRadius: "16px 16px 0 0", padding: 16, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", border: `1px solid ${S.gold}` }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ fontSize: 17, fontWeight: 800 }}>{art.emoji} {art.nom} · {fcfa(art.prix)}</div>
+          <button onClick={() => setChoix(null)} style={{ background: "transparent", border: "none", color: S.muted, fontSize: 22, cursor: "pointer" }}>✕</button>
+        </div>
+        {Array.from({ length: n }, (_, i) => <div key={i}>
+          <div style={{ fontSize: 12, color: S.muted, marginBottom: 6 }}>Accompagnement{n > 1 ? " " + (i + 1) : ""}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 12 }}>
+            {accompsDuMenu(menu).map((x) => <button key={x} style={puce(acc[i] === x)} onClick={() => choisir(i, x)}>{x}</button>)}
+          </div>
+        </div>)}
+        <button disabled={!ok} onClick={() => { ajouter(ligne(menu, art, choix)); setChoix(null); }} style={{ ...Btn(ok ? S.green : S.card3, ok ? S.bg : S.muted), width: "100%", fontSize: 16, padding: 14 }}>
+          {ok ? `＋ Ajouter au panier · ${fcfa(art.prix)}` : "Choisis les accompagnements"}
+        </button>
+      </div>
+    </div>}{cats.map((cat) => {
+      const liste = dispo.filter((a) => a.categorie === cat.id && prixSimple(a));
+      if (!liste.length) return null;
+      return <div key={cat.id}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()}</div>
+        <div style={grille}>{liste.map((a) => (
+          <button key={a.id} style={tuile} onClick={() => nbAccomps(a) ? setChoix({ article: a, accomps: Array(nbAccomps(a)).fill("") }) : ajouter(ligne(menu, a, {}))}>
+            <div style={{ fontSize: 26 }}>{a.emoji || "🍗"}</div>
+            <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: S.gold }}>{fcfa(a.prix)}</div>
+          </button>))}</div>
+      </div>;
+    })}</>;
+  }
+
   // Crêpes, gaufres, glaces… : prix unique, ajout direct au panier (onglet 🧇).
   if (vue === "crepes") {
-    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons");
+    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons" && !c.plats);
     const artJus = choix && choix.article;
     return <>{artJus && <div role="dialog" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setChoix(null)}>
       <div style={{ background: S.card, borderRadius: "16px 16px 0 0", padding: 16, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", border: `1px solid ${S.gold}` }} onClick={(e) => e.stopPropagation()}>
@@ -120,7 +159,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
           <div style={{ fontSize: 12, color: S.muted, marginBottom: 6 }}>Pain (obligatoire)</div>
           <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
             {painsDuMenu(menu).map((p) => (
-              <button key={p} style={{ ...puce(c.pain === p), flex: 1 }} onClick={() => setChoix({ ...c, pain: p })}>{p === "Baguette" ? "🥖 " : "🍞 "}{p}</button>))}
+              <button key={p} style={{ ...puce(c.pain === p), flex: 1 }} onClick={() => setChoix({ ...c, pain: p })}>{p === "Baguette" ? "🥖 " : "🍞 "}{p}{supPain(menu, p) ? ` +${supPain(menu, p)}` : ""}</button>))}
           </div>
         </>}
         {c.formule && <>
@@ -130,8 +169,8 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
               <button key={b.id} style={puce(c.boissonId === b.id)} onClick={() => setChoix({ ...c, boissonId: b.id })}>{b.nom}{b.sup ? ` +${b.sup}` : ""}</button>))}
           </div>
         </>}
+        <button style={{ ...puce(c.fromage), width: "100%", marginBottom: 12 }} onClick={() => setChoix({ ...c, fromage: !c.fromage })}>🧀 Version fromage +{o.supplementFromage || 0}</button>
         {art.omelette && <>
-          <button style={{ ...puce(c.fromage), width: "100%", marginBottom: 12 }} onClick={() => setChoix({ ...c, fromage: !c.fromage })}>🧀 Version fromage +{o.supplementFromage || 0}</button>
           <div style={{ fontSize: 12, color: S.muted, marginBottom: 6 }}>Sauce</div>
           <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
             {(o.sauces || []).map((sc) => (

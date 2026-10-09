@@ -500,7 +500,7 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
       {/* ══ CAISSE ══ */}
       {tab==="caisse"&&<div style={{padding:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6,marginBottom:12}}>
-          {[["formules","🥪","Formules"],["menuCrepes","🧇","Crêpes"],["menuBoissons","☕","Boissons"],["jeux","🎮","PlayStation"+(Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:"")],["snacks","🥞","Autres"]].map(([id,ic,nom])=>{const on=cTab===id||(id==="snacks"&&cTab==="boissons");return(
+          {[["formules","🥪","Formules"],["menuCrepes","🧇","Crêpes"],["menuPoulet","🍗","Poulet"],["menuBoissons","☕","Boissons"],["jeux","🎮","PlayStation"+(Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:"")],["snacks","🥞","Autres"]].map(([id,ic,nom])=>{const on=cTab===id||(id==="snacks"&&cTab==="boissons");return(
             <button key={id} onClick={()=>{setCTab(id);touch();}} style={{background:on?S.gold:S.card2,color:on?S.bg:S.text,border:`1px solid ${on?S.gold:S.border}`,borderRadius:10,padding:"10px 4px",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{fontSize:22}}>{ic}</span>{nom}</button>);})}
         </div>
         {cTab==="jeux"?<>
@@ -520,7 +520,7 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
         </div>
         {isManager&&<button onClick={()=>setAddStationModal(true)} style={{width:"100%",background:"transparent",border:`2px dashed ${S.gold}`,borderRadius:10,padding:"9px",cursor:"pointer",color:S.gold,fontWeight:700,fontSize:13,marginBottom:12}}>＋ Ajouter une console / un poste</button>}
         </>:<>
-        {cTab==="formules"||cTab==="menuCrepes"||cTab==="menuBoissons"?<Suspense fallback={<div style={{color:S.muted,padding:10}}>Chargement du menu…</div>}><MenuCaisse vue={cTab==="formules"?"formules":cTab==="menuCrepes"?"crepes":"boissons"} S={S} Btn={Btn} ajouter={l=>{ajouterLigne(l);showToast(`＋ ${l.name}`);}}/></Suspense>:<>
+        {cTab==="formules"||cTab==="menuCrepes"||cTab==="menuPoulet"||cTab==="menuBoissons"?<Suspense fallback={<div style={{color:S.muted,padding:10}}>Chargement du menu…</div>}><MenuCaisse vue={cTab==="formules"?"formules":cTab==="menuCrepes"?"crepes":cTab==="menuPoulet"?"poulet":"boissons"} S={S} Btn={Btn} ajouter={l=>{ajouterLigne(l);showToast(`＋ ${l.name}`);}}/></Suspense>:<>
         <div style={{display:"flex",gap:8,marginBottom:10}}><button style={Sub(cTab==="boissons")} onClick={()=>setCTab("boissons")}>Anciennes boissons</button><button style={Sub(cTab==="snacks")} onClick={()=>setCTab("snacks")}>Snacks / gaufres</button></div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
           {(cTab==="boissons"?boissons:snacks).map(p=>(
