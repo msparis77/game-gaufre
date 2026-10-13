@@ -260,8 +260,9 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
             <span style={{ fontSize: 11, color: S.muted }}>{boisson ? "Prix" : "Prix formule"}</span>
             <input type="number" value={boisson ? a.prix : a.prixFormule} onChange={(e) => majArticle(a.id, boisson ? "prix" : "prixFormule", nombre(e.target.value))} style={Inp(90)} />
             {!boisson && <span style={{ fontSize: 11, color: S.muted }}>seul : {fcfa(a.prixFormule - m.options.remiseSansBoisson)}</span>}
-            {!boisson && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!!a.omelette} onChange={(e) => majArticle(a.id, "omelette", e.target.checked)} /> omelette (sauce + fromage)</label>}
+            {!boisson && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!!a.omelette} onChange={(e) => majArticle(a.id, "omelette", e.target.checked)} /> omelette (choix de sauce)</label>}
             {!boisson && <label style={{ fontSize: 11, color: S.muted }}><input type="checkbox" checked={!a.sansChoixPain} onChange={(e) => majArticle(a.id, "sansChoixPain", !e.target.checked)} /> choix du pain</label>}
+            {prixSimple(a) && cat.plats && <label style={{ fontSize: 11, color: S.muted }}>accompagnements <input type="number" min="0" max="5" value={a.accompagnements || 0} onChange={(e) => majArticle(a.id, "accompagnements", nombre(e.target.value))} style={Inp(50)} /></label>}
             <label style={{ fontSize: 11, color: a.dispo !== false ? S.green : S.red }}><input type="checkbox" checked={a.dispo !== false} onChange={(e) => majArticle(a.id, "dispo", e.target.checked)} /> dispo</label>
             <button onClick={() => window.confirm(`Supprimer « ${a.nom} » ?`) && maj((n) => { n.articles = n.articles.filter((x) => x.id !== a.id); })} style={{ ...Btn(S.card3, S.red), padding: "4px 8px", fontSize: 11 }}>Supprimer</button>
           </div>
@@ -279,7 +280,7 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
     <div style={Card()}>
       <div style={{ fontWeight: 800, color: S.gold, marginBottom: 8 }}>⚙️ Règles de prix</div>
       <Ligne S={S} label="Réduction sandwich seul (sans boisson)"><input type="number" value={m.options.remiseSansBoisson} onChange={(e) => maj((n) => { n.options.remiseSansBoisson = nombre(e.target.value); })} style={Inp(90)} /></Ligne>
-      <Ligne S={S} label="Supplément version fromage"><input type="number" value={m.options.supplementFromage} onChange={(e) => maj((n) => { n.options.supplementFromage = nombre(e.target.value); })} style={Inp(90)} /></Ligne>
+      <Ligne S={S} label="Supplément fromage (tous les sandwichs)"><input type="number" value={m.options.supplementFromage} onChange={(e) => maj((n) => { n.options.supplementFromage = nombre(e.target.value); })} style={Inp(90)} /></Ligne>
       <div style={{ fontSize: 12, fontWeight: 700, margin: "10px 0 4px" }}>Boissons de la formule (supplément)</div>
       {m.options.boissonsFormule.map((b, i) => <div key={b.id} style={{ display: "flex", gap: 6, marginBottom: 4 }}>
         <input value={b.nom} onChange={(e) => maj((n) => { n.options.boissonsFormule[i].nom = e.target.value; })} style={Inp()} />
@@ -291,6 +292,9 @@ function EditeurMenu({ S, Btn, Inp, Card, menu, showToast }) {
       <input value={m.options.sauces.join(", ")} onChange={(e) => maj((n) => { n.options.sauces = e.target.value.split(",").map((x) => x.trim()).filter(Boolean); })} style={Inp()} />
       <div style={{ fontSize: 12, fontWeight: 700, margin: "10px 0 4px" }}>Pains au choix (séparés par des virgules)</div>
       <input value={(m.options.pains || []).join(", ")} onChange={(e) => maj((n) => { n.options.pains = e.target.value.split(",").map((x) => x.trim()).filter(Boolean); })} placeholder="Baguette, Pain local brioché" style={Inp()} />
+      {(m.options.pains || []).map((p) => <Ligne key={p} S={S} label={"Supplément " + p}><input type="number" value={(m.options.supplementsPain || {})[p] || 0} onChange={(e) => maj((n) => { n.options.supplementsPain = { ...(n.options.supplementsPain || {}), [p]: nombre(e.target.value) }; })} style={Inp(90)} /></Ligne>)}
+      <div style={{ fontSize: 12, fontWeight: 700, margin: "10px 0 4px" }}>Accompagnements du poulet (séparés par des virgules)</div>
+      <input value={(m.options.accompagnements || []).join(", ")} onChange={(e) => maj((n) => { n.options.accompagnements = e.target.value.split(",").map((x) => x.trim()).filter(Boolean); })} placeholder="Riz blanc, Vermicelle…" style={Inp()} />
     </div>
 
     <div style={{ position: "sticky", bottom: 64, display: "flex", gap: 8 }}>
@@ -422,6 +426,13 @@ function EditeurCreneaux({ S, Btn, Inp, Card, creneaux, showToast }) {
       showToast("✓ Créneaux enregistrés");
     } catch (e) { showToast("❌ " + (e.code || e.message), S.red); }
   };
+  // Un créneau par heure de 6h à minuit : 19 créneaux, lettres A à S.
+  // Minuit s'écrit 00h00 (les règles Firestore comparent l'heure du jour du retrait).
+  const remplirJournee = () => {
+    if (!window.confirm("Remplacer tous les créneaux par un créneau par heure, de 6h à minuit ?")) return;
+    setListe(Array.from({ length: 19 }, (_, i) => { const h = (6 + i) % 24; return { id: "c" + String(h).padStart(2, "0") + "00", heure: hhmm(h * 60), code: "ABCDEFGHIJKLMNOPQRS"[i], max: 20, actif: true }; }));
+    showToast("Créneaux préparés : touche « Enregistrer » pour valider");
+  };
   const lettreLibre = () => "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").find((l) => !liste.some((c) => String(c.code).toUpperCase() === l)) || "Z";
 
   return <>
@@ -440,6 +451,7 @@ function EditeurCreneaux({ S, Btn, Inp, Card, creneaux, showToast }) {
         <button onClick={() => setListe(liste.filter((_, j) => j !== i))} style={{ ...Btn(S.card3, S.red), padding: "4px 8px", marginLeft: "auto" }}>✕</button>
       </div>)}
       <button onClick={() => setListe([...liste, { id: nouvelId("c"), heure: "10h30", code: lettreLibre(), max: 20, actif: true }])} style={{ ...Btn(S.card3, S.text), width: "100%", fontSize: 12 }}>+ Ajouter un créneau</button>
+      <button onClick={remplirJournee} style={{ ...Btn(S.card3, S.gold), width: "100%", fontSize: 12, marginTop: 6 }}>⚡ Remplacer par : toutes les heures de 6h à minuit</button>
       <Ligne S={S} label="Fermeture des commandes avant le créneau (minutes)"><input type="number" value={delai} onChange={(e) => setDelai(e.target.value)} style={Inp(70)} /></Ligne>
     </div>
     <button onClick={enregistrer} style={{ ...Btn(S.green, S.bg), width: "100%" }}>💾 Enregistrer les créneaux</button>

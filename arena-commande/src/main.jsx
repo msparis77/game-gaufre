@@ -2,7 +2,7 @@ import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
-import { fcfa, faireLigne, prixUnitaire, estBoisson, prixSimple, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu } from "./shared/prix.js";
+import { fcfa, faireLigne, prixUnitaire, estBoisson, prixSimple, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu, nbAccomps, accompsDuMenu, supPain } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
@@ -130,13 +130,17 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
   const [sauce, setSauce] = useState("");
   const [pain, setPain] = useState("");
   const [jus, setJus] = useState("");
+  const nAcc = nbAccomps(article);
+  const [accomps, setAccomps] = useState(() => Array(nAcc).fill(""));
   const [qte, setQte] = useState(1);
-  const choix = { formule, boissonId, fromage, sauce, pain, jus };
+  const choix = { formule, boissonId, fromage, sauce, pain, jus, accomps };
   const pu = prixUnitaire(menu, article, choix);
   const choixPain = aChoixPain(menu, article);
   const manquePain = choixPain && !pain;
   const manqueSauce = article.omelette && !sauce;
   const manqueJus = aChoixJus(article) && !jus;
+  const manqueAccomp = nAcc > 0 && accomps.some((x) => !x);
+  const choisirAccomp = (i, x) => setAccomps(accomps.map((y, j) => (j === i ? x : y)));
   return (
     <div class="voile" onClick={fermer}>
       <div class="fiche" role="dialog" aria-label={article.nom} onClick={(e) => e.stopPropagation()}>
@@ -158,6 +162,17 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
           </div>
         )}
 
+        {nAcc > 0 && accomps.map((a, i) => (
+          <div class="groupe" key={i}>
+            <div class="label">{nAcc > 1 ? `Accompagnement ${i + 1}` : "Ton accompagnement"} <em>(obligatoire)</em></div>
+            <div class="puces">
+              {accompsDuMenu(menu).map((x) => (
+                <button key={x} class={a === x ? "on" : ""} onClick={() => choisirAccomp(i, x)}>{x}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+
         {!boisson && (
           <>
             <div class="groupe">
@@ -173,7 +188,7 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
                 {painsDuMenu(menu).map((p) => (
                   <label key={p} class="radio">
                     <input type="radio" name="pain" checked={pain === p} onChange={() => setPain(p)} />
-                    <span>{p === "Baguette" ? "🥖 " : "🍞 "}{p}</span>
+                    <span>{p === "Baguette" ? "🥖 " : "🍞 "}{p}</span><b>{supPain(menu, p) ? "+" + fcfa(supPain(menu, p)) : "inclus"}</b>
                   </label>
                 ))}
               </div>
@@ -189,14 +204,14 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
                 ))}
               </div>
             )}
+            <div class="groupe">
+              <label class="radio">
+                <input type="checkbox" checked={fromage} onChange={(e) => setFromage(e.currentTarget.checked)} />
+                <span>Version fromage</span><b>+{fcfa(o.supplementFromage)}</b>
+              </label>
+            </div>
             {article.omelette && (
               <>
-                <div class="groupe">
-                  <label class="radio">
-                    <input type="checkbox" checked={fromage} onChange={(e) => setFromage(e.currentTarget.checked)} />
-                    <span>Version fromage</span><b>+{fcfa(o.supplementFromage)}</b>
-                  </label>
-                </div>
                 <div class="groupe">
                   <div class="label">Ta sauce <em>(obligatoire)</em></div>
                   {o.sauces.map((s) => (
@@ -216,9 +231,9 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
           <b>{qte}</b>
           <button onClick={() => setQte(Math.min(10, qte + 1))} aria-label="Plus">+</button>
         </div>
-        <button class="gros" disabled={manquePain || manqueSauce || manqueJus || pu == null}
+        <button class="gros" disabled={manquePain || manqueSauce || manqueJus || manqueAccomp || pu == null}
           onClick={() => ajouter(faireLigne(menu, article, choix, qte))}>
-          {manquePain ? "Choisis ton pain" : manqueJus ? "Choisis ton jus" : manqueSauce ? "Choisis ta sauce" : `Ajouter · ${fcfa(pu * qte)}`}
+          {manquePain ? "Choisis ton pain" : manqueJus ? "Choisis ton jus" : manqueAccomp ? "Choisis ton accompagnement" : manqueSauce ? "Choisis ta sauce" : `Ajouter · ${fcfa(pu * qte)}`}
         </button>
       </div>
     </div>

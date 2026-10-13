@@ -6,7 +6,7 @@
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, surConnexion, firebaseConfigure } from "./firebaseCaisse.js";
 import { hhmm } from "../../arena-commande/src/shared/creneaux.js";
-import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES } from "../../arena-commande/src/shared/menuDepart.js";
+import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES, SANDWICHS_AJOUTES, CATEGORIES_POULET, CARTE_POULET, ACCOMPAGNEMENTS } from "../../arena-commande/src/shared/menuDepart.js";
 
 export const PRINT_BRIDGE_URL = (import.meta.env.VITE_PRINT_BRIDGE_URL || "http://localhost:3001").replace(/\/+$/, "");
 const CLE_AUTO = "gg3-web-autoprint";
@@ -278,9 +278,21 @@ export function demarrerVeille() {
 // v7 : formules crêpe/gaufre Nutella + jus local, beignets + jus, formule gaming (caisse seulement), crêpe lait concentré, crêpe saucisson fromage
 //      crêpe/gaufre Nutella chantilly à 1800, Nutella banane à 2000, Nutella banane chantilly
 //      à 2500, beignets et sorbets à 800 ; les autres articles crêpes déjà là ne sont pas touchés.
+// v8 : jus Ditakh, sandwichs Thon / Poulet mayonnaise / Merguez frites, pain local +50,
+//      fromage possible sur tous les sandwichs, carte du poulet braisé (CARTE_POULET) avec
+//      accompagnements au choix. Rien de ce qui existe déjà n'est modifié (prix de la caisse gardés).
+// Ajoute `art` juste après l'article `apresId`, sinon après le dernier de sa catégorie,
+// sinon avant les boissons.
+function insererArticle(articles, art, apresId) {
+  let i = apresId ? articles.findIndex((x) => x.id === apresId) : -1;
+  if (i < 0) articles.forEach((x, k) => { if (x.categorie === art.categorie) i = k; });
+  if (i >= 0) i += 1;
+  else i = articles.findIndex((x) => x.categorie === "boissons");
+  articles.splice(i < 0 ? articles.length : i, 0, art);
+}
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 7) return null;
+  if (!m || v >= 8) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -314,26 +326,42 @@ export function migrerMenu(m) {
   // Crêpes : catégories et articles manquants ajoutés (ceux déjà là ne sont pas touchés,
   // pour garder les prix modifiés dans la caisse). Chaque article va après ceux de sa catégorie.
   n.categories = n.categories || [];
-  CATEGORIES_CREPES.forEach((c, k) => {
+  if (v < 7) {
+    CATEGORIES_CREPES.forEach((c, k) => {
+      if (n.categories.some((x) => x.id === c.id)) return;
+      const suivantes = CATEGORIES_CREPES.slice(k + 1).map((x) => x.id).concat("boissons");
+      const i = n.categories.findIndex((x) => suivantes.includes(x.id));
+      n.categories.splice(i < 0 ? n.categories.length : i, 0, { ...c });
+    });
+    n.articles.forEach((a) => {
+      if (a.id === "c_gaufre_nutella_chantilly") a.prix = 1800;
+      if (["c_beignets_nutella", "c_sorbet_bissap", "c_sorbet_pasteque"].includes(a.id)) a.prix = 800;
+      if (a.id === "c_crepe_nutella_banane" || a.id === "c_gaufre_nutella_banane") a.prix = 2000;
+    });
+    for (const c of CARTE_CREPES) {
+      if (n.articles.some((x) => x.id === c.id)) continue;
+      let i = -1;
+      n.articles.forEach((x, k) => { if (x.categorie === c.categorie) i = k; });
+      if (i >= 0) i += 1;
+      else i = n.articles.findIndex((x) => x.categorie === "boissons");
+      n.articles.splice(i < 0 ? n.articles.length : i, 0, { ...c, nomWolof: "", photo: "", dispo: true });
+    }
+  }
+  // v8
+  const ditakh = CARTE_BOISSONS.find((b) => b.id === "b_ditakh");
+  if (!n.articles.some((x) => x.id === ditakh.id)) insererArticle(n.articles, { ...ditakh, categorie: "boissons", nomWolof: "", photo: "", dispo: true }, "b_bouye");
+  for (const { apres, ...a } of SANDWICHS_AJOUTES)
+    if (!n.articles.some((x) => x.id === a.id)) insererArticle(n.articles, { ...a, photo: "", dispo: true }, apres);
+  if (!n.options.supplementsPain) n.options.supplementsPain = { "Pain local brioché": 50 };
+  if (!n.options.accompagnements) n.options.accompagnements = ACCOMPAGNEMENTS;
+  CATEGORIES_POULET.forEach((c) => {
     if (n.categories.some((x) => x.id === c.id)) return;
-    const suivantes = CATEGORIES_CREPES.slice(k + 1).map((x) => x.id).concat("boissons");
-    const i = n.categories.findIndex((x) => suivantes.includes(x.id));
+    const i = n.categories.findIndex((x) => x.id === "boissons");
     n.categories.splice(i < 0 ? n.categories.length : i, 0, { ...c });
   });
-  n.articles.forEach((a) => {
-    if (a.id === "c_gaufre_nutella_chantilly") a.prix = 1800;
-    if (["c_beignets_nutella", "c_sorbet_bissap", "c_sorbet_pasteque"].includes(a.id)) a.prix = 800;
-    if (a.id === "c_crepe_nutella_banane" || a.id === "c_gaufre_nutella_banane") a.prix = 2000;
-  });
-  for (const c of CARTE_CREPES) {
-    if (n.articles.some((x) => x.id === c.id)) continue;
-    let i = -1;
-    n.articles.forEach((x, k) => { if (x.categorie === c.categorie) i = k; });
-    if (i >= 0) i += 1;
-    else i = n.articles.findIndex((x) => x.categorie === "boissons");
-    n.articles.splice(i < 0 ? n.articles.length : i, 0, { ...c, nomWolof: "", photo: "", dispo: true });
-  }
-  n.version = 7;
+  for (const p of CARTE_POULET)
+    if (!n.articles.some((x) => x.id === p.id)) insererArticle(n.articles, { ...p, nomWolof: "", photo: "", dispo: true });
+  n.version = 8;
   return n;
 }
 async function mettreAJourMenu() {
