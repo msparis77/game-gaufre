@@ -292,7 +292,7 @@ function insererArticle(articles, art, apresId) {
 }
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 8) return null;
+  if (!m || v >= 9) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -361,7 +361,12 @@ export function migrerMenu(m) {
   });
   for (const p of CARTE_POULET)
     if (!n.articles.some((x) => x.id === p.id)) insererArticle(n.articles, { ...p, nomWolof: "", photo: "", dispo: true });
-  n.version = 8;
+  // v9 : eau en bouteille (100) et en sachet (50), à la fin des boissons
+  for (const id of ["b_eau_bouteille", "b_eau_sachet"]) {
+    const b = CARTE_BOISSONS.find((x) => x.id === id);
+    if (!n.articles.some((x) => x.id === id)) insererArticle(n.articles, { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true });
+  }
+  n.version = 9;
   return n;
 }
 async function mettreAJourMenu() {

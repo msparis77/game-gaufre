@@ -31,6 +31,8 @@ export const CARTE_BOISSONS = [
   { id: "b_fanta", famille: "sodas", nom: "Fanta", description: "", prix: 500, emoji: "🥤" },
   { id: "b_sprite", famille: "sodas", nom: "Sprite", description: "", prix: 500, emoji: "🥤" },
   { id: "b_energy", famille: "sodas", nom: "Cocktail energy drink", description: "", prix: 1000, emoji: "⚡" },
+  { id: "b_eau_bouteille", famille: "eaux", nom: "Bouteille d'eau", description: "", prix: 100, emoji: "💧" },
+  { id: "b_eau_sachet", famille: "eaux", nom: "Sachet d'eau", description: "", prix: 50, emoji: "💧" },
 ];
 
 // Carte crêpes, gaufres, beignets et glaces (affiche A3 d'octobre 2026), prix unique en FCFA.

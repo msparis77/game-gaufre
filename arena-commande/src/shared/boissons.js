@@ -11,8 +11,9 @@ const FAMILLES = [
   { id: "jus_pressea", nom: "Jus Presséa", icone: "🍊" },
   { id: "jus", nom: "Jus", icone: "🧃", test: /(^|\s)jus(\s|$)/ },
   { id: "sodas", nom: "Sodas & énergie", icone: "🥤" },
+  { id: "eaux", nom: "Eau", icone: "💧", test: /(^|\s)eau(\s|$)|d'eau/ },
 ];
-const ORDRE = ["cafes", "thes", "chocolats", "gourmand", "jus_locaux", "jus_pressea", "jus", "sodas", "autres"];
+const ORDRE = ["cafes", "thes", "chocolats", "gourmand", "jus_locaux", "jus_pressea", "jus", "sodas", "eaux", "autres"];
 const AUTRES = { id: "autres", nom: "Autres boissons", icone: "🥤" };
 
 export function familleBoisson(article) {
