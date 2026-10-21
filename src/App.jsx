@@ -11,7 +11,12 @@ const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => ab
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
 const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<=0)return"0 "+unit;if(qty<0.001)return(qty*1000).toFixed(1)+" "+(unit==="kg"?"g":"ml");if(qty<1)return(qty*1000).toFixed(0)+" "+(unit==="kg"?"g":"ml");return qty.toFixed(3).replace(/\.?0+$/,"")+" "+unit;}return qty%1===0?qty+" "+unit:qty.toFixed(1)+" "+unit;};
-const todayStr=()=>new Date().toISOString().split("T")[0];
+// Journée de caisse : elle se termine à 2h du matin (les ventes après minuit comptent pour la veille)
+const FIN_JOURNEE_H=2;
+const maintenantJournee=()=>new Date(Date.now()-FIN_JOURNEE_H*3600e3);
+const todayStr=()=>maintenantJournee().toISOString().split("T")[0];
+// Journée de caisse d'une vente : champ jour, sinon date + heure moins 2h (ventes d'avant ce champ), sinon la journée chargée
+const journeeVente=v=>{if(v.jour)return v.jour;if(!v.date)return todayStr();if(!v.time)return v.date;const d=new Date(v.date+"T"+v.time+"Z");return isNaN(d)?v.date:new Date(d-FIN_JOURNEE_H*3600e3).toISOString().split("T")[0];};
 const timeStr=()=>new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 const uid=()=>`${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
 // Parties PlayStation / PC : lignes "gaming" des ventes (une vente peut mélanger jeu + nourriture)
@@ -200,26 +205,27 @@ export default function App(){
   const [storeModal,setStoreModal]=useState(false);
   const [storeConfirmed,setStoreConfirmed]=useState(false);
   const [tick,setTick]=useState(0);
+  const [jour,setJour]=useState(todayStr());
   const [lastAct,setLastAct]=useState(Date.now());
   const [toast,setToast]=useState(null);
   const chatRef=useRef(null);
   const recognitionRef=useRef(null);
   const [listening,setListening]=useState(false);
 
-  useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
+  useEffect(()=>{const iv=setInterval(()=>{setTick(t=>t+1);setJour(j=>{const t=todayStr();return t!==j?t:j;});if(user&&Date.now()-lastAct>5*60*1000)setUser(null);},1000);return()=>clearInterval(iv);},[user,lastAct]);
   const touch=()=>setLastAct(Date.now());
 
   useEffect(()=>{(async()=>{
         try{const k="gg3-"+currentStore.id+"-emps";let s=localStorage.getItem(k);let e=s?JSON.parse(s):await fbGet(k);if(e){setEmps(e);empRef.current=e;}else{setEmps(INIT_EMPS);empRef.current=INIT_EMPS;}}catch(e){}
     try{const k2="gg3-"+currentStore.id+"-prods";let s=localStorage.getItem(k2);let d=s?JSON.parse(s):await fbGet(k2);if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing){const ni=completerIngredients(d.ing);const ing2=ni||d.ing;setIngredients(ing2);const nr=d.rec?completerRecettes(d.rec,ing2):null;if(ni||nr){const nd={...d,ing:ing2,...(nr?{rec:nr}:{})};try{localStorage.setItem(k2,JSON.stringify(nd));}catch(e){}fbSave(k2,nd);}if(d.rec)setRecipes(nr||d.rec);}else if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.ec&&Array.isArray(d.ec)&&d.ec.length>0)setExpCats(d.ec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setExpCats(INIT_EXP_CATS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
-    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){if(d.sales)setSales(d.sales);setSessions(d.sessions||{});if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
-    const hist={};for(let i=1;i<=7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let d=await fbGet(k4);if(d)localStorage.setItem(k4,JSON.stringify(d));else{const s=localStorage.getItem(k4);d=s?JSON.parse(s):null;}if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
+    try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):await fbGet(k3);if(d){setSales((d.sales||[]).filter(x=>journeeVente(x)===todayStr()));setSessions(d.sessions||{});if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
+    const hist={};for(let i=1;i<=7;i++){const dt=maintenantJournee();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let d=await fbGet(k4);if(d)localStorage.setItem(k4,JSON.stringify(d));else{const s=localStorage.getItem(k4);d=s?JSON.parse(s):null;}if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
-  })();},[currentStore.id]);
+  })();},[currentStore.id,jour]); // jour : recharge une journée vide quand la caisse passe au lendemain
 
   const saveEmps=e=>{const k="gg3-"+currentStore.id+"-emps";try{localStorage.setItem(k,JSON.stringify(e));}catch(e){}fbSave(k,e);};
   const saveProds=(b,s,ing,rec,sta,pp,g,tno)=>{const k="gg3-"+currentStore.id+"-prods";try{localStorage.setItem(k,JSON.stringify({b,s,ing,rec,sta,pp,goal:g,tno}));}catch(e){}fbSave(k,{b,s,ing,rec,sta,pp,goal:g,tno});};
-  const saveDay=upd=>{try{const k="gg3-"+currentStore.id+"-day-"+todayStr();let c={};try{const s=localStorage.getItem(k);if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem(k,JSON.stringify(nd));fbSave(k,nd);}catch(e){}};
+  const saveDay=upd=>{try{const k="gg3-"+currentStore.id+"-day-"+todayStr();let c={};try{const s=localStorage.getItem(k);if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};if(nd.sales)nd.sales=nd.sales.filter(x=>journeeVente(x)===todayStr());localStorage.setItem(k,JSON.stringify(nd));fbSave(k,nd);}catch(e){}};
   const saveProdsMerge=upd=>{try{const k2="gg3-"+currentStore.id+"-prods";let c={};try{const s=localStorage.getItem(k2);if(s)c=JSON.parse(s);}catch(e){}const nd={...c,...upd};localStorage.setItem(k2,JSON.stringify(nd));fbSave(k2,nd);}catch(e){}};
   const showToast=(msg,color=S.green)=>{setToast({msg,color});setTimeout(()=>setToast(null),2500);};
   const addAudit=useCallback(async(action,details="")=>{const entry={id:uid(),time:timeStr(),date:todayStr(),who:user?.name||"?",role:user?.role||"?",action,details};setAudit(prev=>{const na=[entry,...prev].slice(0,300);saveDay({audit:na});return na;});},[user,currentStore.id]);
@@ -258,7 +264,7 @@ export default function App(){
   const lossAlerts=snacks.filter(p=>{const l=lossQty(p.id);return l!==null&&l>0;});
   const ingAlerts=ingredients.filter(i=>ingAlert(i.id)!==null);
   const top5=[...boissons,...snacks].map(p=>({...p,sold:soldQty(p.id)})).filter(p=>p.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,5);
-  const last7=Array.from({length:7},(_,i)=>{const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];const h=i===0?{sales,expenses,pc:photoCount}:history[ds]||{sales:[],expenses:[],pc:0};const ca=h.sales.reduce((s,sale)=>s+sale.total,0)+(h.pc||0)*photoPrice;const dep=h.expenses.reduce((s,e)=>s+e.amount,0);return{ds,label:i===0?"Auj":i===1?"Hier":dt.toLocaleDateString("fr-FR",{weekday:"short"}),ca,dep,net:ca-dep};}).reverse();
+  const last7=Array.from({length:7},(_,i)=>{const dt=maintenantJournee();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];const h=i===0?{sales,expenses,pc:photoCount}:history[ds]||{sales:[],expenses:[],pc:0};const ca=h.sales.reduce((s,sale)=>s+sale.total,0)+(h.pc||0)*photoPrice;const dep=h.expenses.reduce((s,e)=>s+e.amount,0);return{ds,label:i===0?"Auj":i===1?"Hier":dt.toLocaleDateString("fr-FR",{weekday:"short"}),ca,dep,net:ca-dep};}).reverse();
   const cashTotal=BILLETS.reduce((s,b)=>s+(Number(cashCount[b]||0)*b),0);
   const especesAttendues=totalCA-parPaiement.wave-parPaiement.orange; // Wave et Orange Money ne sont pas dans le tiroir
   const cashDiff=cashTotal-especesAttendues;
@@ -271,7 +277,7 @@ export default function App(){
   const requestTicket=()=>{if(!cart.length)return;setPendingTicket({items:[...cart],total:cartTotal});};
   const confirmSaleAfterPrint=async(pay="especes")=>{
     if(!pendingTicket)return;
-    const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo,paiement:pay};
+    const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),jour:todayStr(),by:user?.name,ticketNo,paiement:pay};
     setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
     const newTno=ticketNo+1;setTicketNo(newTno);
     saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);
@@ -286,7 +292,7 @@ export default function App(){
   useEffect(()=>{try{localStorage.setItem("gg3-panier",JSON.stringify(cart));}catch(e){}},[cart]);
   const webEnAttente=useVeilleBadge();
   const enregistrerVenteEnLigne=(cmd,verif)=>{
-    const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne"};
+    const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),jour:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne"};
     setSales(prev=>{if(prev.some(x=>x.id===sale.id))return prev;const ns=[...prev,sale];saveDay({sales:ns});return ns;});
     addAudit("VENTE EN LIGNE",`${cmd.code} ${cmd.prenom} ${fmt(verif.total)}`);
   };
