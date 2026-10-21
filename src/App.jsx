@@ -11,11 +11,11 @@ const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => ab
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
 const fmt=n=>Number(n||0).toLocaleString("fr-FR")+" F";
 const fmtQ=(qty,unit)=>{if(unit==="kg"||unit==="L"){if(qty<=0)return"0 "+unit;if(qty<0.001)return(qty*1000).toFixed(1)+" "+(unit==="kg"?"g":"ml");if(qty<1)return(qty*1000).toFixed(0)+" "+(unit==="kg"?"g":"ml");return qty.toFixed(3).replace(/\.?0+$/,"")+" "+unit;}return qty%1===0?qty+" "+unit:qty.toFixed(1)+" "+unit;};
-// Journée de caisse : elle se termine à 4h du matin (les ventes après minuit comptent pour la veille)
-const FIN_JOURNEE_H=4;
+// Journée de caisse : elle se termine à 2h du matin (les ventes après minuit comptent pour la veille)
+const FIN_JOURNEE_H=2;
 const maintenantJournee=()=>new Date(Date.now()-FIN_JOURNEE_H*3600e3);
 const todayStr=()=>maintenantJournee().toISOString().split("T")[0];
-// Journée de caisse d'une vente : champ jour, sinon date + heure moins 4h (ventes d'avant ce champ), sinon la journée chargée
+// Journée de caisse d'une vente : champ jour, sinon date + heure moins 2h (ventes d'avant ce champ), sinon la journée chargée
 const journeeVente=v=>{if(v.jour)return v.jour;if(!v.date)return todayStr();if(!v.time)return v.date;const d=new Date(v.date+"T"+v.time+"Z");return isNaN(d)?v.date:new Date(d-FIN_JOURNEE_H*3600e3).toISOString().split("T")[0];};
 const timeStr=()=>new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 const uid=()=>`${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
