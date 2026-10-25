@@ -3,6 +3,8 @@ const OWNER = 'msparis77'
 const REPO = 'game-gaufre'
 const TOKEN = process.env.GITHUB_TOKEN
 const BASE = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`
+// Les données de la caisse sont sur la branche « donnees », que Vercel ne déploie pas (limite de 100 déploiements/jour)
+const BRANCH = 'donnees'
 
    export default async function handler(req, res) {
      
@@ -21,7 +23,8 @@ const BASE = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`
     if (req.method === 'GET') {
       const key = (req.query.key || '').replace(/[^a-zA-Z0-9_-]/g, '_')
       if (!key) return res.status(200).json(null)
-      const r = await fetch(`${BASE}/${key}.json`, { headers })
+      let r = await fetch(`${BASE}/${key}.json?ref=${BRANCH}`, { headers })
+      if (r.status === 404) r = await fetch(`${BASE}/${key}.json`, { headers })
       if (!r.ok) return res.status(200).json(null)
       const d = await r.json()
       const content = JSON.parse(Buffer.from(d.content, 'base64').toString())
@@ -36,11 +39,11 @@ const BASE = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`
       let lastErr = null
       for (let attempt = 0; attempt < 5; attempt++) {
         let sha = null
-        const check = await fetch(url, { headers })
+        const check = await fetch(`${url}?ref=${BRANCH}`, { headers })
         if (check.ok) { const ex = await check.json(); sha = ex.sha }
         const r = await fetch(url, {
           method: 'PUT', headers,
-          body: JSON.stringify({ message: `update ${k}`, content, ...(sha ? { sha } : {}) })
+          body: JSON.stringify({ message: `update ${k}`, content, branch: BRANCH, ...(sha ? { sha } : {}) })
         })
         if (r.ok) return res.status(200).json({ ok: true })
         const e = await r.json().catch(()=>({}))
