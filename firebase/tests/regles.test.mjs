@@ -8,6 +8,7 @@ import { passerCommande } from "../../arena-commande/src/shared/commander.js";
 import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { prochainsCreneaux } from "../../arena-commande/src/shared/creneaux.js";
 import { faireLigne } from "../../arena-commande/src/shared/prix.js";
+import { inscrireClub, CLUB_DEPART, csvClub, vcardsClub } from "../../arena-commande/src/shared/club.js";
 
 const { doc, getDoc, setDoc, updateDoc, getDocs, collection, query, where, deleteDoc, Timestamp, serverTimestamp } = fs;
 let env;
@@ -219,4 +220,59 @@ test("la caisse passe une livraison en route puis livrée, et règle la livraiso
   await assertSucceeds(getDoc(doc(caisse, "config/livreurs")));
   await assertFails(getDoc(doc(eleve, "config/livreurs")));
   await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "config/livreurs")));
+});
+
+// ─── Club Arena ───
+const membreOk = { prenom: "Awa", telephone: "771234567", profil: "eleve", parrain: "Modou" };
+const brut = (uid, extra = {}) => ({ uid, prenom: "Awa", telephone: "771234567", profil: "eleve", consentement: true,
+  majeurOuParents: true, source: "qr", createdAt: serverTimestamp(), cadeauDonne: false, ...extra });
+
+test("club : un client s'inscrit une seule fois, et personne d'autre que la caisse ne lit la liste", async () => {
+  const e1 = env.authenticatedContext("e1").firestore();
+  await inscrireClub(fs, e1, "e1", membreOk);
+  // Même numéro depuis un autre téléphone : refusé (déjà inscrit)
+  await assert.rejects(inscrireClub(fs, env.authenticatedContext("e2").firestore(), "e2", membreOk), (e) => e.code === "deja");
+  await assertFails(getDoc(doc(e1, "club", "771234567")));
+  await assertFails(getDocs(collection(e1, "club")));
+  await assertFails(deleteDoc(doc(e1, "club", "771234567")));
+  await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), "club")));
+  const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
+  const liste = await getDocs(collection(caisse, "club"));
+  assert.equal(liste.size, 1);
+  const m = liste.docs[0].data();
+  assert.equal(m.parrain, "Modou");
+  assert.equal(m.consentement, true);
+  // Cadeau de bienvenue coché par la caisse, rien d'autre ne change
+  await assertSucceeds(updateDoc(doc(caisse, "club", "771234567"), { cadeauDonne: true, majAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(caisse, "club", "771234567"), { prenom: "Autre" }));
+  await assertFails(updateDoc(doc(e1, "club", "771234567"), { cadeauDonne: false }));
+  // Désinscription (STOP)
+  await assertSucceeds(deleteDoc(doc(caisse, "club", "771234567")));
+  // Exports
+  const csv = csvClub([m]);
+  assert.match(csv, /Awa;\+221 771234567;Élève;Modou;/);
+  assert.match(vcardsClub([m]), /TEL;TYPE=CELL:\+221771234567/);
+});
+
+test("club : inscription refusée sans accord, sans âge, ou mal remplie", async () => {
+  const e1 = env.authenticatedContext("e1").firestore();
+  const ref = doc(e1, "club", "771234567");
+  await assertFails(setDoc(ref, brut("e1", { consentement: false })));
+  await assertFails(setDoc(ref, brut("e1", { majeurOuParents: false })));
+  await assertFails(setDoc(ref, brut("e1", { profil: "chef" })));
+  await assertFails(setDoc(ref, brut("e1", { prenom: "" })));
+  await assertFails(setDoc(ref, brut("e1", { cadeauDonne: true })));
+  await assertFails(setDoc(ref, brut("autre")));
+  await assertFails(setDoc(ref, brut("e1", { telephone: "781234567" })));
+  await assertFails(setDoc(ref, brut("e1", { age: 15 })));
+  await assertFails(setDoc(doc(e1, "club", "123"), brut("e1", { telephone: "123" })));
+  await assertFails(setDoc(doc(env.unauthenticatedContext().firestore(), "club", "771234567"), brut("e1")));
+  await assertSucceeds(setDoc(ref, brut("e1")));
+});
+
+test("club : réglages lisibles par tous, modifiables par la caisse seulement", async () => {
+  const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
+  await assertSucceeds(setDoc(doc(caisse, "config/club"), { ...CLUB_DEPART, telephone: "771112233" }));
+  await assertSucceeds(getDoc(doc(env.unauthenticatedContext().firestore(), "config/club")));
+  await assertFails(setDoc(doc(env.authenticatedContext("e1").firestore(), "config/club"), { ...CLUB_DEPART, cadeau: "Tout gratuit" }));
 });

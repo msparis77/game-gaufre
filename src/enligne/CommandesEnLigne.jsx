@@ -5,6 +5,7 @@ import { abonner, imprimer, imprimerNavigateur, imprimerBonLivraison, bonLivreur
 import { verifierCommande, fcfa, prixSimple } from "../../arena-commande/src/shared/prix.js";
 import { hhmm, versMinutes } from "../../arena-commande/src/shared/creneaux.js";
 import { nettoyerTelephone, telephoneValide } from "../../arena-commande/src/shared/commander.js";
+import Club from "./Club.jsx";
 import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 
 const STATUTS = {
@@ -71,7 +72,7 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
   return (
     <div style={{ padding: 14 }}>
       <div style={{ display: "flex", gap: 4, marginBottom: 12, flexWrap: "wrap" }}>
-        {[["commandes", "📋 Commandes"], ["menu", "🍽️ Menu & prix"], ["creneaux", "🕐 Créneaux"], ["livraison", "🛵 Livraison"]].map(([id, l]) => (
+        {[["commandes", "📋 Commandes"], ["menu", "🍽️ Menu & prix"], ["creneaux", "🕐 Créneaux"], ["livraison", "🛵 Livraison"], ["club", "📣 Club"]].map(([id, l]) => (
           <button key={id} style={Sub(vue === id)} onClick={() => (id === "commandes" ? setVue(id) : requirePatron(() => setVue(id)))}>{l}</button>
         ))}
       </div>
@@ -79,6 +80,7 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
       {vue === "menu" && <EditeurMenu {...{ S, Btn, Inp, Card, menu, showToast }} />}
       {vue === "creneaux" && <EditeurCreneaux {...{ S, Btn, Inp, Card, creneaux, showToast }} />}
       {vue === "livraison" && <EditeurLivraison {...{ S, Btn, Inp, Card, livraison, livreurs, showToast }} />}
+      {vue === "club" && <Club {...{ S, Btn, Inp, Card, showToast }} />}
     </div>
   );
 }
