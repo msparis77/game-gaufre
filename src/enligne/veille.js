@@ -6,7 +6,7 @@
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, surConnexion, firebaseConfigure } from "./firebaseCaisse.js";
 import { hhmm } from "../../arena-commande/src/shared/creneaux.js";
-import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES, SANDWICHS_AJOUTES, CATEGORIES_POULET, CARTE_POULET, ACCOMPAGNEMENTS, CATEGORIE_PETIT_DEJ, CARTE_PETIT_DEJ } from "../../arena-commande/src/shared/menuDepart.js";
+import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES, SANDWICHS_AJOUTES, CATEGORIES_POULET, CARTE_POULET, ACCOMPAGNEMENTS, CATEGORIE_PETIT_DEJ, CARTE_PETIT_DEJ, CATEGORIES_FAST_FOOD, CARTE_FAST_FOOD } from "../../arena-commande/src/shared/menuDepart.js";
 
 export const PRINT_BRIDGE_URL = (import.meta.env.VITE_PRINT_BRIDGE_URL || "http://localhost:3001").replace(/\/+$/, "");
 const CLE_AUTO = "gg3-web-autoprint";
@@ -292,7 +292,7 @@ function insererArticle(articles, art, apresId) {
 }
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 10) return null;
+  if (!m || v >= 11) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -378,7 +378,18 @@ export function migrerMenu(m) {
     });
     n.articles.forEach((a) => { if (a.categorie === "sandwichs") a.dispo = false; });
   }
-  n.version = 10;
+  // v11 : carte Fast-Food (tacos, burgers, shawarma, sandwichs, pain local), avant les boissons.
+  if (v < 11) {
+    CATEGORIES_FAST_FOOD.forEach((c) => {
+      if (n.categories.some((x) => x.id === c.id)) return;
+      const i = n.categories.findIndex((x) => x.id === "boissons");
+      n.categories.splice(i < 0 ? n.categories.length : i, 0, { ...c });
+    });
+    CARTE_FAST_FOOD.forEach((a) => {
+      if (!n.articles.some((x) => x.id === a.id)) n.articles.push({ ...a, nomWolof: "", photo: "", dispo: true });
+    });
+  }
+  n.version = 11;
   return n;
 }
 async function mettreAJourMenu() {

@@ -51,8 +51,9 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
   }
 
   // Poulet braisé (onglet 🍗) : formules avec accompagnements au choix.
-  if (vue === "poulet") {
-    const cats = (menu.categories || []).filter((c) => c.plats);
+  // Fast-food (onglet 🍔) : même affichage, ajout direct au panier.
+  if (vue === "poulet" || vue === "fastfood") {
+    const cats = (menu.categories || []).filter((c) => vue === "poulet" ? c.plats : c.fastFood);
     const art = choix && choix.article;
     const n = nbAccomps(art);
     const acc = (choix && choix.accomps) || [];
@@ -91,7 +92,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
 
   // Crêpes, gaufres, glaces… : prix unique, ajout direct au panier (onglet 🧇).
   if (vue === "crepes") {
-    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons" && !c.plats && !c.petitDej);
+    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons" && !c.plats && !c.petitDej && !c.fastFood);
     const artJus = choix && choix.article;
     return <>{artJus && <div role="dialog" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setChoix(null)}>
       <div style={{ background: S.card, borderRadius: "16px 16px 0 0", padding: 16, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", border: `1px solid ${S.gold}` }} onClick={(e) => e.stopPropagation()}>

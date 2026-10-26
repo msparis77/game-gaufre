@@ -111,8 +111,32 @@ export const CARTE_PETIT_DEJ = [
   { id: "pd_viande_hachee", categorie: "petit_dej", nom: "Pain viande hachée", description: "Le bon plan des lycéens", prix: 600, emoji: "🍖" },
 ];
 
+// Carte Fast-Food (octobre 2026), migration v11 : prix unique, ajout direct au panier.
+// `fastFood` : affichées dans l'onglet 🍔 Fast-food de la caisse.
+export const CATEGORIES_FAST_FOOD = [
+  { id: "ff_tacos", nom: "Tacos", emoji: "🌯", prixUnique: true, fastFood: true },
+  { id: "ff_burgers", nom: "Burgers", emoji: "🍔", prixUnique: true, fastFood: true },
+  { id: "ff_shawarma", nom: "Shawarma", emoji: "🥙", prixUnique: true, fastFood: true },
+  { id: "ff_sandwichs", nom: "Sandwichs fast-food", emoji: "🥪", prixUnique: true, fastFood: true },
+  { id: "ff_pain_local", nom: "Pain local", emoji: "🥖", prixUnique: true, fastFood: true },
+];
+export const CARTE_FAST_FOOD = [
+  { id: "ff_tacos_poulet", categorie: "ff_tacos", nom: "Tacos poulet", description: "", prix: 2000, emoji: "🌯" },
+  { id: "ff_tacos_viande_hachee", categorie: "ff_tacos", nom: "Tacos viande hachée", description: "", prix: 2500, emoji: "🌯" },
+  { id: "ff_tacos_norvegien", categorie: "ff_tacos", nom: "Tacos norvégien", description: "", prix: 2000, emoji: "🌯" },
+  { id: "ff_burger_1_steak", categorie: "ff_burgers", nom: "Hamburger 1 steak", description: "", prix: 1500, emoji: "🍔" },
+  { id: "ff_burger_2_steaks", categorie: "ff_burgers", nom: "Hamburger 2 steaks", description: "", prix: 2500, emoji: "🍔" },
+  { id: "ff_shawarma_poulet", categorie: "ff_shawarma", nom: "Shawarma poulet", description: "Servi avec frites", prix: 2000, emoji: "🥙" },
+  { id: "ff_shawarma_viande", categorie: "ff_shawarma", nom: "Shawarma viande", description: "Servi avec frites", prix: 1500, emoji: "🥙" },
+  { id: "ff_sandwich_poulet", categorie: "ff_sandwichs", nom: "Sandwich poulet", description: "", prix: 1000, emoji: "🥪" },
+  { id: "ff_sandwich_viande", categorie: "ff_sandwichs", nom: "Sandwich viande", description: "", prix: 1500, emoji: "🥪" },
+  { id: "ff_fataya_complet", categorie: "ff_sandwichs", nom: "Fataya complet", description: "", prix: 1000, emoji: "🥟" },
+  { id: "ff_local_poulet", categorie: "ff_pain_local", nom: "Local poulet", description: "En pain local", prix: 1000, emoji: "🥖" },
+  { id: "ff_local_viande_hachee", categorie: "ff_pain_local", nom: "Local viande hachée", description: "En pain local", prix: 1500, emoji: "🥖" },
+];
+
 export const MENU_DEPART = {
-  version: 10,
+  version: 11,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     CATEGORIE_PETIT_DEJ,
@@ -120,6 +144,7 @@ export const MENU_DEPART = {
     { id: "omelettes", nom: "Formules omelette", emoji: "🍳" },
     ...CATEGORIES_CREPES,
     ...CATEGORIES_POULET,
+    ...CATEGORIES_FAST_FOOD,
     { id: "boissons", nom: "Boissons", emoji: "☕" },
   ],
   options: {
@@ -161,6 +186,7 @@ export const MENU_DEPART = {
     { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
     ...CARTE_CREPES.map((c) => ({ ...c, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_POULET.map((p) => ({ ...p, nomWolof: "", photo: "", dispo: true })),
+    ...CARTE_FAST_FOOD.map((a) => ({ ...a, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
   ],
 };
