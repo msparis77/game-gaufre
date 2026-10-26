@@ -367,7 +367,8 @@ export function migrerMenu(m) {
     if (!n.articles.some((x) => x.id === id)) insererArticle(n.articles, { ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true });
   }
   // v10 : sandwichs du petit déj' à prix unique en tête du menu ; les formules sandwich
-  // et omelette passent « non dispo » (on les remet en cochant « dispo » dans Menu & prix).
+  // passent « non dispo » (on les remet en cochant « dispo » dans Menu & prix).
+  // Les sandwichs omelette restent en vente.
   if (v < 10) {
     if (!n.categories.some((x) => x.id === CATEGORIE_PETIT_DEJ.id)) n.categories.unshift({ ...CATEGORIE_PETIT_DEJ });
     CARTE_PETIT_DEJ.forEach((a, k) => {
@@ -375,7 +376,7 @@ export function migrerMenu(m) {
       const art = { ...a, nomWolof: "", photo: "", dispo: true };
       if (k === 0) n.articles.unshift(art); else insererArticle(n.articles, art, CARTE_PETIT_DEJ[k - 1].id);
     });
-    n.articles.forEach((a) => { if (a.categorie === "sandwichs" || a.categorie === "omelettes") a.dispo = false; });
+    n.articles.forEach((a) => { if (a.categorie === "sandwichs") a.dispo = false; });
   }
   n.version = 10;
   return n;

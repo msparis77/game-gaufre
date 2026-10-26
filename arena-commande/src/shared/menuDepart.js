@@ -100,7 +100,7 @@ export const CARTE_POULET = [
 ];
 
 // Sandwichs du petit déj' à prix unique (flyer d'octobre 2026), migration v10.
-// Ils remplacent pour l'instant les formules sandwich et omelette (passées « non dispo »).
+// Ils remplacent pour l'instant les formules sandwich (passées « non dispo ») ; les sandwichs omelette restent.
 // `petitDej` : affichés dans l'onglet 🥪 Sandwichs de la caisse.
 export const CATEGORIE_PETIT_DEJ = { id: "petit_dej", nom: "Sandwichs du petit déj'", emoji: "🥖", prixUnique: true, petitDej: true };
 export const CARTE_PETIT_DEJ = [
@@ -108,6 +108,7 @@ export const CARTE_PETIT_DEJ = [
   { id: "pd_dambe", categorie: "petit_dej", nom: "Pain dambé", description: "Le bon plan des lycéens", prix: 300, emoji: "🫘" },
   { id: "pd_oeuf_mayo", categorie: "petit_dej", nom: "Pain œuf mayonnaise", description: "Le bon plan des lycéens", prix: 400, emoji: "🥚" },
   { id: "pd_corned_beef", categorie: "petit_dej", nom: "Pain corned beef", description: "Le bon plan des lycéens", prix: 400, emoji: "🥩" },
+  { id: "pd_viande_hachee", categorie: "petit_dej", nom: "Pain viande hachée", description: "Le bon plan des lycéens", prix: 600, emoji: "🍖" },
 ];
 
 export const MENU_DEPART = {
