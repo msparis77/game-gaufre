@@ -108,3 +108,15 @@ h2{font-size:20px;font-weight:900;color:var(--vert);margin:20px 0 8px}
 .puces{display:flex;flex-wrap:wrap;gap:6px}
 .puces button{font:inherit;font-size:14px;font-weight:700;padding:8px 12px;border-radius:999px;border:2px solid var(--vert);background:var(--blanc);color:var(--vert-f)}
 .puces button.on{background:var(--vert);color:var(--creme)}
+.club-haut{display:flex;flex-direction:column;gap:6px;text-align:center;background:var(--vert);color:var(--creme);border-radius:20px;padding:18px 14px;margin:14px 0}
+.club-haut b{font-size:24px;font-weight:900;color:var(--jaune)}
+.club-cadeau{display:inline-block;align-self:center;background:var(--jaune);color:var(--vert-f);font-weight:800;border-radius:999px;padding:6px 12px;margin-top:4px}
+.champ small{font-weight:600;color:var(--gris)}
+.coche{display:flex;gap:10px;align-items:flex-start;background:var(--blanc);border-radius:12px;padding:12px;margin-bottom:8px;font-size:15px;font-weight:600}
+.coche input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--vert)}
+.club-ok{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--vert);color:var(--creme);border-radius:20px;padding:18px;margin:14px 0 10px}
+.club-ok b{font-size:40px;font-weight:900;color:var(--jaune);margin:4px 0}
+.gros.vert{background:var(--vert);color:var(--creme)}
+.gros.whatsapp{background:#25D366;color:#fff}
+.club-pub{display:flex;flex-direction:column;gap:2px;text-decoration:none;background:var(--jaune);color:var(--vert-f);border-radius:14px;padding:12px 14px;margin:10px 0}
+.club-pub span{font-size:14px;font-weight:600}

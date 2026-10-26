@@ -1,15 +1,16 @@
 import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { doc, getDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, collection, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, utilisateur } from "./firebase.js";
 import { fcfa, faireLigne, prixUnitaire, estBoisson, prixSimple, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu, nbAccomps, accompsDuMenu, supPain } from "./shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
+import { PROFILS, CLUB_DEPART, inscrireClub, vcard, telecharger } from "./shared/club.js";
 import { activerAlertes, alerterPrete, notificationsPossibles, enregistrerSW } from "./alerte.js";
 import "./style.css";
 
-const fs = { doc, collection, runTransaction, serverTimestamp, Timestamp };
+const fs = { doc, setDoc, collection, runTransaction, serverTimestamp, Timestamp };
 
 // ─── Petits outils de stockage local (jamais bloquants) ───
 const lire = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } };
@@ -378,7 +379,7 @@ function PagePanier({ menu, config, livraisonCfg, panier, setPanier, ajouterComm
 }
 
 // ─── Page de suivi en temps réel ───
-function PageSuivi({ id }) {
+function PageSuivi({ id, club }) {
   const [c, setC] = useState(null);
   const [erreur, setErreur] = useState(false);
   const [alerte, setAlerte] = useState(() => notificationsPossibles() && Notification.permission === "granted" ? "granted" : "");
@@ -450,6 +451,9 @@ function PageSuivi({ id }) {
         {liv && <div class="ligne"><span>🛵 Livraison · {liv.nom}</span><span>{fcfa(liv.frais)}</span></div>}
         <div class="total"><span>{liv ? "À payer au livreur" : "À payer au retrait"}</span><b>{fcfa(c.total + (liv?.frais || 0))}</b></div>
       </div>
+      {club && club.actif && !lire("ac-club", null) && (
+        <a class="club-pub" href="#/club"><b>🎁 Rejoins le Club Arena</b><span>{club.cadeau ? club.cadeau + " et nos" : "Nos"} offres sur WhatsApp →</span></a>
+      )}
       <a href="#/" class="lien">Retour au menu</a>
     </main>
   );
@@ -469,11 +473,105 @@ function PageMesCommandes({ ids }) {
   );
 }
 
+// ─── Club Arena : inscription aux offres WhatsApp (QR « Club ») ───
+function PageClub({ club }) {
+  const cfg = { ...CLUB_DEPART, ...(club || {}) };
+  const [inscrit, setInscrit] = useState(() => lire("ac-club", null));
+  const [prenom, setPrenom] = useState(() => lire("ac-prenom", ""));
+  const [tel, setTel] = useState(() => lire("ac-tel", ""));
+  const [profil, setProfil] = useState("");
+  const [parrain, setParrain] = useState("");
+  const [accord, setAccord] = useState(false);
+  const [age, setAge] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const numero = nettoyerTelephone(tel);
+
+  if (inscrit) return <BienvenueClub cfg={cfg} membre={inscrit} />;
+  if (club && !club.actif) return <main class="vide"><p>Les inscriptions au Club sont fermées pour le moment.</p><a class="gros" href="#/">Voir le menu</a></main>;
+
+  const valider = async () => {
+    setErreur("");
+    if (!prenom.trim()) return setErreur("Écris ton prénom.");
+    if (!telephoneValide(numero)) return setErreur("Numéro invalide : 9 chiffres, par exemple 77 123 45 67.");
+    if (!profil) return setErreur("Choisis qui tu es (élève, parent…).");
+    if (!accord) return setErreur("Coche la case pour accepter de recevoir nos offres.");
+    if (!age) return setErreur("Coche la case sur l'âge ou l'accord de tes parents.");
+    setEnvoi(true);
+    try {
+      const u = await utilisateur();
+      await inscrireClub(fs, db, u.uid, { prenom, telephone: numero, profil, parrain });
+      const m = { prenom: prenom.trim(), telephone: numero };
+      ecrire("ac-club", m); ecrire("ac-prenom", m.prenom); ecrire("ac-tel", numero);
+      setInscrit(m);
+    } catch (e) {
+      if (e.code === "deja") { const m = { prenom: prenom.trim(), telephone: numero, deja: true }; ecrire("ac-club", m); setInscrit(m); }
+      else setErreur(e.message || "Erreur, réessaie.");
+    }
+    setEnvoi(false);
+  };
+
+  return (
+    <main class="club">
+      <div class="club-haut">
+        <b>Rejoins le Club Arena</b>
+        <span>Reçois nos offres et nos nouveautés sur WhatsApp.</span>
+        {cfg.cadeau && <span class="club-cadeau">🎁 Cadeau de bienvenue : {cfg.cadeau}</span>}
+      </div>
+      <label class="champ">Ton prénom
+        <input value={prenom} maxLength={30} autocomplete="given-name" onInput={(e) => setPrenom(e.currentTarget.value)} />
+      </label>
+      <label class="champ">Ton numéro WhatsApp
+        <input value={tel} inputMode="tel" autocomplete="tel" placeholder="77 123 45 67" onInput={(e) => setTel(e.currentTarget.value)} />
+      </label>
+      <div class="label">Tu es…</div>
+      <div class="puces" style="margin-bottom:14px">
+        {PROFILS.map((p) => <button key={p.id} type="button" class={profil === p.id ? "on" : ""} onClick={() => setProfil(p.id)}>{p.nom}</button>)}
+      </div>
+      <label class="champ">Qui t'a parlé du Club ? <small>(prénom, facultatif)</small>
+        <input value={parrain} maxLength={30} onInput={(e) => setParrain(e.currentTarget.value)} />
+      </label>
+      <label class="coche"><input type="checkbox" checked={accord} onChange={(e) => setAccord(e.currentTarget.checked)} />
+        <span>J'accepte de recevoir les offres d'Arena Café sur WhatsApp. Je peux arrêter quand je veux en répondant STOP.</span></label>
+      <label class="coche"><input type="checkbox" checked={age} onChange={(e) => setAge(e.currentTarget.checked)} />
+        <span>J'ai 18 ans ou plus, ou mes parents sont d'accord.</span></label>
+      {erreur && <div class="erreur">{erreur}</div>}
+      <button class="gros" disabled={envoi} onClick={valider}>{envoi ? "Inscription…" : "Je m'inscris"}</button>
+      <p class="aide centre" style="margin-top:12px">Ton numéro sert seulement à Arena Café pour t'envoyer ses offres. Il n'est jamais donné ni vendu.</p>
+    </main>
+  );
+}
+
+function BienvenueClub({ cfg, membre }) {
+  const contact = () => telecharger("Arena-Cafe.vcf", vcard("Arena Café", cfg.telephone, "Play • Eat • Chill"), "text/vcard");
+  return (
+    <main class="club">
+      <div class="club-ok">
+        <span>{membre.deja ? "Tu es déjà inscrit" : "Bienvenue au Club"}</span>
+        <b>{membre.prenom}</b>
+        <span>+221 {membre.telephone}</span>
+      </div>
+      {cfg.cadeau && (
+        <div class="secret">
+          <small>🎁 Ton cadeau de bienvenue</small>
+          <strong style="font-size:22px;font-weight:900;margin:6px 0">{cfg.cadeau}</strong>
+          <small>Montre cet écran au comptoir. Une seule fois par numéro.</small>
+        </div>
+      )}
+      {cfg.telephone && <button class="gros vert" onClick={contact}>📇 Enregistrer le numéro d'Arena Café</button>}
+      {cfg.telephone && <p class="aide centre">Indispensable pour recevoir nos offres sur WhatsApp.</p>}
+      {cfg.lienChaine && <a class="gros whatsapp" href={cfg.lienChaine} target="_blank" rel="noopener">Suivre la Chaîne WhatsApp</a>}
+      <a class="gros" href="#/">Voir le menu</a>
+    </main>
+  );
+}
+
 function App() {
   const route = useRoute();
   const [menu, erreurMenu] = useDoc("config/menu", "ac-menu");
   const [config] = useDoc("config/creneaux", "ac-creneaux");
   const [livraisonCfg] = useDoc("config/livraison", "ac-livraison");
+  const [club] = useDoc("config/club", "ac-club-cfg");
   const [panier, setPanierBrut] = useState(() => lire("ac-panier", []));
   const [mesCommandes, setMesCommandes] = useState(() => lire("ac-mes-commandes", []));
   const setPanier = (p) => { setPanierBrut(p); ecrire("ac-panier", p); };
@@ -487,7 +585,8 @@ function App() {
   const page = route[0] || "";
 
   let contenu;
-  if (page === "suivi" && route[1]) contenu = <PageSuivi id={route[1]} />;
+  if (page === "suivi" && route[1]) contenu = <PageSuivi id={route[1]} club={club} />;
+  else if (page === "club") contenu = <PageClub club={club} />;
   else if (page === "commandes") contenu = <PageMesCommandes ids={mesCommandes} />;
   else if (!menu) contenu = <main class="vide"><p>{erreurMenu ? "Connexion impossible. Vérifie ta connexion internet." : "Chargement du menu…"}</p></main>;
   else if (page === "panier") contenu = <PagePanier menu={menu} config={config} livraisonCfg={livraisonCfg} panier={panier} setPanier={setPanier} ajouterCommande={ajouterCommande} />;

@@ -23,10 +23,10 @@ service cloud.firestore {
     // Jour du retrait sous forme 20260928 (heure de Dakar = UTC).
     function jourCle(t) { return t.year() * 10000 + t.month() * 100 + t.day(); }
 
-    // ── Menu, créneaux et livraison : lecture publique, modification par la caisse ──
+    // ── Menu, créneaux, livraison et Club : lecture publique, modification par la caisse ──
     match /config/{nom} {
-      allow read: if nom in ['menu', 'creneaux', 'livraison'];
-      allow write: if estCaisse() && nom in ['menu', 'creneaux', 'livraison'];
+      allow read: if nom in ['menu', 'creneaux', 'livraison', 'club'];
+      allow write: if estCaisse() && nom in ['menu', 'creneaux', 'livraison', 'club'];
       // Livreurs (prénoms et numéros) : seulement la caisse
       allow read, write: if estCaisse() && nom == 'livreurs';
     }
@@ -79,6 +79,36 @@ service cloud.firestore {
         && (!('livreurTel' in request.resource.data)
             || (request.resource.data.livreurTel is string && request.resource.data.livreurTel.matches('^7[05678][0-9]{7}$')));
       allow delete: if false;
+    }
+
+    // ── Club Arena : numéros des clients qui ont accepté de recevoir les offres ──
+    // Le document porte le numéro (ex. club/771234567) : un numéro = une inscription.
+    // Personne d'autre que la caisse ne peut lire la liste.
+    match /club/{tel} {
+      allow get, list, delete: if estCaisse();
+      allow create: if connecte() && inscriptionValide(tel);
+      allow update: if estCaisse()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cadeauDonne', 'majAt'])
+        && request.resource.data.cadeauDonne is bool;
+    }
+    function inscriptionValide(tel) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['uid', 'prenom', 'telephone', 'profil', 'parrain', 'consentement',
+                               'majeurOuParents', 'source', 'createdAt', 'cadeauDonne'])
+        && d.keys().hasAll(['uid', 'prenom', 'telephone', 'profil', 'consentement',
+                            'majeurOuParents', 'source', 'createdAt', 'cadeauDonne'])
+        && d.uid == request.auth.uid
+        && tel.matches('^7[05678][0-9]{7}$')
+        && d.telephone == tel
+        && d.prenom is string && d.prenom.size() >= 1 && d.prenom.size() <= 30
+        && d.profil in ['eleve', 'parent', 'prof', 'voisin', 'autre']
+        && (!('parrain' in d) || (d.parrain is string && d.parrain.size() <= 30))
+        // Accord donné par la personne (case non cochée d'avance) et âge / accord des parents
+        && d.consentement == true
+        && d.majeurOuParents == true
+        && d.source in ['qr', 'commande']
+        && d.createdAt == request.time
+        && d.cadeauDonne == false;
     }
 
     function commandeValide(id) {
