@@ -397,6 +397,7 @@ export function migrerMenu(m) {
     n.articles.forEach((a) => {
       if (a.categorie !== "omelettes" || a.prixFormule == null) return;
       a.prix = a.prixFormule - remise;
+      a.omelette = false; // pas de choix de sauce sur un article simple (sinon le site bloque l'ajout)
       delete a.prixFormule;
     });
   }
