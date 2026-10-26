@@ -292,7 +292,7 @@ function insererArticle(articles, art, apresId) {
 }
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 11) return null;
+  if (!m || v >= 12) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -389,7 +389,19 @@ export function migrerMenu(m) {
       if (!n.articles.some((x) => x.id === a.id)) n.articles.push({ ...a, nomWolof: "", photo: "", dispo: true });
     });
   }
-  n.version = 11;
+  // v12 : plus de formules. Les sandwichs omelette deviennent des sandwichs simples au prix « seul »
+  // (prix formule - remise sans boisson), affichés comme les pains du petit déj'.
+  if (v < 12) {
+    const remise = (n.options && n.options.remiseSansBoisson) || 0;
+    n.categories.forEach((c) => { if (c.id === "omelettes") Object.assign(c, { nom: "Sandwichs omelette", prixUnique: true, petitDej: true }); });
+    n.articles.forEach((a) => {
+      if (a.categorie !== "omelettes" || a.prixFormule == null) return;
+      a.prix = a.prixFormule - remise;
+      a.omelette = false; // pas de choix de sauce sur un article simple (sinon le site bloque l'ajout)
+      delete a.prixFormule;
+    });
+  }
+  n.version = 12;
   return n;
 }
 async function mettreAJourMenu() {
