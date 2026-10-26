@@ -84,7 +84,7 @@ function PageMenu({ menu, panier, setPanier, ouvert }) {
     <main>
       {!ouvert && <div class="bandeau">Les commandes sont fermées pour le moment. Tu peux regarder le menu.</div>}
       <nav class="cats">
-        {menu.categories.map((c) => (
+        {menu.categories.filter((c) => articles.some((a) => a.categorie === c.id)).map((c) => (
           <a key={c.id} href={"#cat-" + c.id} class={cat === c.id ? "on" : ""}
              onClick={(e) => { e.preventDefault(); setCat(c.id); document.getElementById("cat-" + c.id)?.scrollIntoView({ behavior: "smooth" }); }}>
             {c.emoji} {c.nom}
