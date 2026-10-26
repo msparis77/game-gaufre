@@ -136,12 +136,12 @@ export const CARTE_FAST_FOOD = [
 ];
 
 export const MENU_DEPART = {
-  version: 11,
+  version: 12,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     CATEGORIE_PETIT_DEJ,
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
-    { id: "omelettes", nom: "Formules omelette", emoji: "🍳" },
+    { id: "omelettes", nom: "Sandwichs omelette", emoji: "🍳", prixUnique: true, petitDej: true },
     ...CATEGORIES_CREPES,
     ...CATEGORIES_POULET,
     ...CATEGORIES_FAST_FOOD,
@@ -179,11 +179,11 @@ export const MENU_DEPART = {
     { id: "saucisson_pimentaise", categorie: "sandwichs", nom: "Sandwich Saucisson de bœuf pimentaise", nomWolof: "", description: "Saucisson de bœuf, pommes de terre, petits pois, sauce pimentée", prixFormule: 1150, omelette: false, emoji: "🌶️", photo: "", dispo: true },
     { id: "poulet_mayo", categorie: "sandwichs", nom: "Sandwich Poulet mayonnaise", nomWolof: "", description: "Poulet, œuf au plat, pommes de terre, mayonnaise", prixFormule: 1000, omelette: false, emoji: "🥪", photo: "", dispo: true },
     { id: "merguez_frites", categorie: "sandwichs", nom: "Sandwich Merguez frites", nomWolof: "", description: "Merguez, frites", prixFormule: 1000, omelette: false, emoji: "🌭", photo: "", dispo: true },
-    { id: "omelette_nature", categorie: "omelettes", nom: "Sandwich Omelette Nature", nomWolof: "", description: "Omelette, oignons", prixFormule: 850, omelette: true, emoji: "🍳", photo: "", dispo: true },
-    { id: "omelette_pdt", categorie: "omelettes", nom: "Sandwich Omelette Pommes de terre", nomWolof: "", description: "Omelette, pommes de terre", prixFormule: 950, omelette: true, emoji: "🥔", photo: "", dispo: true },
-    { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Œuf au plat Poulet", nomWolof: "", description: "Œuf au plat, poulet, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🍗", photo: "", dispo: true },
-    { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prixFormule: 1200, omelette: true, emoji: "🌭", photo: "", dispo: true },
-    { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prixFormule: 1200, omelette: true, emoji: "🥓", photo: "", dispo: true },
+    { id: "omelette_nature", categorie: "omelettes", nom: "Sandwich Omelette Nature", nomWolof: "", description: "Omelette, oignons", prix: 800, omelette: true, emoji: "🍳", photo: "", dispo: true },
+    { id: "omelette_pdt", categorie: "omelettes", nom: "Sandwich Omelette Pommes de terre", nomWolof: "", description: "Omelette, pommes de terre", prix: 900, omelette: true, emoji: "🥔", photo: "", dispo: true },
+    { id: "omelette_poulet", categorie: "omelettes", nom: "Sandwich Œuf au plat Poulet", nomWolof: "", description: "Œuf au plat, poulet, oignons, pommes de terre", prix: 1150, omelette: true, emoji: "🍗", photo: "", dispo: true },
+    { id: "omelette_saucisson", categorie: "omelettes", nom: "Sandwich Omelette Saucisson", nomWolof: "", description: "Saucisson de bœuf, oignons, pommes de terre", prix: 1150, omelette: true, emoji: "🌭", photo: "", dispo: true },
+    { id: "omelette_jambon", categorie: "omelettes", nom: "Sandwich Omelette Jambon", nomWolof: "", description: "Jambon de dinde, oignons", prix: 1150, omelette: true, emoji: "🥓", photo: "", dispo: true },
     ...CARTE_CREPES.map((c) => ({ ...c, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_POULET.map((p) => ({ ...p, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_FAST_FOOD.map((a) => ({ ...a, nomWolof: "", photo: "", dispo: true })),
