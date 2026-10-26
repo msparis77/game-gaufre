@@ -99,10 +99,22 @@ export const CARTE_POULET = [
   { id: "p_pain", categorie: "poulet", nom: "Pain", description: "En plus", prix: 100, emoji: "🥖" },
 ];
 
+// Sandwichs du petit déj' à prix unique (flyer d'octobre 2026), migration v10.
+// Ils remplacent pour l'instant les formules sandwich et omelette (passées « non dispo »).
+// `petitDej` : affichés dans l'onglet 🥪 Sandwichs de la caisse.
+export const CATEGORIE_PETIT_DEJ = { id: "petit_dej", nom: "Sandwichs du petit déj'", emoji: "🥖", prixUnique: true, petitDej: true };
+export const CARTE_PETIT_DEJ = [
+  { id: "pd_thon", categorie: "petit_dej", nom: "Pain thon", description: "Le bon plan des lycéens", prix: 300, emoji: "🐟" },
+  { id: "pd_dambe", categorie: "petit_dej", nom: "Pain dambé", description: "Le bon plan des lycéens", prix: 300, emoji: "🫘" },
+  { id: "pd_oeuf_mayo", categorie: "petit_dej", nom: "Pain œuf mayonnaise", description: "Le bon plan des lycéens", prix: 400, emoji: "🥚" },
+  { id: "pd_corned_beef", categorie: "petit_dej", nom: "Pain corned beef", description: "Le bon plan des lycéens", prix: 400, emoji: "🥩" },
+];
+
 export const MENU_DEPART = {
-  version: 8,
+  version: 10,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
+    CATEGORIE_PETIT_DEJ,
     { id: "sandwichs", nom: "Formules sandwich", emoji: "🥖" },
     { id: "omelettes", nom: "Formules omelette", emoji: "🍳" },
     ...CATEGORIES_CREPES,
@@ -133,6 +145,7 @@ export const MENU_DEPART = {
     accompagnements: ACCOMPAGNEMENTS,
   },
   articles: [
+    ...CARTE_PETIT_DEJ.map((a) => ({ ...a, nomWolof: "", photo: "", dispo: true })),
     { id: "essentiel", categorie: "sandwichs", nom: "Sandwich Essentiel", nomWolof: "Ñebbe", description: "Haricots mijotés, oignons, sauce maison", prixFormule: 500, omelette: false, emoji: "🫘", photo: "", dispo: true },
     { id: "thon", categorie: "sandwichs", nom: "Sandwich Thon", nomWolof: "", description: "Pain thon", prixFormule: 500, omelette: false, emoji: "🐟", photo: "", dispo: true },
     { id: "gourmand", categorie: "sandwichs", nom: "Sandwich Gourmand", nomWolof: "Neex", description: "Beurre, pâte chocolat-noisette", prixFormule: 700, omelette: false, emoji: "🍫", photo: "", dispo: true },

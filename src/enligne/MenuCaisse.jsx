@@ -91,7 +91,7 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
 
   // Crêpes, gaufres, glaces… : prix unique, ajout direct au panier (onglet 🧇).
   if (vue === "crepes") {
-    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons" && !c.plats);
+    const catsSimples = (menu.categories || []).filter((c) => c.id !== "boissons" && !c.plats && !c.petitDej);
     const artJus = choix && choix.article;
     return <>{artJus && <div role="dialog" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setChoix(null)}>
       <div style={{ background: S.card, borderRadius: "16px 16px 0 0", padding: 16, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", border: `1px solid ${S.gold}` }} onClick={(e) => e.stopPropagation()}>
@@ -129,6 +129,19 @@ export default function MenuCaisse({ vue, S, Btn, ajouter }) {
   const valider = () => { if (!ok) return; ajouter(ligne(menu, art, c)); setChoix(null); };
 
   return <>
+    {cats.filter((cat) => cat.petitDej).map((cat) => {
+      const liste = dispo.filter((a) => a.categorie === cat.id && prixSimple(a));
+      if (!liste.length) return null;
+      return <div key={cat.id}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.muted, letterSpacing: 1, margin: "4px 0 8px" }}>{cat.emoji} {cat.nom.toUpperCase()}</div>
+        <div style={grille}>{liste.map((a) => (
+          <button key={a.id} style={tuile} onClick={() => ajouter(ligne(menu, a, {}))}>
+            <div style={{ fontSize: 26 }}>{a.emoji || "🥖"}</div>
+            <div style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 2px", lineHeight: 1.2 }}>{a.nom}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: S.gold }}>{fcfa(a.prix)}</div>
+          </button>))}</div>
+      </div>;
+    })}
     {cats.map((cat) => {
       const liste = dispo.filter((a) => a.categorie === cat.id && !prixSimple(a));
       if (!liste.length) return null;

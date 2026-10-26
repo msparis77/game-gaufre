@@ -521,7 +521,7 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
       {/* ══ CAISSE ══ */}
       {tab==="caisse"&&<div style={{padding:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6,marginBottom:12}}>
-          {[["formules","🥪","Formules"],["menuCrepes","🧇","Crêpes"],["menuPoulet","🍗","Poulet"],["menuBoissons","☕","Boissons"],["jeux","🎮","PlayStation"+(Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:"")],["snacks","🥞","Autres"]].map(([id,ic,nom])=>{const on=cTab===id||(id==="snacks"&&cTab==="boissons");return(
+          {[["formules","🥪","Sandwichs"],["menuCrepes","🧇","Crêpes"],["menuPoulet","🍗","Poulet"],["menuBoissons","☕","Boissons"],["jeux","🎮","PlayStation"+(Object.keys(sessions).length>0?` (${Object.keys(sessions).length})`:"")],["snacks","🥞","Autres"]].map(([id,ic,nom])=>{const on=cTab===id||(id==="snacks"&&cTab==="boissons");return(
             <button key={id} onClick={()=>{setCTab(id);touch();}} style={{background:on?S.gold:S.card2,color:on?S.bg:S.text,border:`1px solid ${on?S.gold:S.border}`,borderRadius:10,padding:"10px 4px",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{fontSize:22}}>{ic}</span>{nom}</button>);})}
         </div>
         {cTab==="jeux"?<>
