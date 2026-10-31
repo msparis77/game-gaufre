@@ -292,7 +292,7 @@ function insererArticle(articles, art, apresId) {
 }
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 12) return null;
+  if (!m || v >= 13) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -401,7 +401,17 @@ export function migrerMenu(m) {
       delete a.prixFormule;
     });
   }
-  n.version = 12;
+  // v13 : plat du jour à 1 500 (catégorie en tête de l'onglet 🍔).
+  if (v < 13) {
+    const cat = CATEGORIES_FAST_FOOD.find((c) => c.id === "plat_du_jour");
+    if (!n.categories.some((x) => x.id === cat.id)) {
+      const i = n.categories.findIndex((x) => x.fastFood);
+      n.categories.splice(i < 0 ? n.categories.length : i, 0, { ...cat });
+    }
+    const a = CARTE_FAST_FOOD.find((x) => x.id === "plat_du_jour");
+    if (!n.articles.some((x) => x.id === a.id)) n.articles.push({ ...a, nomWolof: "", photo: "", dispo: true });
+  }
+  n.version = 13;
   return n;
 }
 async function mettreAJourMenu() {

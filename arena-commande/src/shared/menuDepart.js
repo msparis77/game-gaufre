@@ -114,6 +114,7 @@ export const CARTE_PETIT_DEJ = [
 // Carte Fast-Food (octobre 2026), migration v11 : prix unique, ajout direct au panier.
 // `fastFood` : affichées dans l'onglet 🍔 Fast-food de la caisse.
 export const CATEGORIES_FAST_FOOD = [
+  { id: "plat_du_jour", nom: "Plat du jour", emoji: "🍲", prixUnique: true, fastFood: true },
   { id: "ff_tacos", nom: "Tacos", emoji: "🌯", prixUnique: true, fastFood: true },
   { id: "ff_burgers", nom: "Burgers", emoji: "🍔", prixUnique: true, fastFood: true },
   { id: "ff_shawarma", nom: "Shawarma", emoji: "🥙", prixUnique: true, fastFood: true },
@@ -121,6 +122,8 @@ export const CATEGORIES_FAST_FOOD = [
   { id: "ff_pain_local", nom: "Pain local", emoji: "🥖", prixUnique: true, fastFood: true },
 ];
 export const CARTE_FAST_FOOD = [
+  // v13 : nom du plat à écrire chaque jour dans la description (🌐 → Menu & prix)
+  { id: "plat_du_jour", categorie: "plat_du_jour", nom: "Plat du jour", description: "Change chaque jour", prix: 1500, emoji: "🍲" },
   { id: "ff_tacos_poulet", categorie: "ff_tacos", nom: "Tacos poulet", description: "", prix: 2000, emoji: "🌯" },
   { id: "ff_tacos_viande_hachee", categorie: "ff_tacos", nom: "Tacos viande hachée", description: "", prix: 2500, emoji: "🌯" },
   { id: "ff_tacos_norvegien", categorie: "ff_tacos", nom: "Tacos norvégien", description: "", prix: 2000, emoji: "🌯" },
@@ -136,7 +139,7 @@ export const CARTE_FAST_FOOD = [
 ];
 
 export const MENU_DEPART = {
-  version: 12,
+  version: 13,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     CATEGORIE_PETIT_DEJ,
