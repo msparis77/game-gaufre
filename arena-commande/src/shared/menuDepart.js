@@ -35,6 +35,9 @@ export const CARTE_BOISSONS = [
   { id: "b_eau_sachet", famille: "eaux", nom: "Sachet d'eau", description: "", prix: 50, emoji: "💧" },
 ];
 
+// v14 : boissons gourmandes retirées de la carte (gardées « non dispo », on peut les remettre dans Menu & prix).
+export const BOISSONS_RETIREES = ["b_cappuccino", "b_cafe_frappe", "b_lait_framboise"];
+
 // Carte crêpes, gaufres, beignets et glaces (affiche A3 d'octobre 2026), prix unique en FCFA.
 // La caisse l'ajoute une seule fois au menu en ligne (migration v6 dans src/enligne/veille.js).
 // Catégories marquées prixUnique : pas de formule, pas de pain, ajout direct au panier.
@@ -73,9 +76,9 @@ export const CARTE_CREPES = [
   { id: "c_crepe_poulet_oeuf", categorie: "crepes_salees", nom: "Crêpe poulet fromage œuf", description: "Poulet, fromage, œuf", prix: 2500, emoji: "🍗" },
   { id: "c_crepe_saucisson", categorie: "crepes_salees", nom: "Crêpe saucisson fromage", description: "Saucisson, fromage", prix: 2500, emoji: "🌭" },
   { id: "c_crepe_saucisson_oeuf", categorie: "crepes_salees", nom: "Crêpe saucisson fromage œuf", description: "Saucisson, fromage, œuf", prix: 3000, emoji: "🌭" },
-  { id: "c_beignets_nutella", categorie: "douceurs", nom: "Beignets bubble Nutella", description: "", prix: 800, emoji: "🍩" },
-  { id: "c_sorbet_bissap", categorie: "douceurs", nom: "Sorbet bissap chantilly", description: "Sorbet bissap, chantilly", prix: 800, emoji: "🌺" },
-  { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet pastèque chantilly", description: "Sorbet pastèque, chantilly", prix: 800, emoji: "🍉" },
+  { id: "c_beignets_nutella", categorie: "douceurs", nom: "Beignets bubble Nutella", description: "", prix: 300, emoji: "🍩" },
+  { id: "c_sorbet_bissap", categorie: "douceurs", nom: "Sorbet bissap chantilly", description: "Sorbet bissap, chantilly", prix: 300, emoji: "🌺" },
+  { id: "c_sorbet_pasteque", categorie: "douceurs", nom: "Sorbet orange chantilly", description: "Sorbet orange, chantilly", prix: 300, emoji: "🍊" },
 ];
 
 // Sandwichs ajoutés sur la carte du petit-déjeuner (octobre 2026), migration v8.
@@ -87,14 +90,16 @@ export const SANDWICHS_AJOUTES = [
 
 // Carte du poulet braisé (affiche A3 d'octobre 2026), migration v8.
 // `plats` : onglet 🍗 Poulet de la caisse. `accompagnements` : nombre d'accompagnements à choisir.
+// v14 : demi et entier vendus sans accompagnement.
+export const PRIX_POULET_ENTIER = 7500;
 export const CATEGORIES_POULET = [
   { id: "poulet", nom: "Poulet braisé", emoji: "🍗", prixUnique: true, plats: true },
 ];
 export const ACCOMPAGNEMENTS = ["Vermicelle", "Riz rouge", "Riz blanc", "Couscous", "Attiéké", "Pommes de terre", "Légumes du moment", "Macaroni au fromage"];
 export const CARTE_POULET = [
   { id: "p_quart", categorie: "poulet", nom: "Formule quart de poulet", description: "¼ de poulet braisé, 1 accompagnement au choix, sauce oignon & piment", prix: 2500, accompagnements: 1, emoji: "🍗" },
-  { id: "p_demi", categorie: "poulet", nom: "Formule demi-poulet", description: "½ poulet braisé, 2 accompagnements au choix, sauce oignon & piment", prix: 5000, accompagnements: 2, emoji: "🍗" },
-  { id: "p_entier", categorie: "poulet", nom: "Formule poulet entier", description: "1 poulet entier braisé, 3 accompagnements au choix, sauce oignon & piment", prix: 10000, accompagnements: 3, emoji: "🍗" },
+  { id: "p_demi", categorie: "poulet", nom: "Demi-poulet braisé", description: "½ poulet braisé, sauce oignon & piment (accompagnement en plus)", prix: 3500, accompagnements: 0, emoji: "🍗" },
+  { id: "p_entier", categorie: "poulet", nom: "Poulet entier braisé", description: "1 poulet entier braisé, sauce oignon & piment (accompagnement en plus)", prix: PRIX_POULET_ENTIER, accompagnements: 0, emoji: "🍗" },
   { id: "p_accompagnement", categorie: "poulet", nom: "Accompagnement", description: "Seul ou en plus de ta formule", prix: 700, accompagnements: 1, emoji: "🍚" },
   { id: "p_pain", categorie: "poulet", nom: "Pain", description: "En plus", prix: 100, emoji: "🥖" },
 ];
@@ -108,14 +113,15 @@ export const CARTE_PETIT_DEJ = [
   { id: "pd_dambe", categorie: "petit_dej", nom: "Pain dambé", description: "Le bon plan des lycéens", prix: 300, emoji: "🫘" },
   { id: "pd_oeuf_mayo", categorie: "petit_dej", nom: "Pain œuf mayonnaise", description: "Le bon plan des lycéens", prix: 400, emoji: "🥚" },
   { id: "pd_corned_beef", categorie: "petit_dej", nom: "Pain corned beef", description: "Le bon plan des lycéens", prix: 400, emoji: "🥩" },
-  { id: "pd_viande_hachee", categorie: "petit_dej", nom: "Pain viande hachée", description: "Le bon plan des lycéens", prix: 600, emoji: "🍖" },
+  { id: "pd_viande_hachee", categorie: "petit_dej", nom: "Pain viande hachée", description: "Le bon plan des lycéens", prix: 800, emoji: "🍖" },
+  { id: "pd_petit_pois_viande", categorie: "petit_dej", nom: "Pain petits pois viande", description: "Le bon plan des lycéens", prix: 500, emoji: "🫛" },
 ];
 
 // Carte Fast-Food (octobre 2026), migration v11 : prix unique, ajout direct au panier.
 // `fastFood` : affichées dans l'onglet 🍔 Fast-food de la caisse.
 export const CATEGORIES_FAST_FOOD = [
   { id: "plat_du_jour", nom: "Plat du jour", emoji: "🍲", prixUnique: true, fastFood: true },
-  { id: "ff_tacos", nom: "Tacos", emoji: "🌯", prixUnique: true, fastFood: true },
+  { id: "ff_tacos", nom: "Tacos & galettes", emoji: "🌯", prixUnique: true, fastFood: true },
   { id: "ff_burgers", nom: "Burgers", emoji: "🍔", prixUnique: true, fastFood: true },
   { id: "ff_shawarma", nom: "Shawarma", emoji: "🥙", prixUnique: true, fastFood: true },
   { id: "ff_sandwichs", nom: "Sandwichs fast-food", emoji: "🥪", prixUnique: true, fastFood: true },
@@ -127,10 +133,13 @@ export const CARTE_FAST_FOOD = [
   { id: "ff_tacos_poulet", categorie: "ff_tacos", nom: "Tacos poulet", description: "", prix: 2000, emoji: "🌯" },
   { id: "ff_tacos_viande_hachee", categorie: "ff_tacos", nom: "Tacos viande hachée", description: "", prix: 2500, emoji: "🌯" },
   { id: "ff_tacos_norvegien", categorie: "ff_tacos", nom: "Tacos norvégien", description: "", prix: 2000, emoji: "🌯" },
+  { id: "ff_galette_poulet", categorie: "ff_tacos", nom: "Galette poulet fromage", description: "Poulet, fromage", prix: 1500, emoji: "🫓" },
+  { id: "ff_galette_viande_oeuf", categorie: "ff_tacos", nom: "Galette viande hachée fromage œuf", description: "Viande hachée, fromage, œuf", prix: 2500, emoji: "🫓" },
+  { id: "ff_galette_jambon_oeuf", categorie: "ff_tacos", nom: "Galette jambon œuf fromage", description: "Jambon, œuf, fromage", prix: 2500, emoji: "🫓" },
   { id: "ff_burger_1_steak", categorie: "ff_burgers", nom: "Hamburger 1 steak", description: "", prix: 1500, emoji: "🍔" },
   { id: "ff_burger_2_steaks", categorie: "ff_burgers", nom: "Hamburger 2 steaks", description: "", prix: 2500, emoji: "🍔" },
-  { id: "ff_shawarma_poulet", categorie: "ff_shawarma", nom: "Shawarma poulet", description: "Servi avec frites", prix: 2000, emoji: "🥙" },
-  { id: "ff_shawarma_viande", categorie: "ff_shawarma", nom: "Shawarma viande", description: "Servi avec frites", prix: 1500, emoji: "🥙" },
+  { id: "ff_shawarma_poulet", categorie: "ff_shawarma", nom: "Shawarma poulet", description: "Servi avec frites", prix: 1800, emoji: "🥙" },
+  { id: "ff_shawarma_viande", categorie: "ff_shawarma", nom: "Shawarma viande", description: "Servi avec frites", prix: 2500, emoji: "🥙" },
   { id: "ff_sandwich_poulet", categorie: "ff_sandwichs", nom: "Sandwich poulet", description: "", prix: 1000, emoji: "🥪" },
   { id: "ff_sandwich_viande", categorie: "ff_sandwichs", nom: "Sandwich viande", description: "", prix: 1500, emoji: "🥪" },
   { id: "ff_fataya_complet", categorie: "ff_sandwichs", nom: "Fataya complet", description: "", prix: 1000, emoji: "🥟" },
@@ -139,7 +148,7 @@ export const CARTE_FAST_FOOD = [
 ];
 
 export const MENU_DEPART = {
-  version: 13,
+  version: 14,
   horaires: { debut: "07:00", fin: "10:30" },
   categories: [
     CATEGORIE_PETIT_DEJ,
@@ -190,7 +199,7 @@ export const MENU_DEPART = {
     ...CARTE_CREPES.map((c) => ({ ...c, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_POULET.map((p) => ({ ...p, nomWolof: "", photo: "", dispo: true })),
     ...CARTE_FAST_FOOD.map((a) => ({ ...a, nomWolof: "", photo: "", dispo: true })),
-    ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: true })),
+    ...CARTE_BOISSONS.map((b) => ({ ...b, categorie: "boissons", nomWolof: "", photo: "", dispo: !BOISSONS_RETIREES.includes(b.id) })),
   ],
 };
 
