@@ -6,7 +6,7 @@
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, runTransaction, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db, surConnexion, firebaseConfigure } from "./firebaseCaisse.js";
 import { hhmm } from "../../arena-commande/src/shared/creneaux.js";
-import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES, SANDWICHS_AJOUTES, CATEGORIES_POULET, CARTE_POULET, ACCOMPAGNEMENTS, CATEGORIE_PETIT_DEJ, CARTE_PETIT_DEJ, CATEGORIES_FAST_FOOD, CARTE_FAST_FOOD } from "../../arena-commande/src/shared/menuDepart.js";
+import { CARTE_BOISSONS, CATEGORIES_CREPES, CARTE_CREPES, SANDWICHS_AJOUTES, CATEGORIES_POULET, CARTE_POULET, ACCOMPAGNEMENTS, CATEGORIE_PETIT_DEJ, CARTE_PETIT_DEJ, CATEGORIES_FAST_FOOD, CARTE_FAST_FOOD, BOISSONS_RETIREES } from "../../arena-commande/src/shared/menuDepart.js";
 
 export const PRINT_BRIDGE_URL = (import.meta.env.VITE_PRINT_BRIDGE_URL || "http://localhost:3001").replace(/\/+$/, "");
 const CLE_AUTO = "gg3-web-autoprint";
@@ -292,7 +292,7 @@ function insererArticle(articles, art, apresId) {
 }
 export function migrerMenu(m) {
   const v = (m && m.version) || 1;
-  if (!m || v >= 13) return null;
+  if (!m || v >= 14) return null;
   const n = JSON.parse(JSON.stringify(m));
   n.options = n.options || {};
   n.articles = n.articles || [];
@@ -411,7 +411,27 @@ export function migrerMenu(m) {
     const a = CARTE_FAST_FOOD.find((x) => x.id === "plat_du_jour");
     if (!n.articles.some((x) => x.id === a.id)) n.articles.push({ ...a, nomWolof: "", photo: "", dispo: true });
   }
-  n.version = 13;
+  // v14 (revue des prix du 1er novembre 2026) : nouveaux prix, galettes, pain petits pois viande,
+  // demi et entier poulet sans accompagnement, sorbet orange, boissons gourmandes retirées.
+  if (v < 14) {
+    const prix = { pd_viande_hachee: 800, c_beignets_nutella: 300, c_sorbet_bissap: 300, c_sorbet_pasteque: 300, ff_shawarma_poulet: 1800, ff_shawarma_viande: 2500 };
+    const poulet = Object.fromEntries(CARTE_POULET.filter((p) => p.id === "p_demi" || p.id === "p_entier").map((p) => [p.id, p]));
+    n.articles.forEach((a) => {
+      if (prix[a.id] != null) a.prix = prix[a.id];
+      if (a.id === "c_sorbet_pasteque") Object.assign(a, { nom: "Sorbet orange chantilly", description: "Sorbet orange, chantilly", emoji: "🍊" });
+      if (poulet[a.id]) { const { nom, description, prix: p, accompagnements } = poulet[a.id]; Object.assign(a, { nom, description, prix: p, accompagnements }); }
+      if (BOISSONS_RETIREES.includes(a.id)) a.dispo = false;
+    });
+    n.categories.forEach((c) => { if (c.id === "ff_tacos") c.nom = "Tacos & galettes"; });
+    const ajouts = [...CARTE_PETIT_DEJ.filter((a) => a.id === "pd_petit_pois_viande"), ...CARTE_FAST_FOOD.filter((a) => a.id.startsWith("ff_galette_"))];
+    ajouts.forEach((a) => {
+      if (n.articles.some((x) => x.id === a.id)) return;
+      let apres = null;
+      n.articles.forEach((x) => { if (x.categorie === a.categorie) apres = x.id; });
+      insererArticle(n.articles, { ...a, nomWolof: "", photo: "", dispo: true }, apres);
+    });
+  }
+  n.version = 14;
   return n;
 }
 async function mettreAJourMenu() {
