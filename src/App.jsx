@@ -734,7 +734,7 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
         </div>
       </div>}
 
-      {tab==="couts"&&isPatron&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><CoutRevient S={S} Card={Card} fmt={fmt} ingredients={ingredients} recipes={recipes}/></Suspense>}
+      {tab==="couts"&&isPatron&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><CoutRevient S={S} Card={Card} fmt={fmt} ingredients={ingredients} recipes={recipes} onSave={(ni,nr,quoi)=>{setIngredients(ni);setRecipes(nr);saveProds(boissons,snacks,ni,nr,stations,photoPrice,dailyGoal,ticketNo);addAudit("MODIF COUTS",quoi);showToast("✓ Enregistré, coûts recalculés");}}/></Suspense>}
 
       {/* ══ IA ══ */}
       {tab==="ia"&&isPatron&&<div style={{padding:14,display:"flex",flexDirection:"column",minHeight:"calc(100vh - 160px)"}}>

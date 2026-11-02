@@ -27,13 +27,16 @@ export const FORMULES = {
 
 export const prixVente = (a) => (typeof a.prix === "number" ? a.prix : typeof a.prixFormule === "number" ? a.prixFormule : 0);
 
-const trouverIng = (ingredients, noms) => {
+export const trouverIngParNoms = (ingredients, noms) => trouverIng(ingredients, noms);
+export const trouverRecette = (a, recipes) => (recipes || []).find((x) => x && (x.id === "rf_" + a.id || cle(x.name) === cle(a.nom))) || null;
+
+function trouverIng(ingredients, noms) {
   for (const n of noms) {
     const i = ingredients.find((x) => x && cle(x.name) === cle(n));
     if (i) return i;
   }
   return null;
-};
+}
 
 // Coût d'un article seul : { cout, source, manque[] } ; cout = null si rien n'est connu.
 function coutSimple(a, ingredients, recipes) {
@@ -43,7 +46,7 @@ function coutSimple(a, ingredients, recipes) {
     if (!ing || !ing.unitCost) return { cout: null, source: "achat", manque: ["prix d'achat " + r[0]] };
     return { cout: Math.round(ing.unitCost), source: "achat", manque: [] };
   }
-  const rec = recipes.find((x) => x && (x.id === "rf_" + a.id || cle(x.name) === cle(a.nom)));
+  const rec = trouverRecette(a, recipes);
   if (!rec) return { cout: null, source: "recette", manque: ["recette"] };
   const c = coutRecette(rec, ingredients);
   return { cout: c.cout, source: "recette", manque: c.manquants.map((m) => "prix " + m) };
