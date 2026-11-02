@@ -276,3 +276,17 @@ test("club : réglages lisibles par tous, modifiables par la caisse seulement", 
   await assertSucceeds(getDoc(doc(env.unauthenticatedContext().firestore(), "config/club")));
   await assertFails(setDoc(doc(env.authenticatedContext("e1").firestore(), "config/club"), { ...CLUB_DEPART, cadeau: "Tout gratuit" }));
 });
+
+test("ventes de la caisse : seule la caisse écrit et lit, personne ne supprime", async () => {
+  const vente = { id: "v1", items: [{ id: "x", name: "Crêpe", price: 1500, qty: 1 }], total: 1500, jour: "2026-11-02", paiement: "wave" };
+  const caisse = env.authenticatedContext("caisse", CAISSE).firestore();
+  const eleve = env.authenticatedContext("eleve1", { firebase: { sign_in_provider: "anonymous" } }).firestore();
+  const anon = env.unauthenticatedContext().firestore();
+  await assertSucceeds(setDoc(doc(caisse, "boutiques/s1/ventes/v1"), vente));
+  await assertSucceeds(setDoc(doc(caisse, "boutiques/s1/ventes/v1"), { annulee: true }, { merge: true }));
+  await assertSucceeds(getDocs(query(collection(caisse, "boutiques/s1/ventes"), where("jour", ">=", "2026-11-01"), where("jour", "<=", "2026-11-30"))));
+  await assertFails(deleteDoc(doc(caisse, "boutiques/s1/ventes/v1")));
+  await assertFails(getDoc(doc(eleve, "boutiques/s1/ventes/v1")));
+  await assertFails(setDoc(doc(eleve, "boutiques/s1/ventes/v2"), vente));
+  await assertFails(getDocs(collection(anon, "boutiques/s1/ventes")));
+});
