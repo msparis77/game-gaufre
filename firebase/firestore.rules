@@ -81,6 +81,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Ventes de la caisse (un document par vente) : seulement la caisse ──
+    // Une vente annulée reste (annulee = true) : on ne supprime jamais.
+    match /boutiques/{boutique}/ventes/{id} {
+      allow read, create, update: if estCaisse();
+      allow delete: if false;
+    }
+
     // ── Club Arena : numéros des clients qui ont accepté de recevoir les offres ──
     // Le document porte le numéro (ex. club/771234567) : un numéro = une inscription.
     // Personne d'autre que la caisse ne peut lire la liste.

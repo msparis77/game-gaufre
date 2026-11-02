@@ -6,6 +6,8 @@ import { tableauCouts } from "./stock/coutRevient.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
 const MenuCaisse=lazy(()=>import("./enligne/MenuCaisse.jsx"));
 const CoutRevient=lazy(()=>import("./stock/CoutRevient.jsx"));
+const HistoriqueVentes=lazy(()=>import("./ventes/HistoriqueVentes.jsx"));
+import { enregistrerVenteCloud, annulerVenteCloud, ecouterJour } from "./ventes/ventesCloud.js";
 const useVeilleBadge = () => { const [n, setN] = useState(0); useEffect(() => abonnerVeille((e) => setN(e.commandes.filter((c) => c.statut === "recue").length)), []); return n; };
 
 const S={bg:"#0A0A0A",card:"#141414",card2:"#1C1C1C",card3:"#252525",gold:"#FFD600",green:"#00E676",red:"#FF5252",blue:"#00B0FF",orange:"#FF6D00",purple:"#BB86FC",teal:"#00BCD4",pink:"#FF4081",text:"#F5F5F5",muted:"#555",border:"#2a2a2a"};
@@ -208,6 +210,7 @@ export default function App(){
   const [storeConfirmed,setStoreConfirmed]=useState(false);
   const [tick,setTick]=useState(0);
   const [jour,setJour]=useState(todayStr());
+  const [jourCharge,setJourCharge]=useState(null); // journée chargée depuis le fichier : l'écoute Firebase démarre après
   const [lastAct,setLastAct]=useState(Date.now());
   const [toast,setToast]=useState(null);
   const chatRef=useRef(null);
@@ -224,6 +227,7 @@ export default function App(){
     try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):null;const srv=await fbGet(k3);if(!d)d=srv;else if(srv&&srv.sales){const ids=new Set((d.sales||[]).map(x=>x.id));const extra=srv.sales.filter(x=>!ids.has(x.id));if(extra.length)d={...d,sales:[...(d.sales||[]),...extra].sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")))};}if(d)localStorage.setItem(k3,JSON.stringify(d));if(d){setSales((d.sales||[]).filter(x=>journeeVente(x)===todayStr()));setSessions(d.sessions||{});if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=maintenantJournee();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let d=await fbGet(k4);if(d)localStorage.setItem(k4,JSON.stringify(d));else{const s=localStorage.getItem(k4);d=s?JSON.parse(s):null;}if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
     setHistory(hist);
+    setJourCharge(currentStore.id+"|"+todayStr());
   })();},[currentStore.id,jour]); // jour : recharge une journée vide quand la caisse passe au lendemain
 
   const saveEmps=e=>{const k="gg3-"+currentStore.id+"-emps";try{localStorage.setItem(k,JSON.stringify(e));}catch(e){}fbSave(k,e);};
@@ -282,6 +286,7 @@ export default function App(){
     if(!pendingTicket)return;
     const sale={id:uid(),items:pendingTicket.items,total:pendingTicket.total,time:timeStr(),date:todayStr(),jour:todayStr(),by:user?.name,ticketNo,paiement:pay};
     setSales(prev=>{const ns=[...prev,sale];saveDay({sales:ns});return ns;});
+    enregistrerVenteCloud(currentStore.id,sale);
     const newTno=ticketNo+1;setTicketNo(newTno);
     saveProds(boissons,snacks,ingredients,recipes,stations,photoPrice,dailyGoal,newTno);
     setCart([]);setPendingTicket(null);
@@ -297,9 +302,19 @@ export default function App(){
   const enregistrerVenteEnLigne=(cmd,verif)=>{
     const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),jour:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne"};
     setSales(prev=>{if(prev.some(x=>x.id===sale.id))return prev;const ns=[...prev,sale];saveDay({sales:ns});return ns;});
+    enregistrerVenteCloud(currentStore.id,sale);
     addAudit("VENTE EN LIGNE",`${cmd.code} ${cmd.prenom} ${fmt(verif.total)}`);
   };
-  const deleteSale=id=>requirePatron(()=>{setSales(prev=>{const ns=prev.filter(s=>s.id!==id);saveDay({sales:ns});return ns;});addAudit("ANNULATION","Patron");showToast("Vente annulée",S.orange);});
+  const deleteSale=id=>requirePatron(()=>{setSales(prev=>{const ns=prev.filter(s=>s.id!==id);saveDay({sales:ns});return ns;});annulerVenteCloud(currentStore.id,id,user?.name);addAudit("ANNULATION","Patron");showToast("Vente annulée",S.orange);});
+
+  // VENTES EN DIRECT : les ventes des autres appareils (Firebase) s'ajoutent, les annulées disparaissent
+  useEffect(()=>{if(jourCharge!==currentStore.id+"|"+jour)return;return ecouterJour(currentStore.id,jour,distant=>{
+    setSales(prev=>{const annulees=new Set(distant.filter(v=>v.annulee).map(v=>v.id));const ids=new Set(prev.map(v=>v.id));
+      const nouvelles=distant.filter(v=>!v.annulee&&!ids.has(v.id)).map(({annulee,boutique,enregistreeA,annuleeA,annuleePar,importee,...v})=>v);
+      if(!nouvelles.length&&!prev.some(v=>annulees.has(v.id)))return prev;
+      const ns=[...prev.filter(v=>!annulees.has(v.id)),...nouvelles].sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")));
+      saveDay({sales:ns});return ns;});
+  });},[currentStore.id,jour,jourCharge]);
 
   // STOCK
   const setIngField=(id,field,val)=>{setIngStock(prev=>{const ns={...prev,[id]:{...prev[id]||{},[field]:Number(val)||0}};if(field==="opening")ns[id].current=Number(val)||0;saveDay({ingStock:ns});return ns;});};
@@ -470,7 +485,7 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
 
       {/* TABS */}
       <div style={{display:"flex",flexWrap:"wrap",gap:4,padding:"6px 6px",background:S.card,borderBottom:`1px solid ${S.border}`}}>
-        {[["home","🏠","Accueil"],["caisse","🛒","Encaissement",Object.keys(sessions).length],["web","🌐","En ligne",webEnAttente],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["couts","💰","Coûts"]]:[]),...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
+        {[["home","🏠","Accueil"],["caisse","🛒","Encaissement",Object.keys(sessions).length],["web","🌐","En ligne",webEnAttente],["stocks","📦","Stocks"],["planning","🧮","Planning"],["recettes","📖","Recettes"],...(isPatron?[["couts","💰","Coûts"]]:[]),...(isPatron?[["ia","🤖","Assistant"]]:[]),["bilan","📊","Bilan"],...(isManager?[["historique","📅","Historique"]]:[]),...(isPatron?[["global","🏢","Global"]]:[]),["aide","❓","Aide"],["audit","🔍","Audit"]].map(([id,ic,nom,badge])=>(
           <button key={id} style={T(tab===id)} onClick={()=>{setTab(id);touch();}}>
             <span style={{fontSize:24,lineHeight:1,position:"relative"}}>{ic}{badge>0&&<span style={{position:"absolute",top:-6,right:-12,background:S.red,color:"#fff",fontSize:11,fontWeight:800,borderRadius:10,padding:"1px 5px"}}>{badge}</span>}</span>
             <span style={{fontSize:12}}>{nom}</span>
@@ -755,6 +770,7 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
       </div>}
 
       {/* ══ BILAN ══ */}
+      {tab==="historique"&&isManager&&<Suspense fallback={<div style={{padding:14,color:S.muted}}>Chargement…</div>}><HistoriqueVentes S={S} Card={Card} Btn={Btn} Inp={Inp} fmt={fmt} boutique={currentStore.id} paiements={PAIEMENTS} aujourdhui={todayStr()} isPatron={isPatron} lireJour={fbGet}/></Suspense>}
       {tab==="bilan"&&<div style={{padding:14}}>
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
           <button onClick={()=>setCashModal(true)} style={{...Btn(S.orange),flex:1,fontSize:12}}>💵 Clôturer</button>
