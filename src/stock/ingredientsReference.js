@@ -1,7 +1,7 @@
 // Produits achetés à référencer dans Stocks → Ingrédients (ticket Auchan + prix donnés par Moussa, 2026-10-08).
 // On ajoute seulement ceux qui manquent, sans quantité ; prix 0 = à remplir plus tard.
 // Un produit déjà présent (même nom ou alias) n'est pas dupliqué ; seuls ceux de PRIX_A_JOUR reçoivent le nouveau prix.
-export const VERSION_REFERENCE = 3;
+export const VERSION_REFERENCE = 4;
 
 export const INGREDIENTS_REFERENCE = [
   // Cuisine
@@ -50,6 +50,56 @@ export const INGREDIENTS_REFERENCE = [
   { v: 3, nom: "Gobelet (café / thé)", unit: "pcs", emoji: "🥤", unitCost: 4.5, alias: ["Gobelet"] },
   { v: 3, nom: "Fanta", unit: "pcs", emoji: "🥤", unitCost: 281 },
   { v: 3, nom: "Sprite", unit: "pcs", emoji: "🥤", unitCost: 281 },
+  // v4 : liste des produits pour les employés (page « Produits Arena Café », complétée par Moussa le 2026-11-02).
+  // Sans prix ni quantité : à remplir dans Stocks → Ingrédients au fur et à mesure.
+  { v: 4, nom: "Baguette", unit: "pcs", emoji: "🥖", unitCost: 0, alias: ["Pain", "Pain baguette"] },
+  { v: 4, nom: "Pain local", unit: "pcs", emoji: "🥖", unitCost: 0 },
+  { v: 4, nom: "Pain à hamburger", unit: "pcs", emoji: "🍔", unitCost: 0, alias: ["Pain burger"] },
+  { v: 4, nom: "Galettes / tortillas", unit: "pcs", emoji: "🌯", unitCost: 0, alias: ["Galette", "Tortilla"] },
+  { v: 4, nom: "Pâte à fataya", unit: "kg", emoji: "🥟", unitCost: 0 },
+  { v: 4, nom: "Mix beignets", unit: "kg", emoji: "🍩", unitCost: 0, alias: ["Pâte à beignets"] },
+  { v: 4, nom: "Poulet entier", unit: "pcs", emoji: "🍗", unitCost: 0 },
+  { v: 4, nom: "Viande de bœuf", unit: "kg", emoji: "🥩", unitCost: 0, alias: ["Boeuf", "Bœuf", "Viande"] },
+  { v: 4, nom: "Steaks hachés", unit: "pcs", emoji: "🍔", unitCost: 0, alias: ["Steak haché"] },
+  { v: 4, nom: "Corned beef", unit: "pcs", emoji: "🥫", unitCost: 0 },
+  { v: 4, nom: "Sorbet bissap", unit: "pcs", emoji: "🍨", unitCost: 0 },
+  { v: 4, nom: "Sorbet orange", unit: "pcs", emoji: "🍨", unitCost: 0 },
+  { v: 4, nom: "Tomates", unit: "kg", emoji: "🍅", unitCost: 0, alias: ["Tomate"] },
+  { v: 4, nom: "Salade", unit: "pcs", emoji: "🥬", unitCost: 0 },
+  { v: 4, nom: "Petits pois", unit: "kg", emoji: "🫛", unitCost: 0 },
+  { v: 4, nom: "Légumes du moment", unit: "kg", emoji: "🥕", unitCost: 0 },
+  { v: 4, nom: "Citrons", unit: "kg", emoji: "🍋", unitCost: 0, alias: ["Citron"] },
+  { v: 4, nom: "Menthe", unit: "pcs", emoji: "🌿", unitCost: 0 },
+  { v: 4, nom: "Oignons verts (en branche)", unit: "pcs", emoji: "🧅", unitCost: 0, alias: ["Oignons branche", "Oignon vert"] },
+  { v: 4, nom: "Attiéké", unit: "kg", emoji: "🥣", unitCost: 0 },
+  { v: 4, nom: "Moutarde", unit: "kg", emoji: "🟡", unitCost: 0 },
+  { v: 4, nom: "Piment", unit: "kg", emoji: "🌶️", unitCost: 0 },
+  { v: 4, nom: "Paprika", unit: "kg", emoji: "🌶️", unitCost: 0 },
+  { v: 4, nom: "Thym", unit: "pcs", emoji: "🌿", unitCost: 0 },
+  { v: 4, nom: "Kilmaji", unit: "pcs", emoji: "🧂", unitCost: 0 },
+  { v: 4, nom: "Épices marinade poulet braisé", unit: "pcs", emoji: "🍗", unitCost: 0 },
+  { v: 4, nom: "Charbon", unit: "kg", emoji: "🔥", unitCost: 0 },
+  { v: 4, nom: "Café Touba", unit: "kg", emoji: "☕", unitCost: 0 },
+  { v: 4, nom: "Fleurs de bissap", unit: "kg", emoji: "🌺", unitCost: 0, alias: ["Bissap"] },
+  { v: 4, nom: "Poudre de bouye", unit: "kg", emoji: "🌳", unitCost: 0, alias: ["Bouye", "Pain de singe"] },
+  { v: 4, nom: "Tamarin", unit: "kg", emoji: "🟤", unitCost: 0 },
+  { v: 4, nom: "Ditakh", unit: "kg", emoji: "🟢", unitCost: 0 },
+  { v: 4, nom: "Oranges", unit: "kg", emoji: "🍊", unitCost: 0, alias: ["Orange"] },
+  { v: 4, nom: "Energy drink", unit: "pcs", emoji: "⚡", unitCost: 0 },
+  { v: 4, nom: "Eau en bouteille", unit: "pcs", emoji: "💧", unitCost: 0, alias: ["Bouteille d'eau"] },
+  { v: 4, nom: "Eau en sachet", unit: "pcs", emoji: "💧", unitCost: 0, alias: ["Sachet d'eau"] },
+  { v: 4, nom: "Gobelets jus + couvercles", unit: "pcs", emoji: "🥤", unitCost: 0 },
+  { v: 4, nom: "Pailles", unit: "pcs", emoji: "🥤", unitCost: 0, alias: ["Paille"] },
+  { v: 4, nom: "Barquettes / boîtes à emporter", unit: "pcs", emoji: "📦", unitCost: 0, alias: ["Barquette"] },
+  { v: 4, nom: "Papier alu / papier sandwich", unit: "pcs", emoji: "🧻", unitCost: 0, alias: ["Papier alu"] },
+  { v: 4, nom: "Sachets / sacs", unit: "pcs", emoji: "🛍️", unitCost: 0, alias: ["Sac", "Sacs", "Sachet"] },
+  { v: 4, nom: "Serviettes", unit: "pcs", emoji: "🧻", unitCost: 0 },
+  { v: 4, nom: "Couverts en plastique", unit: "pcs", emoji: "🍴", unitCost: 0 },
+  { v: 4, nom: "Rouleaux papier ticket", unit: "pcs", emoji: "🧾", unitCost: 0 },
+  { v: 4, nom: "Liquide vaisselle", unit: "pcs", emoji: "🧽", unitCost: 0 },
+  { v: 4, nom: "Éponges", unit: "pcs", emoji: "🧽", unitCost: 0 },
+  { v: 4, nom: "Javel / produit sol", unit: "pcs", emoji: "🧴", unitCost: 0, alias: ["Javel"] },
+  { v: 4, nom: "Gaz (bouteille)", unit: "pcs", emoji: "🔥", unitCost: 0, alias: ["Gaz"] },
 ];
 
 // Nouveaux prix pour des produits déjà dans la caisse (validés par Moussa le 2026-10-08).
