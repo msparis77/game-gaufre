@@ -1,7 +1,7 @@
 // Produits achetés à référencer dans Stocks → Ingrédients (ticket Auchan + prix donnés par Moussa, 2026-10-08).
 // On ajoute seulement ceux qui manquent, sans quantité ; prix 0 = à remplir plus tard.
 // Un produit déjà présent (même nom ou alias) n'est pas dupliqué ; seuls ceux de PRIX_A_JOUR reçoivent le nouveau prix.
-export const VERSION_REFERENCE = 4;
+export const VERSION_REFERENCE = 5;
 
 export const INGREDIENTS_REFERENCE = [
   // Cuisine
@@ -58,7 +58,7 @@ export const INGREDIENTS_REFERENCE = [
   { v: 4, nom: "Galettes / tortillas", unit: "pcs", emoji: "🌯", unitCost: 0, alias: ["Galette", "Tortilla"] },
   { v: 4, nom: "Pâte à fataya", unit: "kg", emoji: "🥟", unitCost: 0 },
   { v: 4, nom: "Mix beignets", unit: "kg", emoji: "🍩", unitCost: 0, alias: ["Pâte à beignets"] },
-  { v: 4, nom: "Poulet entier", unit: "pcs", emoji: "🍗", unitCost: 0 },
+  { v: 4, nom: "Poulet entier", unit: "pcs", emoji: "🍗", unitCost: 3000 },
   { v: 4, nom: "Viande de bœuf", unit: "kg", emoji: "🥩", unitCost: 0, alias: ["Boeuf", "Bœuf", "Viande"] },
   { v: 4, nom: "Steaks hachés", unit: "pcs", emoji: "🍔", unitCost: 0, alias: ["Steak haché"] },
   { v: 4, nom: "Corned beef", unit: "pcs", emoji: "🥫", unitCost: 0 },
@@ -86,7 +86,7 @@ export const INGREDIENTS_REFERENCE = [
   { v: 4, nom: "Ditakh", unit: "kg", emoji: "🟢", unitCost: 0 },
   { v: 4, nom: "Oranges", unit: "kg", emoji: "🍊", unitCost: 0, alias: ["Orange"] },
   { v: 4, nom: "Energy drink", unit: "pcs", emoji: "⚡", unitCost: 0 },
-  { v: 4, nom: "Eau en bouteille", unit: "pcs", emoji: "💧", unitCost: 0, alias: ["Bouteille d'eau"] },
+  { v: 4, nom: "Eau en bouteille", unit: "pcs", emoji: "💧", unitCost: 71, alias: ["Bouteille d'eau"] },
   { v: 4, nom: "Eau en sachet", unit: "pcs", emoji: "💧", unitCost: 0, alias: ["Sachet d'eau"] },
   { v: 4, nom: "Gobelets jus + couvercles", unit: "pcs", emoji: "🥤", unitCost: 0 },
   { v: 4, nom: "Pailles", unit: "pcs", emoji: "🥤", unitCost: 0, alias: ["Paille"] },
@@ -124,6 +124,17 @@ export const PRIX_A_JOUR = [
   { v: 3, noms: ["Nutella", "Chocopain"], unitCost: 1800 },
   { v: 3, noms: ["Mayonnaise"], unitCost: 1500 },
   { v: 3, noms: ["Coca", "Coca-Cola"], unitCost: 281 },
+  // v5 : prix déjà connus (ticket Auchan, achats en gros) pour des produits restés à 0 (2026-11-02).
+  { v: 5, noms: ["Pâte de sardinelle"], nom: "Pâte de sardinelle Pinton", unit: "pcs", unitCost: 1390 }, // pot Pinton, ticket Auchan
+  { v: 5, noms: ["Ketchup"], unitCost: 1425 }, // bouteille, ticket Auchan
+  { v: 5, noms: ["Sauce sriracha"], unitCost: 1850 }, // bouteille, ticket Auchan
+  { v: 5, noms: ["Poivre"], unitCost: 990 }, // poivre gris moulu, ticket Auchan
+  { v: 5, noms: ["Bouillon Maggi"], unitCost: 1590 }, // boîte, ticket Auchan
+  { v: 5, noms: ["Nescafé boîte"], unitCost: 4225 }, // ticket Auchan
+  { v: 5, noms: ["Sirop de grenadine"], unit: "pcs", unitCost: 2225 }, // bouteille Duval, ticket Auchan
+  { v: 5, noms: ["Sucre vanillé"], unitCost: 100 }, // sachet, estimation
+  { v: 5, noms: ["Poulet entier"], unitCost: 3000 }, // Moussa 08/10 : 3 000 F le poulet
+  { v: 5, noms: ["Eau en bouteille"], unitCost: 71 }, // pack de 12 à 850 F
 ];
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
@@ -138,9 +149,9 @@ export function completerIngredients(ingredients) {
   const misAJour = ingredients.map((i) => {
     // Si un produit a plusieurs prix, on garde le plus récent (version la plus haute).
     const p = i && PRIX_A_JOUR.filter((x) => (x.v || 1) > deja && x.noms.some((n) => cle(n) === cle(i.name))).pop();
-    if (!p || (i.unitCost === p.unitCost && (!p.unit || i.unit === p.unit))) return i;
+    if (!p || (i.unitCost === p.unitCost && (!p.unit || i.unit === p.unit) && (!p.nom || i.name === p.nom))) return i;
     change = true;
-    return { ...i, unitCost: p.unitCost, ...(p.unit ? { unit: p.unit } : {}), refV: VERSION_REFERENCE };
+    return { ...i, unitCost: p.unitCost, ...(p.unit ? { unit: p.unit } : {}), ...(p.nom ? { name: p.nom } : {}), refV: VERSION_REFERENCE };
   });
   const connus = new Set(ingredients.map((i) => cle(i && i.name)));
   const ajouts = INGREDIENTS_REFERENCE.filter((r) => (r.v || 1) > deja && ![r.nom, ...(r.alias || [])].some((n) => connus.has(cle(n)))).map((r) => ({
