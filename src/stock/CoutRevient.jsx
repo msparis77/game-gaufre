@@ -9,11 +9,19 @@ const FILTRES = [["tous", "Tous"], ["bon", "✅ Bonne marge"], ["moyen", "🟡 �
 
 const niveau = (l) => (l.pct == null ? "a_faire" : l.pct <= 35 ? "bon" : l.pct <= 50 ? "moyen" : "faible");
 const nombre = (v) => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) && n >= 0 ? n : 0; };
-// Quantités saisies en grammes / millilitres pour les ingrédients au kg / L, en pièces sinon.
-const enPetit = (unit) => /^(kg|l)$/i.test(String(unit || "").trim());
-const petiteUnite = (unit) => (/^l$/i.test(String(unit || "").trim()) ? "ml" : enPetit(unit) ? "g" : unit || "pcs");
-const versSaisie = (qty, unit) => { const q = enPetit(unit) ? qty * 1000 : qty; return String(Math.round(q * 1000) / 1000); };
-const depuisSaisie = (txt, unit) => (enPetit(unit) ? nombre(txt) / 1000 : nombre(txt));
+// Unités : le prix d'achat est au kg, au litre ou à la pièce ; la quantité d'une recette peut se
+// saisir en g, kg, ml, L ou pièce. On enregistre toujours la quantité dans l'unité d'achat.
+const UNITES = ["g", "kg", "ml", "L", "pcs"];
+const UNITES_ACHAT = ["kg", "L", "pcs"];
+const FACTEUR = { g: 0.001, kg: 1, ml: 0.001, L: 1, pcs: 1 };
+const BASE = { g: "kg", kg: "kg", ml: "L", L: "L", pcs: "pcs" };
+const uniteAchat = (unit) => { const u = String(unit || "").trim().toLowerCase(); return u === "kg" ? "kg" : u === "l" ? "L" : "pcs"; };
+const nomUnite = (u) => (u === "pcs" ? "pièce" : u);
+const uniteSaisie = (base) => (base === "kg" ? "g" : base === "L" ? "ml" : "pcs");
+const versSaisie = (qty, u) => String(Math.round((qty / FACTEUR[u]) * 1000) / 1000);
+const sansAccent = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/œ/g, "oe").trim();
+// Recherche par le début du nom : « t » trouve Thon, Thé, Tomates…
+const commencePar = (nom, q) => !q || sansAccent(nom).startsWith(sansAccent(q));
 
 export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave }) {
   const menu = useMenuSite();
@@ -23,6 +31,7 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
   const [brouillon, setBrouillon] = useState(null); // { lignes: [{id, q}], prix: {ingId: texte}, venteTest }
   const [prixAchat, setPrixAchat] = useState({}); // vue « Prix d'achat » : { ingId: texte }
   const [cherche, setCherche] = useState("");
+  const [chercheProduit, setChercheProduit] = useState("");
 
   const articles = menu.articles || [];
   const couleur = { bon: S.green, moyen: S.gold, faible: S.red, a_faire: S.muted };
@@ -33,28 +42,32 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
   const nbRecettes = (ingId) => recipes.filter((r) => (r.ingredients || []).some((ri) => ri.id === ingId)).length;
 
   // Ingrédients avec les prix du brouillon (pour voir le résultat avant d'enregistrer).
-  const avecPrix = (prix) => ingredients.map((i) => (prix && prix[i.id] != null ? { ...i, unitCost: nombre(prix[i.id]) } : i));
+  const avecPrix = (prix, unites) => ingredients.map((i) => {
+    let x = prix && prix[i.id] != null ? { ...i, unitCost: nombre(prix[i.id]) } : i;
+    if (unites && unites[i.id] && unites[i.id] !== uniteAchat(i.unit)) x = { ...x, unit: unites[i.id] };
+    return x;
+  });
 
   const ouvrir = (a) => {
     if (ouvert === a.id) { setOuvert(null); setBrouillon(null); return; }
     const rec = trouverRecette(a, recipes);
-    const lignes = rec ? (rec.ingredients || []).map((ri) => { const ing = ingredients.find((i) => i.id === ri.id); return { id: ri.id, q: versSaisie(ri.qty || 0, ing && ing.unit) }; }) : [];
+    const lignes = rec ? (rec.ingredients || []).map((ri) => { const ing = ingredients.find((i) => i.id === ri.id); const u = uniteSaisie(uniteAchat(ing && ing.unit)); return { id: ri.id, u, q: versSaisie(ri.qty || 0, u) }; }) : [];
     const prix = {};
     lignes.forEach((l) => { const ing = ingredients.find((i) => i.id === l.id); if (ing) prix[l.id] = String(ing.unitCost || 0); });
     const rv = REVENTE[a.id] && trouverIngParNoms(ingredients, REVENTE[a.id]);
     if (rv) prix[rv.id] = String(rv.unitCost || 0);
     setOuvert(a.id);
-    setBrouillon({ lignes, prix, venteTest: "" });
+    setBrouillon({ lignes, prix, unites: {}, venteTest: "", ajout: "" });
   };
 
   const enregistrer = (a) => {
     const b = brouillon;
-    const ni = avecPrix(b.prix);
-    const prixChanges = ni.filter((i, k) => i.unitCost !== ingredients[k].unitCost).map((i) => i.name);
+    const ni = avecPrix(b.prix, b.unites);
+    const prixChanges = ni.filter((i, k) => i.unitCost !== ingredients[k].unitCost || i.unit !== ingredients[k].unit).map((i) => i.name);
     let nr = recipes;
     let recetteChangee = false;
     if (!REVENTE[a.id]) {
-      const nouvellesLignes = b.lignes.filter((l) => l.id).map((l) => { const ing = ni.find((i) => i.id === l.id); return { id: l.id, qty: depuisSaisie(l.q, ing && ing.unit) }; });
+      const nouvellesLignes = b.lignes.filter((l) => l.id).map((l) => ({ id: l.id, qty: Math.round(nombre(l.q) * FACTEUR[l.u] * 100000) / 100000 }));
       const rec = trouverRecette(a, recipes);
       const cat = (menu.categories || []).find((c) => c.id === a.categorie);
       if (rec) {
@@ -73,8 +86,20 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
 
   const editeur = (a) => {
     const b = brouillon;
-    const ni = avecPrix(b.prix);
+    const ni = avecPrix(b.prix, b.unites);
     const majB = (f) => setBrouillon((p) => f({ ...p }));
+    // Changer l'unité d'une quantité : si elle n'est pas du même type que l'unité d'achat
+    // (ex. des grammes pour un produit acheté à la pièce), l'unité d'achat suit (au kg, au litre, à la pièce).
+    const changerUnite = (k, u) => majB((p) => {
+      const ls = [...p.lignes];
+      const l = ls[k];
+      ls[k] = { ...l, u };
+      const ing = ingredients.find((i) => i.id === l.id);
+      const actuelle = (p.unites || {})[l.id] || uniteAchat(ing && ing.unit);
+      return { ...p, lignes: ls, unites: BASE[u] !== actuelle ? { ...(p.unites || {}), [l.id]: BASE[u] } : p.unites };
+    });
+    const changerUniteAchat = (id, ua) => majB((p) => ({ ...p, unites: { ...(p.unites || {}), [id]: ua }, lignes: p.lignes.map((l) => (l.id === id && BASE[l.u] !== ua ? { ...l, u: uniteSaisie(ua) } : l)) }));
+    const ajouterIng = (ing) => majB((p) => ({ ...p, ajout: "", lignes: [...p.lignes, { id: ing.id, u: uniteSaisie(uniteAchat(ing.unit)), q: "" }], prix: p.prix[ing.id] == null ? { ...p.prix, [ing.id]: String(ing.unitCost || 0) } : p.prix }));
     const vente = b.venteTest !== "" ? nombre(b.venteTest) : typeof a.prix === "number" ? a.prix : a.prixFormule || 0;
 
     if (FORMULES[a.id]) {
@@ -96,36 +121,50 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
 
     const lignes = b.lignes.map((l) => {
       const ing = ni.find((i) => i.id === l.id);
-      const qty = depuisSaisie(l.q, ing && ing.unit);
+      const qty = nombre(l.q) * FACTEUR[l.u];
       return { ...l, ing, qty, cout: ing ? qty * (ing.unitCost || 0) : 0 };
     });
     const cout = Math.round(lignes.reduce((s, l) => s + l.cout, 0));
     const manque = lignes.filter((l) => l.ing && !l.ing.unitCost).map((l) => l.ing.name);
     return (
       <div style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 10, color: S.muted, marginBottom: 6 }}>Quantités pour UNE portion. Le prix d'achat est celui du kg, du litre ou de la pièce : si tu le changes, tous les produits qui utilisent cet ingrédient sont recalculés.</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 64px 74px 54px 22px", gap: 4, fontSize: 9, color: S.muted, marginBottom: 3 }}>
-          <span>Ingrédient</span><span>Quantité</span><span>Prix d'achat</span><span style={{ textAlign: "right" }}>Coût</span><span />
+        <div style={{ fontSize: 10, color: S.muted, marginBottom: 6 }}>Quantités pour UNE portion, en g, kg, ml, L ou pièce. Le prix d'achat est celui du kg, du litre ou de la pièce : si tu le changes, tous les produits qui utilisent cet ingrédient sont recalculés.</div>
+        {lignes.map((l, k) => {
+          const ua = l.ing ? uniteAchat(l.ing.unit) : null;
+          const change = l.ing && (b.unites || {})[l.id] && (b.unites || {})[l.id] !== uniteAchat((ingredients.find((i) => i.id === l.id) || {}).unit);
+          return (
+            <div key={k} style={{ background: S.bg, borderRadius: 8, padding: 6, marginBottom: 5 }}>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <select value={l.id || ""} onChange={(e) => { const id = e.target.value; const ing = ingredients.find((i) => i.id === id); majB((p) => { const ls = [...p.lignes]; ls[k] = { ...ls[k], id, u: uniteSaisie(uniteAchat(ing && ing.unit)) }; return { ...p, lignes: ls, prix: ing && p.prix[id] == null ? { ...p.prix, [id]: String(ing.unitCost || 0) } : p.prix }; }); }} style={{ ...champ, fontSize: 12, padding: "6px 4px", flex: 1, fontWeight: 700 }}>
+                  <option value="">— choisir —</option>
+                  {ingTries.map((i) => <option key={i.id} value={i.id}>{i.emoji} {i.name}</option>)}
+                </select>
+                <span style={{ fontSize: 12, fontWeight: 800, minWidth: 52, textAlign: "right" }}>{fmt(Math.round(l.cout))}</span>
+                <button onClick={() => majB((p) => ({ ...p, lignes: p.lignes.filter((_, j) => j !== k) }))} style={{ background: "transparent", border: `1px solid ${S.red}`, color: S.red, borderRadius: 4, padding: "4px 6px", cursor: "pointer", fontSize: 10 }}>✕</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 58px 1fr 66px", gap: 4, marginTop: 4, alignItems: "center" }}>
+                <input inputMode="decimal" placeholder="qté" value={l.q} onChange={(e) => majB((p) => { const ls = [...p.lignes]; ls[k] = { ...ls[k], q: e.target.value }; return { ...p, lignes: ls }; })} style={{ ...champ, color: S.gold, fontWeight: 700 }} />
+                <select value={l.u} onChange={(e) => changerUnite(k, e.target.value)} style={{ ...champ, padding: "6px 2px" }}>
+                  {UNITES.map((u) => <option key={u} value={u}>{nomUnite(u)}</option>)}
+                </select>
+                <input inputMode="decimal" disabled={!l.ing} placeholder="prix" value={l.ing ? b.prix[l.id] ?? "" : ""} onChange={(e) => majB((p) => ({ ...p, prix: { ...p.prix, [l.id]: e.target.value } }))} style={{ ...champ, color: l.ing && !l.ing.unitCost ? S.orange : S.text }} />
+                <select disabled={!l.ing} value={ua || "pcs"} onChange={(e) => changerUniteAchat(l.id, e.target.value)} style={{ ...champ, padding: "6px 2px", fontSize: 11 }}>
+                  {UNITES_ACHAT.map((u) => <option key={u} value={u}>F / {nomUnite(u)}</option>)}
+                </select>
+              </div>
+              {change && <div style={{ fontSize: 9, color: S.orange, marginTop: 3 }}>⚠️ {l.ing.name} sera acheté au {nomUnite(ua)} : vérifie que le prix est bien celui d'1 {nomUnite(ua)}.</div>}
+            </div>
+          );
+        })}
+        <div style={{ marginTop: 4 }}>
+          <input placeholder="＋ Ajouter : tape le début du nom (ex. T)" value={b.ajout || ""} onChange={(e) => majB((p) => ({ ...p, ajout: e.target.value }))} style={{ ...champ, fontSize: 13, padding: "8px 10px", borderStyle: "dashed", borderColor: S.blue }} />
+          {(b.ajout || "").trim() && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+              {ingTries.filter((i) => commencePar(i.name, b.ajout)).map((i) => <button key={i.id} onClick={() => ajouterIng(i)} style={{ ...bouton(S.blue), padding: "5px 8px", fontSize: 11 }}>{i.emoji} {i.name}</button>)}
+              {!ingTries.some((i) => commencePar(i.name, b.ajout)) && <span style={{ fontSize: 10, color: S.muted }}>Aucun ingrédient ne commence par « {b.ajout} ». Ajoute-le d'abord dans 📦 Stocks.</span>}
+            </div>
+          )}
         </div>
-        {lignes.map((l, k) => (
-          <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr 64px 74px 54px 22px", gap: 4, alignItems: "center", marginBottom: 4 }}>
-            <select value={l.id || ""} onChange={(e) => { const id = e.target.value; const ing = ingredients.find((i) => i.id === id); majB((p) => { const ls = [...p.lignes]; ls[k] = { ...ls[k], id }; return { ...p, lignes: ls, prix: ing && p.prix[id] == null ? { ...p.prix, [id]: String(ing.unitCost || 0) } : p.prix }; }); }} style={{ ...champ, fontSize: 11, padding: "6px 2px" }}>
-              <option value="">— choisir —</option>
-              {ingTries.map((i) => <option key={i.id} value={i.id}>{i.emoji} {i.name}</option>)}
-            </select>
-            <div style={{ position: "relative" }}>
-              <input inputMode="decimal" value={l.q} onChange={(e) => majB((p) => { const ls = [...p.lignes]; ls[k] = { ...ls[k], q: e.target.value }; return { ...p, lignes: ls }; })} style={{ ...champ, color: S.gold, fontWeight: 700, paddingRight: 20 }} />
-              <span style={{ position: "absolute", right: 4, top: 7, fontSize: 9, color: S.muted }}>{petiteUnite(l.ing && l.ing.unit)}</span>
-            </div>
-            <div style={{ position: "relative" }}>
-              <input inputMode="decimal" disabled={!l.ing} value={l.ing ? b.prix[l.id] ?? "" : ""} onChange={(e) => majB((p) => ({ ...p, prix: { ...p.prix, [l.id]: e.target.value } }))} style={{ ...champ, paddingRight: 22, color: l.ing && !l.ing.unitCost ? S.orange : S.text }} />
-              <span style={{ position: "absolute", right: 3, top: 7, fontSize: 9, color: S.muted }}>/{(l.ing && l.ing.unit) || "?"}</span>
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 700, textAlign: "right" }}>{fmt(Math.round(l.cout))}</span>
-            <button onClick={() => majB((p) => ({ ...p, lignes: p.lignes.filter((_, j) => j !== k) }))} style={{ background: "transparent", border: `1px solid ${S.red}`, color: S.red, borderRadius: 4, padding: "2px 0", cursor: "pointer", fontSize: 10 }}>✕</button>
-          </div>
-        ))}
-        <button onClick={() => majB((p) => ({ ...p, lignes: [...p.lignes, { id: "", q: "" }] }))} style={{ ...bouton(S.blue), width: "100%", borderStyle: "dashed", marginTop: 2 }}>＋ Ajouter un ingrédient</button>
         {manque.length > 0 && <div style={{ fontSize: 10, color: S.orange, marginTop: 6 }}>⚠️ Prix d'achat à 0 : {manque.join(", ")}</div>}
         {resultat(vente, cout)}
         {boutons(a)}
@@ -170,9 +209,9 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
     const q = cherche.trim().toLowerCase();
     return (
       <div>
-        <input placeholder="🔍 Chercher un ingrédient" value={cherche} onChange={(e) => setCherche(e.target.value)} style={{ ...champ, fontSize: 13, padding: "9px 10px", marginBottom: 10 }} />
+        <input placeholder="🔍 Chercher : tape le début du nom (ex. T)" value={cherche} onChange={(e) => setCherche(e.target.value)} style={{ ...champ, fontSize: 13, padding: "9px 10px", marginBottom: 10 }} />
         <div style={Card()}>
-          {ingTries.filter((i) => !q || String(i.name).toLowerCase().includes(q)).map((i) => {
+          {ingTries.filter((i) => commencePar(i.name, q)).map((i) => {
             const n = nbRecettes(i.id);
             const v = prixAchat[i.id] ?? String(i.unitCost || 0);
             return (
@@ -203,7 +242,7 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
   const lignes = tableauCouts(menu, ingredients, recipes);
   const nb = (n) => lignes.filter((l) => niveau(l) === n).length;
   const calcules = lignes.filter((l) => l.cout != null);
-  const vus = lignes.filter((l) => filtre === "tous" || niveau(l) === filtre);
+  const vus = lignes.filter((l) => (filtre === "tous" || niveau(l) === filtre) && commencePar(l.nom, chercheProduit));
   const cats = (menu.categories || []).filter((c) => vus.some((l) => l.categorie === c.id));
 
   return (
@@ -227,6 +266,7 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
         <button onClick={() => setVue("prix")} style={{ ...puce(vue === "prix"), flex: 1, fontSize: 12, padding: "8px" }}>🏷️ Prix d'achat</button>
       </div>
       {vue === "prix" ? vuePrix() : <>
+        <input placeholder="🔍 Chercher un produit : tape le début du nom (ex. S)" value={chercheProduit} onChange={(e) => setChercheProduit(e.target.value)} style={{ ...champ, fontSize: 13, padding: "9px 10px", marginBottom: 8 }} />
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
           {FILTRES.map(([id, nom]) => <button key={id} onClick={() => setFiltre(id)} style={puce(filtre === id)}>{nom}</button>)}
         </div>
