@@ -120,3 +120,13 @@ h2{font-size:20px;font-weight:900;color:var(--vert);margin:20px 0 8px}
 .gros.whatsapp{background:#25D366;color:#fff}
 .club-pub{display:flex;flex-direction:column;gap:2px;text-decoration:none;background:var(--jaune);color:var(--vert-f);border-radius:14px;padding:12px 14px;margin:10px 0}
 .club-pub span{font-size:14px;font-weight:600}
+.moyens{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.moyens button{background:var(--blanc);border:2px solid var(--vert);border-radius:14px;padding:12px 6px;color:var(--vert);font:inherit;font-size:14px;cursor:pointer}
+.moyens button.on{background:var(--vert);color:#fff}
+.payer{border-radius:18px;padding:16px;margin:12px 0;text-align:center;display:flex;flex-direction:column;gap:8px;background:#e6f8fd;border:3px solid #1DC8F2}
+.payer.orange{background:#fff1e5;border-color:#FF7900}
+.payer.paye{background:#e3f5e9;border-color:var(--vert)}
+.payer b{font-size:19px}
+.payer .montant{font-size:34px;font-weight:900}
+.payer small{color:#555;line-height:1.4}
+.payer a.gros{text-decoration:none;text-align:center}

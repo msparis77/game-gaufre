@@ -222,6 +222,48 @@ test("la caisse passe une livraison en route puis livrée, et règle la livraiso
   await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "config/livreurs")));
 });
 
+// ─── Paiement Wave / Orange Money ───
+const PAIE_ON = { wave: { actif: true, numero: "771112233", lien: "" }, orange: { actif: false, numero: "", lien: "" } };
+async function preparerPaiement(paie) {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "config/paiement"), paie); });
+}
+
+test("paiement : espèces toujours possible, Wave seulement s'il est activé, jamais « payé » par le client", async () => {
+  const cfg = await preparer(configTest(), LIV_ON);
+  const c = creneauTest(cfg);
+  // Sans réglage : Wave refusé, espèces OK
+  await assert.rejects(passerCommande(fs, env.authenticatedContext("w0").firestore(), "w0", { ...commandeOk(c), moyen: "wave" }));
+  await assertSucceeds(passerCommande(fs, env.authenticatedContext("e0").firestore(), "e0", { ...commandeOk(c), moyen: "especes" }));
+  await preparerPaiement(PAIE_ON);
+  const r = await passerCommande(fs, env.authenticatedContext("w1").firestore(), "w1", { ...commandeOk(c), moyen: "wave", livraison: livOk });
+  const d = (await getDoc(doc(env.authenticatedContext("w1").firestore(), "commandes_en_ligne", r.id))).data();
+  assert.deepEqual(d.paiement, { mode: "livraison", statut: "a_payer", moyen: "wave" });
+  await assert.rejects(passerCommande(fs, env.authenticatedContext("o1").firestore(), "o1", { ...commandeOk(c), moyen: "orange" })); // Orange désactivé
+  await assert.rejects(passerCommande(fs, env.authenticatedContext("x1").firestore(), "x1", { ...commandeOk(c), moyen: "bitcoin" }));
+  // Le client ne peut pas se déclarer « payé » en écrivant directement
+  const eleve = env.authenticatedContext("w1").firestore();
+  await assertFails(updateDoc(doc(eleve, "commandes_en_ligne", r.id), { paiement: { mode: "livraison", statut: "paye", moyen: "wave" } }));
+  // Réglages : lisibles par tous, modifiables par la caisse seulement
+  await assertSucceeds(getDoc(doc(env.unauthenticatedContext().firestore(), "config/paiement")));
+  await assertFails(setDoc(doc(eleve, "config/paiement"), PAIE_ON));
+  const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
+  await assertSucceeds(setDoc(doc(caisse, "config/paiement"), PAIE_ON));
+});
+
+test("paiement : la caisse confirme « payé » ou passe en espèces, sans changer le mode", async () => {
+  const cfg = await preparer(configTest(), LIV_ON);
+  await preparerPaiement(PAIE_ON);
+  const r = await passerCommande(fs, env.authenticatedContext("w1").firestore(), "w1", { ...commandeOk(creneauTest(cfg)), moyen: "wave" });
+  const caisse = env.authenticatedContext("caisseUid", CAISSE).firestore();
+  const ref = doc(caisse, "commandes_en_ligne", r.id);
+  await assertFails(updateDoc(ref, { paiement: { mode: "livraison", statut: "paye", moyen: "wave" } })); // mode changé
+  await assertFails(updateDoc(ref, { paiement: { mode: "retrait", statut: "rembourse", moyen: "wave" } }));
+  await assertFails(updateDoc(ref, { paiement: { mode: "retrait", statut: "paye", moyen: "wave", montant: 1 } }));
+  await assertSucceeds(updateDoc(ref, { paiement: { mode: "retrait", statut: "a_payer", moyen: "especes" } }));
+  await assertSucceeds(updateDoc(ref, { paiement: { mode: "retrait", statut: "paye", moyen: "wave" }, majAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(ref, { statut: "recuperee", venteEnregistree: true }));
+});
+
 // ─── Club Arena ───
 const membreOk = { prenom: "Awa", telephone: "771234567", profil: "eleve", parrain: "Modou" };
 const brut = (uid, extra = {}) => ({ uid, prenom: "Awa", telephone: "771234567", profil: "eleve", consentement: true,

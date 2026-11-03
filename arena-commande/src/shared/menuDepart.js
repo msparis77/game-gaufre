@@ -228,3 +228,10 @@ export const LIVRAISON_DEPART = {
   },
 };
 // Livreurs (config/livreurs, lisible seulement par la caisse) : [{ nom, tel }]
+
+// Paiement Wave / Orange Money (config/paiement, lisible par tous, modifiable par la caisse).
+// numero : numéro marchand affiché au client · lien : lien de paiement Wave (pay.wave.com/…)
+export const PAIEMENT_DEPART = {
+  wave: { actif: false, numero: "", lien: "" },
+  orange: { actif: false, numero: "", lien: "" },
+};

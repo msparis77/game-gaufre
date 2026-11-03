@@ -7,6 +7,7 @@ import { boissonsParFamille, iconeBoisson } from "./shared/boissons.js";
 import { prochainsCreneaux, hhmm, compteurId } from "./shared/creneaux.js";
 import { passerCommande, nettoyerTelephone, telephoneValide } from "./shared/commander.js";
 import { PROFILS, CLUB_DEPART, inscrireClub, vcard, telecharger } from "./shared/club.js";
+import { MOYENS, moyensOuverts, moyenCommande, estMobile, estPaye, lienPaiement, formatNumero } from "./shared/paiement.js";
 import { activerAlertes, alerterPrete, notificationsPossibles, enregistrerSW } from "./alerte.js";
 import "./style.css";
 
@@ -242,13 +243,16 @@ function FicheArticle({ menu, article, fermer, ajouter }) {
 }
 
 // ─── Page panier + infos + créneau ───
-function PagePanier({ menu, config, livraisonCfg, panier, setPanier, ajouterCommande }) {
+function PagePanier({ menu, config, livraisonCfg, paiementCfg, panier, setPanier, ajouterCommande }) {
   const [prenom, setPrenom] = useState(() => lire("ac-prenom", ""));
   const [tel, setTel] = useState(() => lire("ac-tel", ""));
   const [creneauId, setCreneauId] = useState(null);
   const zones = zonesOuvertes(livraisonCfg);
   const livraisonPossible = !!livraisonCfg?.actif && zones.length > 0;
   const [mode, setMode] = useState("retrait");
+  const moyens = moyensOuverts(paiementCfg);
+  const [moyenChoisi, setMoyen] = useState(() => lire("ac-moyen", "especes"));
+  const moyen = moyens.includes(moyenChoisi) ? moyenChoisi : "especes";
   const [zoneId, setZoneId] = useState(() => lire("ac-zone", ""));
   const [adresse, setAdresse] = useState(() => lire("ac-adresse", ""));
   const [places, setPlaces] = useState({});
@@ -293,9 +297,10 @@ function PagePanier({ menu, config, livraisonCfg, panier, setPanier, ajouterComm
     try {
       ecrire("ac-prenom", prenom.trim()); ecrire("ac-tel", tel);
       if (livrer) { ecrire("ac-zone", zone.id); ecrire("ac-adresse", adresse.trim()); }
+      ecrire("ac-moyen", moyen);
       activerAlertes(); // son + notification pour « Prête » (profite du geste de l'élève)
       const u = await utilisateur();
-      const r = await passerCommande(fs, db, u.uid, { prenom, telephone: telNet, lignes: panier, total, creneau,
+      const r = await passerCommande(fs, db, u.uid, { prenom, telephone: telNet, lignes: panier, total, creneau, moyen: moyens.length > 1 ? moyen : undefined,
         livraison: livrer ? { zone: zone.id, nom: zone.nom, adresse, frais: zone.frais } : null });
       ajouterCommande(r);
       setPanier([]);
@@ -368,7 +373,12 @@ function PagePanier({ menu, config, livraisonCfg, panier, setPanier, ajouterComm
       <p class="aide">Les commandes ferment {config?.delaiFermetureMin ?? 15} min avant chaque créneau.</p>
 
       <h2>Paiement</h2>
-      <div class="paiement">{livrer ? "💵 Paiement au livreur, à la livraison." : "💵 Paiement sur place, au retrait de ta commande."}</div>
+      {moyens.length > 1 && <div class="moyens">
+        {moyens.map((m) => <button key={m} class={moyen === m ? "on" : ""} onClick={() => setMoyen(m)}><b>{MOYENS[m].emoji} {MOYENS[m].nom}</b></button>)}
+      </div>}
+      <div class="paiement">{moyen === "especes"
+        ? (livrer ? "💵 Paiement en espèces au livreur, à la livraison." : "💵 Paiement sur place, au retrait de ta commande.")
+        : `${MOYENS[moyen].emoji} Après avoir commandé, tu paies ${fcfa(total + frais)} par ${MOYENS[moyen].nom}. La boutique vérifie et lance ta commande.`}</div>
 
       {erreur && <div class="erreur" role="alert">{erreur}</div>}
       <button class="gros" disabled={envoi} onClick={valider}>
@@ -379,7 +389,7 @@ function PagePanier({ menu, config, livraisonCfg, panier, setPanier, ajouterComm
 }
 
 // ─── Page de suivi en temps réel ───
-function PageSuivi({ id, club }) {
+function PageSuivi({ id, club, paiementCfg }) {
   const [c, setC] = useState(null);
   const [erreur, setErreur] = useState(false);
   const [alerte, setAlerte] = useState(() => notificationsPossibles() && Notification.permission === "granted" ? "granted" : "");
@@ -418,10 +428,11 @@ function PageSuivi({ id, club }) {
       </div>}
       {c.statut === "en_route" && <div class="prete">
         <b>🛵 {c.prenom}, ta commande est en route !</b>
-        <span>{c.livreur ? `${c.livreur} arrive` : "Le livreur arrive"}. Prépare ton code secret et {fcfa(c.total + (liv?.frais || 0))}.</span>
+        <span>{c.livreur ? `${c.livreur} arrive` : "Le livreur arrive"}. Prépare ton code secret{estPaye(c) ? "" : ` et ${fcfa(c.total + (liv?.frais || 0))}`}.</span>
         {c.livreurTel && <a class="appel" href={"tel:+221" + c.livreurTel}>📞 Appeler {c.livreur || "le livreur"} · {c.livreurTel.replace(/(\d{2})(\d{3})(\d{2})(\d{2})/, "$1 $2 $3 $4")}</a>}
       </div>}
       <p class="merci">Merci {c.prenom} !</p>
+      {!annulee && estMobile(c) && <BlocPaiement c={c} cfg={paiementCfg} />}
       <div class="numero">
         <small>Ton numéro de commande</small>
         <b>{c.code}</b>
@@ -449,7 +460,7 @@ function PageSuivi({ id, club }) {
       <div class="recap">
         {c.lignes.map((l, i) => <div key={i} class="ligne"><span>{l.qte} × {l.nom}</span><span>{fcfa(l.prixUnitaire * l.qte)}</span></div>)}
         {liv && <div class="ligne"><span>🛵 Livraison · {liv.nom}</span><span>{fcfa(liv.frais)}</span></div>}
-        <div class="total"><span>{liv ? "À payer au livreur" : "À payer au retrait"}</span><b>{fcfa(c.total + (liv?.frais || 0))}</b></div>
+        <div class="total"><span>{estPaye(c) ? `✅ Payé par ${MOYENS[moyenCommande(c)].nom}` : estMobile(c) ? `À payer par ${MOYENS[moyenCommande(c)].nom}` : liv ? "À payer au livreur" : "À payer au retrait"}</span><b>{fcfa(c.total + (liv?.frais || 0))}</b></div>
       </div>
       {club && club.actif && !lire("ac-club", null) && (
         <a class="club-pub" href="#/club"><b>🎁 Rejoins le Club Arena</b><span>{club.cadeau ? club.cadeau + " et nos" : "Nos"} offres sur WhatsApp →</span></a>
@@ -566,12 +577,30 @@ function BienvenueClub({ cfg, membre }) {
   );
 }
 
+// ─── Paiement Wave / Orange Money : numéro, montant, et confirmation de la boutique ───
+function BlocPaiement({ c, cfg }) {
+  const m = moyenCommande(c);
+  const montant = c.total + (c.livraison?.frais || 0);
+  if (estPaye(c)) return <div class="payer paye"><b>✅ Paiement {MOYENS[m].nom} reçu</b><span>Merci ! Tu n'as plus rien à payer{c.livraison ? " au livreur" : ""}.</span></div>;
+  const numero = cfg?.[m]?.numero;
+  const lien = lienPaiement(cfg, m, montant);
+  return <div class={"payer " + m}>
+    <b>{MOYENS[m].emoji} Paie maintenant par {MOYENS[m].nom}</b>
+    <div class="montant">{fcfa(montant)}</div>
+    {numero && <span>au numéro <strong>{formatNumero(numero)}</strong> (Arena Café)</span>}
+    {lien && <a class="gros" href={lien} target="_blank" rel="noopener">Payer avec {MOYENS[m].nom}</a>}
+    {m === "orange" && !lien && <a class="gros" href="tel:%23144%23">Ouvrir Orange Money (#144#)</a>}
+    <small>Écris ton numéro de commande <strong>{c.code}</strong> si l'appli le demande. La boutique vérifie et lance ta commande. Cette page affichera « Paiement reçu ».</small>
+  </div>;
+}
+
 function App() {
   const route = useRoute();
   const [menu, erreurMenu] = useDoc("config/menu", "ac-menu");
   const [config] = useDoc("config/creneaux", "ac-creneaux");
   const [livraisonCfg] = useDoc("config/livraison", "ac-livraison");
   const [club] = useDoc("config/club", "ac-club-cfg");
+  const [paiementCfg] = useDoc("config/paiement", "ac-paiement");
   const [panier, setPanierBrut] = useState(() => lire("ac-panier", []));
   const [mesCommandes, setMesCommandes] = useState(() => lire("ac-mes-commandes", []));
   const setPanier = (p) => { setPanierBrut(p); ecrire("ac-panier", p); };
@@ -585,11 +614,11 @@ function App() {
   const page = route[0] || "";
 
   let contenu;
-  if (page === "suivi" && route[1]) contenu = <PageSuivi id={route[1]} club={club} />;
+  if (page === "suivi" && route[1]) contenu = <PageSuivi id={route[1]} club={club} paiementCfg={paiementCfg} />;
   else if (page === "club") contenu = <PageClub club={club} />;
   else if (page === "commandes") contenu = <PageMesCommandes ids={mesCommandes} />;
   else if (!menu) contenu = <main class="vide"><p>{erreurMenu ? "Connexion impossible. Vérifie ta connexion internet." : "Chargement du menu…"}</p></main>;
-  else if (page === "panier") contenu = <PagePanier menu={menu} config={config} livraisonCfg={livraisonCfg} panier={panier} setPanier={setPanier} ajouterCommande={ajouterCommande} />;
+  else if (page === "panier") contenu = <PagePanier menu={menu} config={config} livraisonCfg={livraisonCfg} paiementCfg={paiementCfg} panier={panier} setPanier={setPanier} ajouterCommande={ajouterCommande} />;
   else contenu = <PageMenu menu={menu} panier={panier} setPanier={setPanier} ouvert={ouvert} />;
 
   return (

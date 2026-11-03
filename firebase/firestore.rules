@@ -25,8 +25,8 @@ service cloud.firestore {
 
     // ── Menu, créneaux, livraison et Club : lecture publique, modification par la caisse ──
     match /config/{nom} {
-      allow read: if nom in ['menu', 'creneaux', 'livraison', 'club'];
-      allow write: if estCaisse() && nom in ['menu', 'creneaux', 'livraison', 'club'];
+      allow read: if nom in ['menu', 'creneaux', 'livraison', 'club', 'paiement'];
+      allow write: if estCaisse() && nom in ['menu', 'creneaux', 'livraison', 'club', 'paiement'];
       // Livreurs (prénoms et numéros) : seulement la caisse
       allow read, write: if estCaisse() && nom == 'livreurs';
     }
@@ -72,12 +72,18 @@ service cloud.firestore {
       allow create: if connecte() && commandeValide(id);
       allow update: if estCaisse()
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt', 'livreur', 'livreurTel'])
+             .hasOnly(['statut', 'imprimeAt', 'imprimePar', 'venteEnregistree', 'majAt', 'livreur', 'livreurTel', 'paiement'])
         && request.resource.data.statut in ['recue', 'preparation', 'prete', 'recuperee',
                                             'en_route', 'livree', 'annulee']
         && (!('livreur' in request.resource.data) || request.resource.data.livreur is string)
         && (!('livreurTel' in request.resource.data)
-            || (request.resource.data.livreurTel is string && request.resource.data.livreurTel.matches('^7[05678][0-9]{7}$')));
+            || (request.resource.data.livreurTel is string && request.resource.data.livreurTel.matches('^7[05678][0-9]{7}$')))
+        // La caisse confirme un paiement Wave / Orange Money reçu, ou passe en espèces
+        && request.resource.data.paiement.mode == resource.data.paiement.mode
+        && request.resource.data.paiement.keys().hasOnly(['mode', 'statut', 'moyen'])
+        && request.resource.data.paiement.statut in ['a_payer', 'paye']
+        && (!('moyen' in request.resource.data.paiement)
+            || request.resource.data.paiement.moyen in ['especes', 'wave', 'orange']);
       allow delete: if false;
     }
 
@@ -138,7 +144,7 @@ service cloud.firestore {
         && d.total is int && d.total > 0 && d.total <= 100000
         && d.statut == 'recue'
         // Retrait au comptoir, ou livraison si elle est activée dans la caisse
-        && ((!('livraison' in d) && d.paiement == {'mode': 'retrait', 'statut': 'a_payer'})
+        && ((!('livraison' in d) && paiementValide(d, 'retrait'))
             || ('livraison' in d && livraisonValide(d)))
         && d.createdAt == request.time
         && d.venteEnregistree == false
@@ -163,13 +169,28 @@ service cloud.firestore {
         && cli.derniere == request.time;
     }
 
+    // Paiement : espèces (sur place ou au livreur), ou Wave / Orange Money si
+    // ce moyen est ouvert dans la caisse. Toujours « à payer » à la création :
+    // seule la caisse peut le passer à « payé ».
+    function paiementValide(d, mode) {
+      let p = d.paiement;
+      return p is map
+        && p.keys().hasOnly(['mode', 'statut', 'moyen'])
+        && p.keys().hasAll(['mode', 'statut'])
+        && p.mode == mode
+        && p.statut == 'a_payer'
+        && (!('moyen' in p) || p.moyen == 'especes'
+            || (p.moyen in ['wave', 'orange']
+                && get(/databases/$(database)/documents/config/paiement).data[p.moyen].actif == true));
+    }
+
     // Livraison : activée, zone ouverte, frais exacts de la zone, adresse remplie,
     // minimum de commande atteint. Paiement à la livraison.
     function livraisonValide(d) {
       let cfg = get(/databases/$(database)/documents/config/livraison).data;
       let l = d.livraison;
       return cfg.actif == true
-        && d.paiement == {'mode': 'livraison', 'statut': 'a_payer'}
+        && paiementValide(d, 'livraison')
         && l is map
         && l.keys().hasOnly(['zone', 'nom', 'adresse', 'frais'])
         && l.keys().hasAll(['zone', 'nom', 'adresse', 'frais'])
