@@ -25,7 +25,7 @@ const R = (id, nom, categorie, emoji, garn) => ({ id, nom, categorie, emoji, gar
 
 export const RECETTES_CARTE = [
   // Petit-déjeuner (pains)
-  R("pd_thon", "Pain thon", "Petit-déjeuner", "🐟", [PAIN, ["Thon", 0.04], OIGNON(0.005)]),
+  R("pd_thon", "Pain thon", "Petit-déjeuner", "🐟", [PAIN, ["Pâte de sardinelle Pinton", 0.04], OIGNON(0.005)]),
   R("pd_dambe", "Pain dambé", "Petit-déjeuner", "🫘", [PAIN, ["Haricots", 0.05], OIGNON(0.005)]),
   R("pd_oeuf_mayo", "Pain œuf mayonnaise", "Petit-déjeuner", "🥚", [PAIN, ["Oeufs", 1], MAYO(0.03)]),
   R("pd_corned_beef", "Pain corned beef", "Petit-déjeuner", "🥫", [PAIN, ["Corned beef", 0.05], OIGNON(0.005)]),

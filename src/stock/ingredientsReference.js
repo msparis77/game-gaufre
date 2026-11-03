@@ -138,6 +138,8 @@ export const PRIX_A_JOUR = [
   // v6 : Moussa 2026-11-03 : la baguette coûte 65 F ; le corned beef se compte en grammes dans les pains.
   { v: 6, noms: ["Pain", "Baguette", "Pain baguette"], unitCost: 65 },
   { v: 6, noms: ["Corned beef"], unit: "kg", unitCost: 0 },
+  // Le « thon » des pains est la pâte de sardinelle Pinton (1 390 F le pot, compté comme 1 kg, à confirmer).
+  { v: 6, noms: ["Pâte de sardinelle Pinton", "Pâte de sardinelle"], unit: "kg", unitCost: 1390 },
 ];
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
