@@ -54,6 +54,14 @@ const STATUTS_LIVRAISON = [
   { id: "livree", nom: "Livrée", detail: "Bon appétit !" },
 ];
 // Zones de livraison ouvertes, dans l'ordre (z1, z2…)
+// Livraison limitée au fast-food (+ boissons) tant que fastFoodSeulement n'est pas décoché dans la caisse
+const categoriesLivrables = (menu, liv) => liv?.fastFoodSeulement === false ? null
+  : new Set([...menu.categories.filter((c) => c.fastFood).map((c) => c.id), "boissons"]);
+const livrable = (menu, liv, panier) => {
+  const cats = categoriesLivrables(menu, liv);
+  if (!cats) return true;
+  return panier.every((l) => { const a = menu.articles.find((x) => x.id === l.articleId); return a && cats.has(a.categorie); });
+};
 const zonesOuvertes = (liv) => Object.entries(liv?.zones || {}).filter(([, z]) => z.actif).sort(([a], [b]) => a.localeCompare(b, "fr", { numeric: true })).map(([id, z]) => ({ id, ...z }));
 
 function Entete({ nbCommandes }) {
@@ -77,12 +85,19 @@ function Photo({ article, grande }) {
 }
 
 // ─── Page menu ───
-function PageMenu({ menu, panier, setPanier, ouvert }) {
+function PageMenu({ menu, panier, setPanier, ouvert, livraison }) {
   const [cat, setCat] = useState(menu.categories[0]?.id);
   const [choisi, setChoisi] = useState(null);
-  const articles = menu.articles.filter((a) => a.dispo !== false && !a.caisseSeulement);
+  // Page « livraison » : seulement ce qui peut être livré
+  const cats = livraison ? categoriesLivrables(menu, livraison) : null;
+  const articles = menu.articles.filter((a) => a.dispo !== false && !a.caisseSeulement && (!cats || cats.has(a.categorie)));
+  const zones = livraison ? zonesOuvertes(livraison) : [];
   return (
     <main>
+      {livraison && <div class="bandeau-livraison">
+        <b>🛵 Fast-food livré chez toi</b>
+        <span>{livraison.actif && zones.length ? <>Livraison {zones.map((z) => `${z.nom} (+${fcfa(z.frais)})`).join(", ")}{livraison.minimum > 0 ? ` · dès ${fcfa(livraison.minimum)}` : ""}</> : "La livraison n'est pas encore ouverte. Tu peux commander à emporter."}</span>
+      </div>}
       {!ouvert && <div class="bandeau">Les commandes sont fermées pour le moment. Tu peux regarder le menu.</div>}
       <nav class="cats">
         {menu.categories.filter((c) => articles.some((a) => a.categorie === c.id)).map((c) => (
@@ -248,8 +263,9 @@ function PagePanier({ menu, config, livraisonCfg, paiementCfg, panier, setPanier
   const [tel, setTel] = useState(() => lire("ac-tel", ""));
   const [creneauId, setCreneauId] = useState(null);
   const zones = zonesOuvertes(livraisonCfg);
-  const livraisonPossible = !!livraisonCfg?.actif && zones.length > 0;
-  const [mode, setMode] = useState("retrait");
+  const livraisonOuverte = !!livraisonCfg?.actif && zones.length > 0;
+  const livraisonPossible = livraisonOuverte && livrable(menu, livraisonCfg, panier);
+  const [mode, setMode] = useState(() => lire("ac-mode", "retrait"));
   const moyens = moyensOuverts(paiementCfg);
   const [moyenChoisi, setMoyen] = useState(() => lire("ac-moyen", "especes"));
   const moyen = moyens.includes(moyenChoisi) ? moyenChoisi : "especes";
@@ -338,11 +354,12 @@ function PagePanier({ menu, config, livraisonCfg, paiementCfg, panier, setPanier
           onInput={(e) => setTel(e.currentTarget.value)} />
       </label>
 
+      {livraisonOuverte && !livraisonPossible && <p class="aide">🛵 Pour l'instant, on livre seulement le fast-food et les boissons. Retire les autres articles pour être livré, ou viens chercher ta commande.</p>}
       {livraisonPossible && <>
         <h2>Retrait ou livraison ?</h2>
         <div class="modes">
-          <button class={mode === "retrait" ? "on" : ""} onClick={() => setMode("retrait")}><b>🏃 Je viens chercher</b><small>au comptoir</small></button>
-          <button class={mode === "livraison" ? "on" : ""} onClick={() => setMode("livraison")}><b>🛵 Livraison</b><small>chez toi</small></button>
+          <button class={mode === "retrait" ? "on" : ""} onClick={() => { setMode("retrait"); ecrire("ac-mode", "retrait"); }}><b>🏃 Je viens chercher</b><small>au comptoir</small></button>
+          <button class={mode === "livraison" ? "on" : ""} onClick={() => { setMode("livraison"); ecrire("ac-mode", "livraison"); }}><b>🛵 Livraison</b><small>chez toi</small></button>
         </div>
         {livrer && <>
           <div class="zones">
@@ -619,13 +636,16 @@ function App() {
   else if (page === "commandes") contenu = <PageMesCommandes ids={mesCommandes} />;
   else if (!menu) contenu = <main class="vide"><p>{erreurMenu ? "Connexion impossible. Vérifie ta connexion internet." : "Chargement du menu…"}</p></main>;
   else if (page === "panier") contenu = <PagePanier menu={menu} config={config} livraisonCfg={livraisonCfg} paiementCfg={paiementCfg} panier={panier} setPanier={setPanier} ajouterCommande={ajouterCommande} />;
+  else if (page === "livraison") contenu = <PageMenu menu={menu} panier={panier} setPanier={setPanier} ouvert={ouvert} livraison={livraisonCfg || { actif: false }} />;
   else contenu = <PageMenu menu={menu} panier={panier} setPanier={setPanier} ouvert={ouvert} />;
+  // Arrivé par le lien de livraison : la livraison est choisie d'avance au panier
+  useEffect(() => { if (page === "livraison") ecrire("ac-mode", "livraison"); }, [page]);
 
   return (
     <>
       <Entete nbCommandes={mesCommandes.length} />
       {contenu}
-      {nb > 0 && page === "" && (
+      {nb > 0 && (page === "" || page === "livraison") && (
         <a class="barre" href="#/panier"><span>Voir le panier ({nb})</span><b>{fcfa(total)}</b></a>
       )}
     </>

@@ -369,7 +369,7 @@ function EditeurLivraison({ S, Btn, Inp, Card, livraison, livreurs, showToast })
   const donnees = (actif) => {
     const zones = {};
     b.zones.forEach((z, i) => { zones["z" + (i + 1)] = { nom: String(z.nom).trim(), frais: nombre(z.frais), actif: !!z.actif }; });
-    return { actif, minimum: nombre(b.minimum), zones };
+    return { actif, minimum: nombre(b.minimum), zones, fastFoodSeulement: b.fastFoodSeulement !== false };
   };
   const enregistrer = async (actif = b.actif) => {
     if (b.zones.some((z) => !String(z.nom).trim())) return showToast("❌ Donne un nom à chaque zone", S.red);
@@ -401,6 +401,10 @@ function EditeurLivraison({ S, Btn, Inp, Card, livraison, livreurs, showToast })
         <button onClick={() => setB({ ...b, zones: b.zones.filter((_, j) => j !== i) })} style={{ ...Btn(S.card3, S.red), padding: "4px 8px" }}>✕</button>
       </div>)}
       <button onClick={() => setB({ ...b, zones: [...b.zones, { id: nouvelId("z"), nom: "", frais: 500, actif: false }] })} style={{ ...Btn(S.card3, S.text), width: "100%", fontSize: 12, marginBottom: 10 }}>+ Ajouter une zone</button>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, margin: "4px 0 10px" }}>
+        <input type="checkbox" checked={b.fastFoodSeulement !== false} onChange={(e) => setB({ ...b, fastFoodSeulement: e.target.checked })} />
+        Livrer seulement le fast-food 🍔 et les boissons
+      </label>
       <Ligne S={S} label="Minimum de commande pour être livré (F)"><input type="number" value={b.minimum} onChange={(e) => setB({ ...b, minimum: e.target.value })} style={Inp(90)} /></Ligne>
     </div>
     <div style={Card()}>

@@ -223,6 +223,7 @@ export const CRENEAUX_DEPART = {
 export const LIVRAISON_DEPART = {
   actif: false,
   minimum: 0,
+  fastFoodSeulement: true, // la livraison commence avec le fast-food (+ boissons)
   zones: {
     z1: { nom: "Guédiawaye", frais: 500, actif: true },
   },
