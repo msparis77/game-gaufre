@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, laz
 import { demarrerVeille, abonner as abonnerVeille } from "./enligne/veille.js";
 import { completerIngredients } from "./stock/ingredientsReference.js";
 import { completerRecettes, coutRecette } from "./stock/recettesFiches.js";
+import { ajouterRecettesCarte } from "./stock/recettesCarte.js";
 import { tableauCouts } from "./stock/coutRevient.js";
+import { sortiesVentesMenu, topVentes } from "./stock/sortiesVentes.js";
+import { useMenuSite } from "./enligne/menuSite.js";
 const CommandesEnLigne = lazy(() => import("./enligne/CommandesEnLigne.jsx"));
 const MenuCaisse=lazy(()=>import("./enligne/MenuCaisse.jsx"));
 const CoutRevient=lazy(()=>import("./stock/CoutRevient.jsx"));
@@ -222,7 +225,7 @@ export default function App(){
 
   useEffect(()=>{(async()=>{
         try{const k="gg3-"+currentStore.id+"-emps";let s=localStorage.getItem(k);let e=s?JSON.parse(s):await fbGet(k);if(e){setEmps(e);empRef.current=e;}else{setEmps(INIT_EMPS);empRef.current=INIT_EMPS;}}catch(e){}
-    try{const k2="gg3-"+currentStore.id+"-prods";let d=await fbGet(k2);if(!d||typeof d!=="object"){const s=localStorage.getItem(k2);d=s?JSON.parse(s):null;}if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing){const ni=completerIngredients(d.ing);const ing2=ni||d.ing;setIngredients(ing2);const nr=d.rec?completerRecettes(d.rec,ing2):null;if(ni||nr){const nd={...d,ing:ing2,...(nr?{rec:nr}:{})};try{localStorage.setItem(k2,JSON.stringify(nd));}catch(e){}fbSave(k2,nd);}if(d.rec)setRecipes(nr||d.rec);}else if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.ec&&Array.isArray(d.ec)&&d.ec.length>0)setExpCats(d.ec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setExpCats(INIT_EXP_CATS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
+    try{const k2="gg3-"+currentStore.id+"-prods";let d=await fbGet(k2);if(!d||typeof d!=="object"){const s=localStorage.getItem(k2);d=s?JSON.parse(s):null;}if(d){if(d.b)setBoissons(d.b);if(d.s)setSnacks(d.s);if(d.ing){const ni=completerIngredients(d.ing);const ing2=ni||d.ing;setIngredients(ing2);const nr1=d.rec?completerRecettes(d.rec,ing2):null;const nr2=d.rec?ajouterRecettesCarte(nr1||d.rec,ing2):null;const nr=nr2||nr1;if(ni||nr){const nd={...d,ing:ing2,...(nr?{rec:nr}:{})};try{localStorage.setItem(k2,JSON.stringify(nd));}catch(e){}fbSave(k2,nd);}if(d.rec)setRecipes(nr||d.rec);}else if(d.rec)setRecipes(d.rec);if(d.sta&&Array.isArray(d.sta)&&d.sta.length>0)setStations(d.sta);if(d.ec&&Array.isArray(d.ec)&&d.ec.length>0)setExpCats(d.ec);if(d.pp)setPhotoPrice(d.pp);if(d.goal)setDailyGoal(d.goal);if(d.tno)setTicketNo(d.tno);}else{setBoissons(INIT_B);setSnacks(INIT_S);setIngredients(INIT_ING);setRecipes(INIT_REC);setStations(INIT_STATIONS);setExpCats(INIT_EXP_CATS);setPhotoPrice(50);setDailyGoal(DEFAULT_GOAL);setTicketNo(1001);}}catch(e){}
     // Copie locale complétée par les ventes du serveur, puis gardée : saveDay part de cette copie (sans elle, cocher la checklist effaçait les ventes du serveur)
     try{const k3="gg3-"+currentStore.id+"-day-"+todayStr();let s=localStorage.getItem(k3);let d=s?JSON.parse(s):null;const srv=await fbGet(k3);if(!d)d=srv;else if(srv&&srv.sales){const ids=new Set((d.sales||[]).map(x=>x.id));const extra=srv.sales.filter(x=>!ids.has(x.id));if(extra.length)d={...d,sales:[...(d.sales||[]),...extra].sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")))};}if(d)localStorage.setItem(k3,JSON.stringify(d));if(d){setSales((d.sales||[]).filter(x=>journeeVente(x)===todayStr()));setSessions(d.sessions||{});if(d.pc!=null)setPhotoCount(d.pc);if(d.audit)setAudit(d.audit);if(d.checklist)setChecklist(d.checklist);if(d.expenses)setExpenses(d.expenses);if(d.ingStock)setIngStock(d.ingStock);if(d.ingPhys)setIngPhys(d.ingPhys);if(d.productions)setProductions(d.productions);if(d.manualExits)setManualExits(d.manualExits);if(d.purchases)setPurchases(d.purchases);if(d.finPhys)setFinPhys(d.finPhys);}else{setSales([]);setSessions({});setPhotoCount(0);setAudit([]);setChecklist({});setExpenses([]);setIngStock({});setIngPhys({});setProductions([]);setManualExits([]);setPurchases([]);setFinPhys({});}}catch(e){}
     const hist={};for(let i=1;i<=7;i++){const dt=maintenantJournee();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];try{const k4="gg3-"+currentStore.id+"-day-"+ds;let d=await fbGet(k4);if(d)localStorage.setItem(k4,JSON.stringify(d));else{const s=localStorage.getItem(k4);d=s?JSON.parse(s):null;}if(d)hist[ds]={sales:d.sales||[],expenses:d.expenses||[],pc:d.pc||0};}catch(e){}}
@@ -247,13 +250,15 @@ export default function App(){
   const tryPatronModal=code=>{const p=empRef.current.find(e=>(e.role==="patron"||e.role==="gerant")&&code===e.pin);if(p){setPinModal(null);setPinMErr(false);pinModal.onSuccess();}else{setPinMErr(true);setTimeout(()=>setPinMErr(false),1200);}};
 
   // COMPUTED
+  const menuSite=useMenuSite();
+  const sortiesMenu=useMemo(()=>sortiesVentesMenu(sales,menuSite,ingredients,recipes),[sales,menuSite,ingredients,recipes]);
   const soldQty=id=>sales.reduce((s,sale)=>s+(sale.items.find(i=>i.id===id)?.qty||0),0);
   const prodQtyFn=id=>productions.filter(p=>p.snackId===id).reduce((s,p)=>s+p.qty,0);
   const remQty=id=>Math.max(0,prodQtyFn(id)-soldQty(id));
   const lossQty=id=>{const p=finPhys[id];if(p==null)return null;return remQty(id)-p;};
   const ingUsedDirect=id=>sales.reduce((s,sale)=>s+sale.items.reduce((s2,item)=>{const prod=[...boissons,...snacks].find(p=>p.id===item.id);return s2+(prod&&prod.dIngId===id?(prod.dIngQty||0)*item.qty:0);},0),0);
   const ingUsedManual=id=>manualExits.filter(m=>m.ingId===id).reduce((s,m)=>s+m.qty,0);
-  const ingUsed=id=>productions.reduce((s,p)=>{const rec=recipes.find(r=>r.snackId===p.snackId);const ri=rec?.ingredients.find(i=>i.id===id);return s+(ri?ri.qty*p.qty:0);},0)+ingUsedDirect(id)+ingUsedManual(id);
+  const ingUsed=id=>productions.reduce((s,p)=>{const rec=recipes.find(r=>r.snackId===p.snackId);const ri=rec?.ingredients.find(i=>i.id===id);return s+(ri?ri.qty*p.qty:0);},0)+ingUsedDirect(id)+ingUsedManual(id)+(sortiesMenu.parIng.get(id)||0);
   const ingPurchased=id=>purchases.filter(p=>p.ingId===id).reduce((s,p)=>s+p.qty,0);
   const ingRem=id=>Math.max(0,(ingStock[id]?.opening||0)+ingPurchased(id)-ingUsed(id));
   const ingAlert=id=>{const p=ingPhys[id];if(p==null)return null;const t=ingRem(id);const diff=t-p;return diff!==0?{diff,t,p}:null;};
@@ -267,13 +272,13 @@ export default function App(){
   const recipeCost=rec=>rec?rec.ingredients.reduce((s,ri)=>{const ing=ingredients.find(i=>i.id===ri.id);return s+(ing?ri.qty*ing.unitCost:0);},0):0;
   const productCost=p=>p.dIngId?(p.dIngQty||0)*(ingredients.find(i=>i.id===p.dIngId)?.unitCost||0):recipeCost(recipes.find(r=>r.snackId===p.id));
   const totalPurchasesCost=purchases.reduce((s,p)=>s+p.cost,0);
-  const cogsConsumed=ingredients.reduce((s,ing)=>s+ingUsed(ing.id)*ing.unitCost,0);
+  const cogsConsumed=Math.round(ingredients.reduce((s,ing)=>s+ingUsed(ing.id)*(ing.unitCost||0),0));
   const grossMargin=totalCA-cogsConsumed;
   const realNetProfit=grossMargin-totalExpenses;
   const goalPct=Math.min(100,Math.round((totalCA/dailyGoal)*100));
   const lossAlerts=snacks.filter(p=>{const l=lossQty(p.id);return l!==null&&l>0;});
   const ingAlerts=ingredients.filter(i=>ingAlert(i.id)!==null);
-  const top5=[...boissons,...snacks].map(p=>({...p,sold:soldQty(p.id)})).filter(p=>p.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,5);
+  const top5=topVentes(sales,5);
   const last7=Array.from({length:7},(_,i)=>{const dt=maintenantJournee();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split("T")[0];const h=i===0?{sales,expenses,pc:photoCount}:history[ds]||{sales:[],expenses:[],pc:0};const ca=h.sales.reduce((s,sale)=>s+sale.total,0)+(h.pc||0)*photoPrice;const dep=h.expenses.reduce((s,e)=>s+e.amount,0);return{ds,label:i===0?"Auj":i===1?"Hier":dt.toLocaleDateString("fr-FR",{weekday:"short"}),ca,dep,net:ca-dep};}).reverse();
   const cashTotal=BILLETS.reduce((s,b)=>s+(Number(cashCount[b]||0)*b),0);
   const especesAttendues=totalCA-parPaiement.wave-parPaiement.orange; // Wave et Orange Money ne sont pas dans le tiroir
@@ -617,7 +622,8 @@ RÈGLES COÛTS: coût de revient = somme (quantité × prix d'achat). Cible : co
               {scanLoading&&scanTarget==="verif"?"⏳ Lecture...":"📸 Scanner stock soir"}
             </button>
           </div>
-          <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin en KG. La production déduit automatiquement.</div>
+          <div style={{background:"#0a0d1a",border:`1px solid ${S.blue}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#aaa"}}>🌾 Stock matin dans l'unité de chaque produit. Chaque vente de la carte retire automatiquement les ingrédients de sa recette (💰 Coûts).</div>
+          {sortiesMenu.nonRelies.length>0&&<div style={{background:"#1a1200",border:`1px solid ${S.orange}`,borderRadius:10,padding:10,marginBottom:12,fontSize:11,color:"#ffcc80"}}>⚠️ Vendus aujourd'hui sans recette (le stock ne baisse pas) : {sortiesMenu.nonRelies.map(x=>`${x.nom} ×${x.qte}`).join(", ")}{isPatron?" — ajoute leur recette dans 💰 Coûts.":""}</div>}
           {ingredients.map(ing=>{const s=ingStock[ing.id]||{};const used=ingUsed(ing.id);const rem=ingRem(ing.id);const al=ingAlert(ing.id);return(<div key={ing.id} style={{background:al?"#1a0000":S.card,border:`1px solid ${al?S.red:S.border}`,borderRadius:10,padding:12,marginBottom:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <span style={{fontSize:13,fontWeight:700}}>{ing.emoji} {ing.name}</span>

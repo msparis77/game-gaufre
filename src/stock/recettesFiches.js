@@ -53,7 +53,7 @@ export const RECETTES_FICHES = [
 const ALIAS = {
   Oeufs: ["Œufs", "Oeuf", "Œuf"], Nutella: ["Chocopain"], Fromage: ["Emmental", "Emmental râpé"], Levure: ["Levure chimique"],
   "Lait demi-écrémé": ["Lait liquide", "Lait Candia"], "Huile tournesol": ["Huile"], "Crème liquide": ["Crème", "Crème chantilly", "Chantilly"],
-  "Lait concentré sucré": ["Lait concentré"], "Jambon de bœuf": ["Jambon"], Margarine: ["Beurre"], "Lait entier": ["Lait demi-écrémé"],
+  "Lait concentré sucré": ["Lait concentré"], Baguette: ["Pain", "Pain baguette"], "Viande de bœuf": ["Boeuf", "Bœuf", "Viande"], "Jambon de bœuf": ["Jambon"], Margarine: ["Beurre"], "Lait entier": ["Lait demi-écrémé"],
 };
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
@@ -67,7 +67,7 @@ const trouverIng = (ingredients, nom) => {
 };
 
 // Additionne les lignes (la pâte et la garniture peuvent partager un ingrédient, ex. sucre ou œufs).
-const lignes = (ingredients, liste) => {
+export const lignes = (ingredients, liste) => {
   const out = [];
   liste.forEach(([nom, qty]) => {
     const ing = trouverIng(ingredients, nom);

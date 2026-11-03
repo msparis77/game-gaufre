@@ -5,7 +5,7 @@ import { tableauCouts, REVENTE, FORMULES, trouverRecette, trouverIngParNoms } fr
 // Onglet 💰 Coûts : pour chaque article du menu, prix de vente, coût de revient et marge.
 // On peut ouvrir un produit pour changer sa recette (quantités) et les prix d'achat :
 // le calcul se refait tout de suite, et les autres produits qui utilisent le même ingrédient suivent.
-const FILTRES = [["tous", "Tous"], ["bon", "✅ Bonne marge"], ["moyen", "🟡 À surveiller"], ["faible", "🔴 Faible marge"], ["a_faire", "📝 À compléter"]];
+const FILTRES = [["tous", "Tous"], ["bon", "✅ Bonne marge"], ["moyen", "🟡 À surveiller"], ["faible", "🔴 Faible marge"], ["a_faire", "📝 À compléter"], ["proposee", "💡 À vérifier"]];
 
 const niveau = (l) => (l.pct == null ? "a_faire" : l.pct <= 35 ? "bon" : l.pct <= 50 ? "moyen" : "faible");
 const nombre = (v) => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) && n >= 0 ? n : 0; };
@@ -71,8 +71,8 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
       const rec = trouverRecette(a, recipes);
       const cat = (menu.categories || []).find((c) => c.id === a.categorie);
       if (rec) {
-        recetteChangee = JSON.stringify(rec.ingredients || []) !== JSON.stringify(nouvellesLignes);
-        if (recetteChangee) nr = recipes.map((r) => (r.id === rec.id ? { ...r, ingredients: nouvellesLignes, prixVente: r.prixVente || a.prix } : r));
+        recetteChangee = !!rec.proposee || JSON.stringify(rec.ingredients || []) !== JSON.stringify(nouvellesLignes);
+        if (recetteChangee) nr = recipes.map((r) => (r.id === rec.id ? { ...r, ingredients: nouvellesLignes, prixVente: r.prixVente || a.prix, proposee: false } : r));
       } else if (nouvellesLignes.length) {
         recetteChangee = true;
         nr = [...recipes, { id: "rf_" + a.id, name: a.nom, emoji: a.emoji || "🍽️", category: cat ? cat.nom : "Autres", snackId: "", prixVente: typeof a.prix === "number" ? a.prix : undefined, ingredients: nouvellesLignes }];
@@ -242,7 +242,7 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
   const lignes = tableauCouts(menu, ingredients, recipes);
   const nb = (n) => lignes.filter((l) => niveau(l) === n).length;
   const calcules = lignes.filter((l) => l.cout != null);
-  const vus = lignes.filter((l) => (filtre === "tous" || niveau(l) === filtre) && commencePar(l.nom, chercheProduit));
+  const vus = lignes.filter((l) => (filtre === "tous" || (filtre === "proposee" ? l.proposee : niveau(l) === filtre)) && commencePar(l.nom, chercheProduit));
   const cats = (menu.categories || []).filter((c) => vus.some((l) => l.categorie === c.id));
 
   return (
@@ -292,6 +292,7 @@ export default function CoutRevient({ S, Card, fmt, ingredients, recipes, onSave
                       <div><div style={{ color: S.muted }}>{l.source === "achat" ? "Prix d'achat" : "Coût"}</div><div style={{ fontWeight: 700, color: S.gold }}>{l.cout == null ? "—" : fmt(l.cout)}</div></div>
                       <div><div style={{ color: S.muted }}>Marge</div><div style={{ fontWeight: 700, color: l.marge == null ? S.muted : l.marge < 0 ? S.red : S.green }}>{l.marge == null ? "—" : fmt(l.marge)}</div></div>
                     </div>
+                    {!estOuvert && l.proposee && <div style={{ fontSize: 10, color: S.blue, marginTop: 6 }}>💡 Recette proposée, à vérifier : touche le produit, corrige les quantités puis Enregistre.</div>}
                     {!estOuvert && l.manque.length > 0 && <div style={{ fontSize: 10, color: l.cout == null ? S.muted : S.orange, marginTop: 6 }}>{l.cout == null ? "📝 À compléter : " : "⚠️ Pas encore compté : "}{l.manque.join(", ")}</div>}
                   </div>
                   {estOuvert && a && editeur(a)}
