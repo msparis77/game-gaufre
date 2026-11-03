@@ -53,7 +53,7 @@ export const RECETTES_FICHES = [
 const ALIAS = {
   Oeufs: ["Œufs", "Oeuf", "Œuf"], Nutella: ["Chocopain"], Fromage: ["Emmental", "Emmental râpé"], Levure: ["Levure chimique"],
   "Lait demi-écrémé": ["Lait liquide", "Lait Candia"], "Huile tournesol": ["Huile"], "Crème liquide": ["Crème", "Crème chantilly", "Chantilly"],
-  "Lait concentré sucré": ["Lait concentré"], Baguette: ["Pain", "Pain baguette"], "Viande de bœuf": ["Boeuf", "Bœuf", "Viande"], "Jambon de bœuf": ["Jambon"], Margarine: ["Beurre"], "Lait entier": ["Lait demi-écrémé"],
+  "Lait concentré sucré": ["Lait concentré"], Baguette: ["Pain", "Pain baguette"], "Pâte de sardinelle Pinton": ["Pâte de sardinelle"], "Viande de bœuf": ["Boeuf", "Bœuf", "Viande"], "Jambon de bœuf": ["Jambon"], Margarine: ["Beurre"], "Lait entier": ["Lait demi-écrémé"],
 };
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
