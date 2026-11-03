@@ -1,27 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "./firebaseCaisse.js";
+import React, { useState } from "react";
 import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu, nbAccomps, accompsDuMenu, supPain } from "../../arena-commande/src/shared/prix.js";
-import { MENU_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
 import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
-// Le menu du site (config/menu dans Firebase) dans l'onglet Encaissement.
-// Même menu, mêmes prix que le site : on le modifie une seule fois dans 🌐 → Menu & prix.
-const CACHE = "gg3-menu-site";
-
-export function useMenuSite() {
-  const [menu, setMenu] = useState(() => {
-    try { const m = JSON.parse(localStorage.getItem(CACHE) || "null"); if (m && m.articles) return m; } catch (e) {}
-    return MENU_DEPART;
-  });
-  useEffect(() => onSnapshot(doc(db, "config/menu"), (s) => {
-    if (!s.exists()) return;
-    const m = s.data();
-    setMenu(m);
-    try { localStorage.setItem(CACHE, JSON.stringify(m)); } catch (e) {}
-  }, () => {}), []);
-  return menu;
-}
+export { useMenuSite } from "./menuSite.js";
 
 // Ligne de panier : même id pour les mêmes choix, pour que la quantité s'additionne.
 function ligne(menu, a, choix) {

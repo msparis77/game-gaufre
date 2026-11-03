@@ -15,6 +15,8 @@ export const REVENTE = {
   b_pressea_ananas_coco: ["Jus Presséa", "Presséa"],
   b_pressea_goyave: ["Jus Presséa", "Presséa"],
   b_pressea_orange: ["Jus Presséa", "Presséa"],
+  b_eau_bouteille: ["Eau en bouteille"],
+  b_eau_sachet: ["Eau en sachet"],
 };
 
 // Formules : leurs éléments (ids d'articles du menu, ou libellé d'un élément sans coût connu).
@@ -49,7 +51,7 @@ function coutSimple(a, ingredients, recipes) {
   const rec = trouverRecette(a, recipes);
   if (!rec) return { cout: null, source: "recette", manque: ["recette"] };
   const c = coutRecette(rec, ingredients);
-  return { cout: c.cout, source: "recette", manque: c.manquants.map((m) => "prix " + m) };
+  return { cout: c.cout, source: "recette", manque: c.manquants.map((m) => "prix " + m), proposee: !!rec.proposee };
 }
 
 // Ligne complète pour un article du menu.
