@@ -7,7 +7,9 @@
 import { lignes } from "./recettesFiches.js";
 import { trouverRecette } from "./coutRevient.js";
 
-export const VERSION_CARTE = 1;
+// v2 (Moussa 2026-11-03) : pains à 300-800 F : thon 40 g, corned beef 50 g, dambé 50 g, sauce ou garniture 30 g,
+// oignon 5 g dans chaque sandwich ; baguette à 65 F (prix dans ingredientsReference).
+export const VERSION_CARTE = 2;
 
 const PAIN = ["Baguette", 1];
 const ALU = ["Papier alu / papier sandwich", 1];
@@ -23,18 +25,18 @@ const R = (id, nom, categorie, emoji, garn) => ({ id, nom, categorie, emoji, gar
 
 export const RECETTES_CARTE = [
   // Petit-déjeuner (pains)
-  R("pd_thon", "Pain thon", "Petit-déjeuner", "🐟", [PAIN, ["Thon", 0.03], MAYO(0.01), OIGNON(0.01)]),
-  R("pd_dambe", "Pain dambé", "Petit-déjeuner", "🫘", [PAIN, ["Haricots", 0.06], OIGNON(0.01), HUILE(0.005)]),
-  R("pd_oeuf_mayo", "Pain œuf mayonnaise", "Petit-déjeuner", "🥚", [PAIN, ["Oeufs", 1], MAYO(0.01)]),
-  R("pd_corned_beef", "Pain corned beef", "Petit-déjeuner", "🥫", [PAIN, ["Corned beef", 0.25], OIGNON(0.01)]),
-  R("pd_viande_hachee", "Pain viande hachée", "Petit-déjeuner", "🥩", [PAIN, ["Viande hachée", 0.06], OIGNON(0.015), HUILE(0.005)]),
-  R("pd_petit_pois_viande", "Pain petits pois viande", "Petit-déjeuner", "🥩", [PAIN, ["Petits pois", 0.04], ["Viande hachée", 0.03], OIGNON(0.01)]),
+  R("pd_thon", "Pain thon", "Petit-déjeuner", "🐟", [PAIN, ["Thon", 0.04], OIGNON(0.005)]),
+  R("pd_dambe", "Pain dambé", "Petit-déjeuner", "🫘", [PAIN, ["Haricots", 0.05], OIGNON(0.005)]),
+  R("pd_oeuf_mayo", "Pain œuf mayonnaise", "Petit-déjeuner", "🥚", [PAIN, ["Oeufs", 1], MAYO(0.03)]),
+  R("pd_corned_beef", "Pain corned beef", "Petit-déjeuner", "🥫", [PAIN, ["Corned beef", 0.05], OIGNON(0.005)]),
+  R("pd_viande_hachee", "Pain viande hachée", "Petit-déjeuner", "🥩", [PAIN, ["Viande hachée", 0.03], OIGNON(0.005)]),
+  R("pd_petit_pois_viande", "Pain petits pois viande", "Petit-déjeuner", "🥩", [PAIN, ["Petits pois", 0.015], ["Viande hachée", 0.015], OIGNON(0.005)]),
   // Sandwichs omelette
-  R("omelette_nature", "Sandwich Omelette Nature", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], OIGNON(0.02), HUILE(0.01), ["Sel", 0.001]]),
-  R("omelette_pdt", "Sandwich Omelette Pommes de terre", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], ["Pommes de terre", 0.08], OIGNON(0.02), HUILE(0.02)]),
-  R("omelette_poulet", "Sandwich Œuf au plat Poulet", "Sandwichs", "🍳", [PAIN, ["Oeufs", 1], ["Poulet", 0.05], ["Pommes de terre", 0.08], OIGNON(0.02), HUILE(0.02)]),
-  R("omelette_saucisson", "Sandwich Omelette Saucisson", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], ["Saucisson", 0.04], ["Pommes de terre", 0.08], OIGNON(0.02), HUILE(0.02)]),
-  R("omelette_jambon", "Sandwich Omelette Jambon", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], ["Jambon de bœuf", 0.04], OIGNON(0.02), HUILE(0.01)]),
+  R("omelette_nature", "Sandwich Omelette Nature", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], OIGNON(0.005), HUILE(0.01), ["Sel", 0.001]]),
+  R("omelette_pdt", "Sandwich Omelette Pommes de terre", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], ["Pommes de terre", 0.08], OIGNON(0.005), HUILE(0.02)]),
+  R("omelette_poulet", "Sandwich Œuf au plat Poulet", "Sandwichs", "🍳", [PAIN, ["Oeufs", 1], ["Poulet", 0.05], ["Pommes de terre", 0.08], OIGNON(0.005), HUILE(0.02)]),
+  R("omelette_saucisson", "Sandwich Omelette Saucisson", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], ["Saucisson", 0.04], ["Pommes de terre", 0.08], OIGNON(0.005), HUILE(0.02)]),
+  R("omelette_jambon", "Sandwich Omelette Jambon", "Sandwichs", "🍳", [PAIN, ["Oeufs", 2], ["Jambon de bœuf", 0.04], OIGNON(0.005), HUILE(0.01)]),
   // Douceurs
   R("c_beignets_nutella", "Beignets bubble Nutella", "Douceurs", "🍩", [["Mix beignets", 0.05], ["Nutella", 0.02], HUILE(0.02)]),
   R("c_sorbet_bissap", "Sorbet bissap chantilly", "Douceurs", "🍧", [["Sorbet bissap", 1], ["Crème liquide", 0.02], SUCRE(0.004)]),
@@ -81,22 +83,33 @@ export const RECETTES_CARTE = [
   R("ff_burger_2_steaks", "Hamburger 2 steaks", "Fast-food", "🍔", [["Pain à hamburger", 1], ["Steaks hachés", 2], ["Fromage", 0.04], ["Salade", 0.05], ["Tomates", 0.02], OIGNON(0.01), ["Ketchup", 0.02], MAYO(0.01), ALU]),
   R("ff_shawarma_poulet", "Shawarma poulet", "Fast-food", "🥙", [["Galettes / tortillas", 1], ["Poulet", 0.1], ["Pommes de terre", 0.15], HUILE(0.03), ["Salade", 0.05], ["Tomates", 0.02], MAYO(0.015), ALU]),
   R("ff_shawarma_viande", "Shawarma viande", "Fast-food", "🥙", [["Galettes / tortillas", 1], ["Viande de bœuf", 0.1], ["Pommes de terre", 0.15], HUILE(0.03), ["Salade", 0.05], ["Tomates", 0.02], MAYO(0.015), ALU]),
-  R("ff_sandwich_poulet", "Sandwich poulet", "Fast-food", "🥖", [PAIN, ["Poulet", 0.08], ["Salade", 0.03], ["Tomates", 0.02], OIGNON(0.01), MAYO(0.01), ALU]),
-  R("ff_sandwich_viande", "Sandwich viande", "Fast-food", "🥖", [PAIN, ["Viande de bœuf", 0.08], ["Salade", 0.03], ["Tomates", 0.02], OIGNON(0.01), MAYO(0.01), ALU]),
+  R("ff_sandwich_poulet", "Sandwich poulet", "Fast-food", "🥖", [PAIN, ["Poulet", 0.08], ["Salade", 0.03], ["Tomates", 0.02], OIGNON(0.005), MAYO(0.01), ALU]),
+  R("ff_sandwich_viande", "Sandwich viande", "Fast-food", "🥖", [PAIN, ["Viande de bœuf", 0.08], ["Salade", 0.03], ["Tomates", 0.02], OIGNON(0.005), MAYO(0.01), ALU]),
   R("ff_fataya_complet", "Fataya complet", "Fast-food", "🥟", [["Pâte à fataya", 0.1], ["Viande hachée", 0.05], OIGNON(0.02), HUILE(0.03)]),
-  R("ff_local_poulet", "Local poulet", "Fast-food", "🥖", [["Pain local", 1], ["Poulet", 0.06], OIGNON(0.02), MAYO(0.01), ALU]),
-  R("ff_local_viande_hachee", "Local viande hachée", "Fast-food", "🥖", [["Pain local", 1], ["Viande hachée", 0.07], OIGNON(0.02), MAYO(0.01), ALU]),
+  R("ff_local_poulet", "Local poulet", "Fast-food", "🥖", [["Pain local", 1], ["Poulet", 0.06], OIGNON(0.005), MAYO(0.01), ALU]),
+  R("ff_local_viande_hachee", "Local viande hachée", "Fast-food", "🥖", [["Pain local", 1], ["Viande hachée", 0.07], OIGNON(0.005), MAYO(0.01), ALU]),
 ];
 
-// Ajoute les recettes proposées qui manquent (jamais par-dessus une recette existante).
+// Ajoute les recettes proposées qui manquent (jamais par-dessus une recette faite par le patron),
+// et met à jour celles qui sont encore « proposées » quand la liste change de version.
 // Renvoie la nouvelle liste, ou null s'il n'y a rien à faire.
 export function ajouterRecettesCarte(recipes, ingredients) {
   if (!Array.isArray(recipes) || !Array.isArray(ingredients)) return null;
   if (recipes.some((x) => x && x.carteV >= VERSION_CARTE)) return null;
+  const parId = new Map(RECETTES_CARTE.map((f) => [f.id, f]));
+  let change = false;
+  const majs = recipes.map((r) => {
+    const f = r && r.proposee && typeof r.id === "string" && parId.get(r.id.slice(3));
+    if (!f) return r;
+    const ings = lignes(ingredients, f.garn);
+    if (!ings.length) return r;
+    change = true;
+    return { ...r, ingredients: ings, carteV: VERSION_CARTE };
+  });
   const ajouts = RECETTES_CARTE
-    .filter((f) => !trouverRecette({ id: f.id, nom: f.nom }, recipes))
+    .filter((f) => !trouverRecette({ id: f.id, nom: f.nom }, majs))
     .map((f) => ({ id: "rf_" + f.id, emoji: f.emoji, name: f.nom, category: f.categorie, snackId: "", ingredients: lignes(ingredients, f.garn), carteV: VERSION_CARTE, proposee: true }))
     .filter((r) => r.ingredients.length);
-  if (!ajouts.length) return null;
-  return [...recipes, ...ajouts];
+  if (!ajouts.length && !change) return null;
+  return [...majs, ...ajouts];
 }

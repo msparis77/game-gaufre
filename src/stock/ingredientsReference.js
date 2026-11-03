@@ -1,7 +1,7 @@
 // Produits achetés à référencer dans Stocks → Ingrédients (ticket Auchan + prix donnés par Moussa, 2026-10-08).
 // On ajoute seulement ceux qui manquent, sans quantité ; prix 0 = à remplir plus tard.
 // Un produit déjà présent (même nom ou alias) n'est pas dupliqué ; seuls ceux de PRIX_A_JOUR reçoivent le nouveau prix.
-export const VERSION_REFERENCE = 5;
+export const VERSION_REFERENCE = 6;
 
 export const INGREDIENTS_REFERENCE = [
   // Cuisine
@@ -135,6 +135,9 @@ export const PRIX_A_JOUR = [
   { v: 5, noms: ["Sucre vanillé"], unitCost: 100 }, // sachet, estimation
   { v: 5, noms: ["Poulet entier"], unitCost: 3000 }, // Moussa 08/10 : 3 000 F le poulet
   { v: 5, noms: ["Eau en bouteille"], unitCost: 71 }, // pack de 12 à 850 F
+  // v6 : Moussa 2026-11-03 : la baguette coûte 65 F ; le corned beef se compte en grammes dans les pains.
+  { v: 6, noms: ["Pain", "Baguette", "Pain baguette"], unitCost: 65 },
+  { v: 6, noms: ["Corned beef"], unit: "kg", unitCost: 0 },
 ];
 
 const cle = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]/g, "");
