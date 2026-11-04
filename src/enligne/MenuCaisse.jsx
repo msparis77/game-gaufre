@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { estBoisson, prixSimple, prixUnitaire, nomLigne, fcfa, aChoixPain, painsDuMenu, aChoixJus, jusDuMenu, nbAccomps, accompsDuMenu, supPain } from "../../arena-commande/src/shared/prix.js";
 import { boissonsParFamille, iconeBoisson } from "../../arena-commande/src/shared/boissons.js";
 
-export { useMenuSite } from "./menuSite.js";
+import { useMenuSite } from "./menuSite.js";
+export { useMenuSite }; // gardé pour CoutRevient.jsx
 
 // Ligne de panier : même id pour les mêmes choix, pour que la quantité s'additionne.
 function ligne(menu, a, choix) {
