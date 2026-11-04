@@ -223,8 +223,16 @@ export const CRENEAUX_DEPART = {
 export const LIVRAISON_DEPART = {
   actif: false,
   minimum: 0,
+  fastFoodSeulement: true, // la livraison commence avec le fast-food (+ boissons)
   zones: {
     z1: { nom: "Guédiawaye", frais: 500, actif: true },
   },
 };
 // Livreurs (config/livreurs, lisible seulement par la caisse) : [{ nom, tel }]
+
+// Paiement Wave / Orange Money (config/paiement, lisible par tous, modifiable par la caisse).
+// numero : numéro marchand affiché au client · lien : lien de paiement Wave (pay.wave.com/…)
+export const PAIEMENT_DEPART = {
+  wave: { actif: false, numero: "", lien: "" },
+  orange: { actif: false, numero: "", lien: "" },
+};

@@ -308,7 +308,7 @@ export default function App(){
   useEffect(()=>{try{localStorage.setItem("gg3-panier",JSON.stringify(cart));}catch(e){}},[cart]);
   const webEnAttente=useVeilleBadge();
   const enregistrerVenteEnLigne=(cmd,verif)=>{
-    const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),jour:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne"};
+    const sale={id:"web_"+cmd.id,items:verif.lignes.map(l=>({id:"web_"+l.articleId,name:"🌐 "+l.nom,price:l.prixUnitaire,qty:l.qte,cat:"en_ligne",emoji:"🌐"})),total:verif.total,time:timeStr(),date:todayStr(),jour:todayStr(),by:user?.name,ticketNo:"WEB-"+cmd.code,source:"en_ligne",paiement:(cmd.paiement&&cmd.paiement.statut==="paye"&&["wave","orange"].includes(cmd.paiement.moyen))?cmd.paiement.moyen:"especes"};
     setSales(prev=>{if(prev.some(x=>x.id===sale.id))return prev;const ns=[...prev,sale];saveDay({sales:ns});return ns;});
     enregistrerVenteCloud(currentStore.id,sale);
     addAudit("VENTE EN LIGNE",`${cmd.code} ${cmd.prenom} ${fmt(verif.total)}`);

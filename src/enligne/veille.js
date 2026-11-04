@@ -77,7 +77,7 @@ function donneesTicket(c) {
     client: c.prenom,
     telephone: c.telephone,
     retrait: heureRetrait(c),
-    paiement: c.livraison ? "À PAYER AU LIVREUR" : "À PAYER AU RETRAIT",
+    paiement: dejaPaye(c) ? `DÉJÀ PAYÉ (${dejaPaye(c)})` : c.paiement?.moyen === "wave" ? "WAVE À VÉRIFIER" : c.paiement?.moyen === "orange" ? "ORANGE MONEY À VÉRIFIER" : c.livraison ? "À PAYER AU LIVREUR" : "À PAYER AU RETRAIT",
     livraison: c.livraison ? `${c.livraison.nom} · ${c.livraison.adresse}` : "",
     items: [...c.lignes.map((l) => ({ name: l.nom, qty: l.qte, price: l.prixUnitaire })),
       ...(c.livraison ? [{ name: "LIVRAISON " + c.livraison.nom, qty: 1, price: c.livraison.frais }] : [])],
@@ -142,6 +142,9 @@ export function imprimerNavigateur(c) {
   w.document.close(); w.focus(); w.print(); w.close();
 }
 
+// Commande déjà payée par Wave / Orange Money ? (nom du moyen, sinon "")
+const dejaPaye = (c) => (c.paiement?.statut === "paye" ? ({ wave: "Wave", orange: "Orange Money" }[c.paiement.moyen] || "") : "");
+
 // ── Bon de livraison (pour le livreur) ──
 // Toutes les infos du client : prénom, téléphone, adresse, articles, montant à
 // encaisser, et le code secret que le client doit lui donner.
@@ -158,7 +161,7 @@ export function texteBonLivreur(c) {
     ...c.lignes.map((x) => `${x.qte} × ${x.nom}`),
     `Livraison : ${(l.frais || 0).toLocaleString("fr-FR")} F`,
     "",
-    `À ENCAISSER : ${total.toLocaleString("fr-FR")} F`,
+    dejaPaye(c) ? `DÉJÀ PAYÉ PAR ${dejaPaye(c).toUpperCase()} : RIEN À ENCAISSER` : `À ENCAISSER : ${total.toLocaleString("fr-FR")} F`,
     c.codeRetrait ? `Code secret à demander au client : ${c.codeRetrait}` : "",
   ].filter((x, i, a) => x !== "" || a[i - 1] !== "").join("\n");
 }
@@ -177,7 +180,7 @@ function donneesBonLivraison(c) {
     telephone: c.telephone,
     adresse: `${l.nom} · ${l.adresse}`,
     livreur: c.livreur || "",
-    paiement: "À ENCAISSER PAR LE LIVREUR",
+    paiement: dejaPaye(c) ? `DÉJÀ PAYÉ (${dejaPaye(c)}) : RIEN À ENCAISSER` : "À ENCAISSER PAR LE LIVREUR",
     items: [...c.lignes.map((x) => ({ name: x.nom, qty: x.qte, price: x.prixUnitaire })), { name: "LIVRAISON " + l.nom, qty: 1, price: l.frais || 0 }],
     total: c.total + (l.frais || 0),
   };
@@ -191,7 +194,7 @@ export function bonLivreurNavigateur(c) {
 <p style="text-align:center;margin:0">ARENA CAFÉ · BON DE LIVRAISON</p><h1>${esc(t.ticketNo)}</h1>${t.livreur ? `<p style="text-align:center;margin:0">Livreur : <b>${esc(t.livreur)}</b></p>` : ""}<hr/>
 <p style="margin:0">Client : <b>${esc(t.client)}</b><br/>Tél : <b>+221 ${esc(t.telephone)}</b><br/>Adresse : <b>${esc(t.adresse)}</b></p><hr/>
 <table width="100%">${t.items.map((i) => `<tr><td>${i.qty} × ${esc(i.name)}</td><td class="r">${(i.qty * i.price).toLocaleString("fr-FR")} F</td></tr>`).join("")}</table><hr/>
-<p><b>À ENCAISSER : ${t.total.toLocaleString("fr-FR")} F</b></p>${t.codeRetrait ? `<p>Code secret à demander au client :<br/><b style="font-size:22px">${esc(t.codeRetrait)}</b></p>` : ""}</body></html>`);
+<p><b>${dejaPaye(c) ? `DÉJÀ PAYÉ (${esc(dejaPaye(c))}) : RIEN À ENCAISSER` : `À ENCAISSER : ${t.total.toLocaleString("fr-FR")} F`}</b></p>${t.codeRetrait ? `<p>Code secret à demander au client :<br/><b style="font-size:22px">${esc(t.codeRetrait)}</b></p>` : ""}</body></html>`);
   w.document.close(); w.focus(); w.print(); w.close();
 }
 // Imprime le bon via le print bridge ; si l'imprimante ne répond pas, fenêtre du navigateur.

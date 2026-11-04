@@ -6,7 +6,8 @@ import { verifierCommande, fcfa, prixSimple } from "../../arena-commande/src/sha
 import { hhmm, versMinutes } from "../../arena-commande/src/shared/creneaux.js";
 import { nettoyerTelephone, telephoneValide } from "../../arena-commande/src/shared/commander.js";
 import Club from "./Club.jsx";
-import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
+import { MENU_DEPART, CRENEAUX_DEPART, LIVRAISON_DEPART, PAIEMENT_DEPART } from "../../arena-commande/src/shared/menuDepart.js";
+import { MOYENS, moyenCommande, estMobile, estPaye, formatNumero } from "../../arena-commande/src/shared/paiement.js";
 
 const STATUTS = {
   recue: { nom: "Reçue", couleur: "#FF6D00" },
@@ -60,6 +61,7 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
   const livraison = useDoc("config/livraison", connecte);
   const livreursDoc = useDoc("config/livreurs", connecte);
   const livreurs = (livreursDoc && livreursDoc.liste) || [];
+  const paiement = useDoc("config/paiement", connecte);
 
   if (!firebaseConfigure)
     return <div style={{ padding: 14 }}><div style={Card(S.orange)}>
@@ -72,7 +74,7 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
   return (
     <div style={{ padding: 14 }}>
       <div style={{ display: "flex", gap: 4, marginBottom: 12, flexWrap: "wrap" }}>
-        {[["commandes", "📋 Commandes"], ["menu", "🍽️ Menu & prix"], ["creneaux", "🕐 Créneaux"], ["livraison", "🛵 Livraison"], ["club", "📣 Club"]].map(([id, l]) => (
+        {[["commandes", "📋 Commandes"], ["menu", "🍽️ Menu & prix"], ["creneaux", "🕐 Créneaux"], ["livraison", "🛵 Livraison"], ["paiement", "💳 Wave / Orange"], ["club", "📣 Club"]].map(([id, l]) => (
           <button key={id} style={Sub(vue === id)} onClick={() => (id === "commandes" ? setVue(id) : requirePatron(() => setVue(id)))}>{l}</button>
         ))}
       </div>
@@ -80,6 +82,7 @@ export default function CommandesEnLigne({ S, Btn, Inp, Card, Sub, requirePatron
       {vue === "menu" && <EditeurMenu {...{ S, Btn, Inp, Card, menu, showToast }} />}
       {vue === "creneaux" && <EditeurCreneaux {...{ S, Btn, Inp, Card, creneaux, showToast }} />}
       {vue === "livraison" && <EditeurLivraison {...{ S, Btn, Inp, Card, livraison, livreurs, showToast }} />}
+      {vue === "paiement" && <EditeurPaiement {...{ S, Btn, Inp, Card, paiement, showToast }} />}
       {vue === "club" && <Club {...{ S, Btn, Inp, Card, showToast }} />}
     </div>
   );
@@ -114,7 +117,8 @@ function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livreurs, showTo
 
   const changer = async (c, statut, extra = {}) => {
     if (c.codeRetrait && statut === "recuperee" && !window.confirm(`Vérifie avant de remettre la commande ${c.code} :\n\n${c.prenom} doit te donner le code secret ${c.codeRetrait}.\n\nLe code est bon ?`)) return;
-    if (c.codeRetrait && statut === "livree" && !window.confirm(`Livraison ${c.code} :\n\nLe livreur a bien reçu le code secret ${c.codeRetrait} de ${c.prenom} et l'argent (${fcfa(vente(menu, c).total)}) ?`)) return;
+    if (FINAL.includes(statut) && estMobile(c) && !estPaye(c)) return showToast(`⚠️ Paiement ${MOYENS[moyenCommande(c)].nom} pas encore confirmé : touchez « Argent reçu » ou « Il paie en espèces »`, S.orange);
+    if (c.codeRetrait && statut === "livree" && !window.confirm(`Livraison ${c.code} :\n\nLe livreur a bien reçu le code secret ${c.codeRetrait} de ${c.prenom}${estPaye(c) ? "" : ` et l'argent (${fcfa(vente(menu, c).total)})`} ?`)) return;
     setOccupe(c.id);
     try {
       if (FINAL.includes(statut)) {
@@ -138,6 +142,20 @@ function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livreurs, showTo
     } catch (e) { showToast("❌ Erreur : " + (e.code || e.message), S.red); }
     setOccupe(null);
   };
+  // Paiement Wave / Orange Money : le caissier vérifie sur le téléphone de la boutique
+  const confirmerPaiement = async (c, moyen) => {
+    const montant = vente(menu, c).total;
+    const msg = moyen === "especes"
+      ? `${c.code} : ${c.prenom} n'a pas payé par ${MOYENS[moyenCommande(c)].nom} et paiera ${fcfa(montant)} en espèces${c.livraison ? " au livreur" : " au comptoir"} ?`
+      : `${c.code} : vérifiez sur le téléphone ${MOYENS[moyen].nom} de la boutique.\n\nAvez-vous bien reçu ${fcfa(montant)} de ${c.prenom} (${c.telephone}) ?`;
+    if (!window.confirm(msg)) return;
+    setOccupe(c.id);
+    try {
+      await updateDoc(doc(db, "commandes_en_ligne", c.id), { paiement: { mode: c.paiement.mode, moyen, statut: moyen === "especes" ? "a_payer" : "paye" }, majAt: serverTimestamp() });
+      showToast(moyen === "especes" ? `${c.code} : paiement en espèces` : `✓ ${c.code} payée par ${MOYENS[moyen].nom}`);
+    } catch (e) { showToast("❌ Erreur : " + (e.code || e.message), S.red); }
+    setOccupe(null);
+  };
   const annuler = (c) => { if (window.confirm(`Annuler la commande ${c.code} de ${c.prenom} ?`)) changer(c, "annulee"); };
 
   return <>
@@ -154,14 +172,14 @@ function ListeCommandes({ S, Btn, Card, veille, menu, creneaux, livreurs, showTo
       <div style={{ ...Card(), flex: 1, marginBottom: 0, textAlign: "center" }}><div style={{ fontSize: 22, fontWeight: 800, color: S.green }}>{fcfa(encaisse)}</div><div style={{ fontSize: 10, color: S.muted }}>encaissé en ligne aujourd'hui</div></div>
     </div>
     {!actives.length && <div style={{ ...Card(), color: S.muted, fontSize: 13, textAlign: "center" }}>Aucune commande en cours.</div>}
-    {actives.map((c) => <CarteCommande key={c.id} {...{ S, Btn, Card, c, menu, occupe, changer, annuler, auj, jour, livreurs }} />)}
+    {actives.map((c) => <CarteCommande key={c.id} {...{ S, Btn, Card, c, menu, occupe, changer, annuler, confirmerPaiement, auj, jour, livreurs }} />)}
     {finies.length > 0 && <button onClick={() => setVoirFinies(!voirFinies)} style={{ ...Btn(S.card2, S.muted), width: "100%", marginTop: 6 }}>{voirFinies ? "▲" : "▼"} Terminées aujourd'hui ({finies.length})</button>}
     {voirFinies && finies.map((c) => <CarteCommande key={c.id} {...{ S, Btn, Card, c, menu, occupe, changer, annuler, auj, jour, livreurs }} finie />)}
     <div style={{ fontSize: 10, color: S.muted, marginTop: 14, lineHeight: 1.6 }}>Print bridge : {PRINT_BRIDGE_URL}. Les commandes récupérées sont ajoutées aux ventes du jour (🌐) et comptent dans la clôture de caisse.</div>
   </>;
 }
 
-function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, jour, finie, livreurs = [] }) {
+function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, confirmerPaiement, auj, jour, finie, livreurs = [] }) {
   const st = STATUTS[c.statut] || STATUTS.recue;
   const v = menu ? verifierCommande(menu, c) : null;
   const liv = c.livraison;
@@ -183,9 +201,17 @@ function CarteCommande({ S, Btn, Card, c, menu, occupe, changer, annuler, auj, j
       {(v ? v.lignes : c.lignes).map((l, i) => <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "2px 0" }}>
         <span><b>{l.qte} ×</b> {l.nom}{l.inconnu && <span style={{ color: S.orange }}> (article supprimé du menu)</span>}</span><span style={{ color: S.muted, whiteSpace: "nowrap" }}>{fcfa(l.prixUnitaire * l.qte)}</span>
       </div>)}
-      <div style={{ display: "flex", justifyContent: "space-between", borderTop: `1px dashed ${S.border}`, marginTop: 4, paddingTop: 4, fontWeight: 800 }}><span>À encaisser</span><span style={{ color: S.green }}>{fcfa((v ? v.total : c.total) + fraisLivraison(c))}{liv ? ` (dont livraison ${fcfa(liv.frais)})` : ""}</span></div>
+      <div style={{ display: "flex", justifyContent: "space-between", borderTop: `1px dashed ${S.border}`, marginTop: 4, paddingTop: 4, fontWeight: 800 }}><span>{estPaye(c) ? `✅ Payé par ${MOYENS[moyenCommande(c)].nom}` : "À encaisser"}</span><span style={{ color: S.green }}>{fcfa((v ? v.total : c.total) + fraisLivraison(c))}{liv ? ` (dont livraison ${fcfa(liv.frais)})` : ""}</span></div>
       {v && v.ecart && <div style={{ color: S.orange, fontSize: 11, marginTop: 4 }}>⚠️ Le téléphone affichait {fcfa(c.total)} : le prix a été recalculé avec le menu actuel.</div>}
     </div>
+    {estMobile(c) && !estPaye(c) && <div style={{ background: S.card2, borderRadius: 8, padding: 8, marginBottom: 8, fontSize: 13, borderLeft: `3px solid ${MOYENS[moyenCommande(c)].couleur}` }}>
+      <b style={{ color: MOYENS[moyenCommande(c)].couleur }}>{MOYENS[moyenCommande(c)].emoji} Paiement {MOYENS[moyenCommande(c)].nom} à vérifier</b>
+      <div style={{ fontSize: 11, color: S.muted, margin: "2px 0 6px" }}>Regardez sur le téléphone {MOYENS[moyenCommande(c)].nom} de la boutique si {fcfa((v ? v.total : c.total) + fraisLivraison(c))} sont arrivés de {c.telephone}.</div>
+      {!finie && <div style={{ display: "flex", gap: 6 }}>
+        <button disabled={occupe === c.id} onClick={() => confirmerPaiement(c, moyenCommande(c))} style={{ ...Btn(MOYENS[moyenCommande(c)].couleur, "#fff"), flex: 2, fontSize: 12 }}>✅ Argent reçu</button>
+        <button disabled={occupe === c.id} onClick={() => confirmerPaiement(c, "especes")} style={{ ...Btn(S.card3, S.text), flex: 1, fontSize: 12 }}>💵 Il paie en espèces</button>
+      </div>}
+    </div>}
     {liv && <div style={{ background: S.card2, borderRadius: 8, padding: 8, marginBottom: 8, fontSize: 13, borderLeft: `3px solid ${STATUTS.en_route.couleur}` }}>
       <b>🛵 {liv.nom}</b> · {liv.adresse}{c.livreur && <div style={{ fontSize: 12, color: S.muted, marginTop: 2 }}>Livreur : <b style={{ color: S.text }}>{c.livreur}</b>{c.livreurTel && <> · {c.livreurTel}</>}</div>}
       {c.statut === "en_route" && <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
@@ -343,7 +369,7 @@ function EditeurLivraison({ S, Btn, Inp, Card, livraison, livreurs, showToast })
   const donnees = (actif) => {
     const zones = {};
     b.zones.forEach((z, i) => { zones["z" + (i + 1)] = { nom: String(z.nom).trim(), frais: nombre(z.frais), actif: !!z.actif }; });
-    return { actif, minimum: nombre(b.minimum), zones };
+    return { actif, minimum: nombre(b.minimum), zones, fastFoodSeulement: b.fastFoodSeulement !== false };
   };
   const enregistrer = async (actif = b.actif) => {
     if (b.zones.some((z) => !String(z.nom).trim())) return showToast("❌ Donne un nom à chaque zone", S.red);
@@ -375,6 +401,10 @@ function EditeurLivraison({ S, Btn, Inp, Card, livraison, livreurs, showToast })
         <button onClick={() => setB({ ...b, zones: b.zones.filter((_, j) => j !== i) })} style={{ ...Btn(S.card3, S.red), padding: "4px 8px" }}>✕</button>
       </div>)}
       <button onClick={() => setB({ ...b, zones: [...b.zones, { id: nouvelId("z"), nom: "", frais: 500, actif: false }] })} style={{ ...Btn(S.card3, S.text), width: "100%", fontSize: 12, marginBottom: 10 }}>+ Ajouter une zone</button>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, margin: "4px 0 10px" }}>
+        <input type="checkbox" checked={b.fastFoodSeulement !== false} onChange={(e) => setB({ ...b, fastFoodSeulement: e.target.checked })} />
+        Livrer seulement le fast-food 🍔 et les boissons
+      </label>
       <Ligne S={S} label="Minimum de commande pour être livré (F)"><input type="number" value={b.minimum} onChange={(e) => setB({ ...b, minimum: e.target.value })} style={Inp(90)} /></Ligne>
     </div>
     <div style={Card()}>
@@ -388,6 +418,39 @@ function EditeurLivraison({ S, Btn, Inp, Card, livraison, livreurs, showToast })
       <button onClick={() => setLiv([...liv, { nom: "", tel: "" }])} style={{ ...Btn(S.card3, S.text), width: "100%", fontSize: 12 }}>+ Ajouter un livreur</button>
     </div>
     <button onClick={() => enregistrer()} style={{ ...Btn(S.green, S.bg), width: "100%" }}>💾 Enregistrer les réglages</button>
+  </>;
+}
+
+// ─────────────── Réglages Wave / Orange Money ───────────────
+function EditeurPaiement({ S, Btn, Inp, Card, paiement, showToast }) {
+  const [b, setB] = useState(null);
+  useEffect(() => { if (paiement !== undefined && !b) setB(JSON.parse(JSON.stringify({ ...PAIEMENT_DEPART, ...(paiement || {}) }))); }, [paiement, b]);
+  if (paiement === undefined || !b) return <div style={{ color: S.muted }}>Chargement…</div>;
+  const maj = (m, champ, v) => setB({ ...b, [m]: { ...b[m], [champ]: v } });
+  const enregistrer = async () => {
+    const d = {};
+    for (const m of ["wave", "orange"]) {
+      const numero = nettoyerTelephone(b[m].numero);
+      const lien = String(b[m].lien || "").trim();
+      if (numero && !telephoneValide(numero)) return showToast(`❌ Numéro ${MOYENS[m].nom} invalide`, S.red);
+      if (lien && !/^https:\/\//.test(lien)) return showToast(`❌ Le lien ${MOYENS[m].nom} doit commencer par https://`, S.red);
+      if (b[m].actif && !numero && !lien) return showToast(`❌ Ajoutez le numéro ${MOYENS[m].nom} avant de l'activer`, S.red);
+      d[m] = { actif: !!b[m].actif, numero, lien };
+    }
+    try { await setDoc(doc(db, "config/paiement"), d); showToast("✓ Paiements enregistrés"); }
+    catch (e) { showToast("❌ Erreur : " + (e.code || e.message), S.red); }
+  };
+  return <>
+    <div style={{ ...Card(), fontSize: 12, color: S.muted, lineHeight: 1.6 }}>Quand un moyen est activé, les clients peuvent le choisir sur le site (retrait et livraison). Le site leur montre votre numéro et le montant. Ensuite, dans 📋 Commandes, vérifiez sur le téléphone de la boutique que l'argent est arrivé, puis touchez « ✅ Argent reçu ».</div>
+    {["wave", "orange"].map((m) => <div key={m} style={Card(MOYENS[m].couleur)}>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, color: MOYENS[m].couleur, marginBottom: 8 }}>
+        <input type="checkbox" checked={!!b[m].actif} onChange={(e) => maj(m, "actif", e.target.checked)} /> {MOYENS[m].emoji} {MOYENS[m].nom} {b[m].actif ? "ACTIVÉ sur le site" : "désactivé"}
+      </label>
+      <Ligne S={S} label="Numéro marchand"><input value={b[m].numero} type="tel" onChange={(e) => maj(m, "numero", e.target.value)} placeholder="77 123 45 67" style={Inp(140)} /></Ligne>
+      <div style={{ fontSize: 11, color: S.muted, margin: "6px 0 4px" }}>{m === "wave" ? "Lien de paiement Wave (facultatif, ex. https://pay.wave.com/m/…) : ouvre Wave avec le montant déjà rempli." : "Lien de paiement Orange Money (facultatif). Sans lien, le site propose de composer #144#."}</div>
+      <input value={b[m].lien} onChange={(e) => maj(m, "lien", e.target.value)} placeholder="https://…" style={Inp()} />
+    </div>)}
+    <button onClick={enregistrer} style={{ ...Btn(S.green, S.bg), width: "100%" }}>💾 Enregistrer</button>
   </>;
 }
 
